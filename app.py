@@ -32,7 +32,7 @@ def load_data():
 
 @st.cache_resource
 def load_semantic_model():
-    return SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+    return SentenceTransformer('paraphrase-multilingual-mpnet-base-v2')
 
 @st.cache_resource
 def load_precomputed_embeddings():
@@ -307,4 +307,5 @@ if not results_df.empty:
     if len(results_df) > 50:
 
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
