@@ -159,7 +159,7 @@ st.divider()
 
 #semantic engine
 
-st.subheader("🔍 Busca Semântica Inteligente")
+st.subheader(":material/search: Busca Semântica Inteligente")
 st.markdown("*Digite um conceito, tema ou evento histórico. O motor buscará documentos pelo significado contextual.*")
 
 query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha':")
@@ -168,10 +168,10 @@ col_segura, col_vazia = st.columns([2, 8])
 
 with col_segura:
     limiar_str = st.text_input(
-        "Rigor da Busca Semântica (Corte): 0.", 
+        "Valor de Corte de Relevância:", 
         value="50", 
         max_chars=2,
-        help="Preencha as casas decimais. Ex: se digitar 5, será lido como 0.50."
+        help="Rigor da Busca Semântica: Valores altos exigem uma correspondência mais estrita com o tema pesquisado. Valores baixos ampliam o escopo, incluindo documentos com relação mais distante. Preencha as casas decimais, se digitar 5, será lido como 0.50."
     )
 
 try:
@@ -260,7 +260,7 @@ else:
 
 #export module
 
-st.subheader("📄 Exportar PDF com o Dossiê Documental")
+st.subheader(":material/picture_as_pdf: Exportar PDF com o Dossiê Documental")
 st.markdown("*Use os filtros e a busca para isolar um conjunto de documentos. Em seguida, escolha a quantidade e clique abaixo para baixar um PDF formatado (Normas ABNT).*")
 
 if not results_df.empty:
