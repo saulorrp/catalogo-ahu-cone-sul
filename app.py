@@ -190,7 +190,7 @@ st.divider()
 
 
 with st.sidebar:
-    st.header("Perfis de Busca (Lentes)")
+    st.header(":material/tune: Perfis de Busca (Lentes)")
     lente = st.radio(
         "Selecione uma lente metodológica:",
         ["Busca Livre (Personalizada)", 
@@ -200,7 +200,7 @@ with st.sidebar:
     )
     
     st.divider()
-    st.header("Filtros Manuais")
+    st.header(":material/filter_alt: Filtros Manuais")
     
     st.subheader("Contexto Espacial")
     todas_regioes = df['folder'].unique().tolist()
@@ -342,6 +342,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
