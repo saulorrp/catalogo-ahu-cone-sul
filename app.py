@@ -50,7 +50,7 @@ class PDF(FPDF):
         self.ln(5)
 
     def footer(self):
-        self.set_y(-15) # Margem inferior do rodapé
+        self.set_y(-15)
         self.set_font('Times', 'I', 10)
         self.cell(0, 10, f'Página {self.page_no()}', align='C')
 
@@ -66,7 +66,7 @@ def create_pdf(dataframe, search_params):
     
     def safe_write(text, style='', size=12):
         """Escreve texto com segurança, tratando caracteres especiais."""
-        pdf.set_x(30) # Força o retorno para a margem esquerda de 30mm (ABNT)
+        pdf.set_x(30) 
         pdf.set_font('Times', style, size)
         cleaned = str(text).replace('\n', ' ').strip()
         encoded = cleaned.encode('latin-1', 'replace').decode('latin-1')
@@ -91,9 +91,11 @@ def create_pdf(dataframe, search_params):
     safe_write(f"- Score de Vernacularidade (SV): {search_params['sv_range']}", size=11)
     safe_write(f"- Direção da Comunicação: {search_params['vetores']}", size=11)
     safe_write(f"- Categoria do Remetente: {search_params['categorias']}", size=11)
+    
+    # Adicionando o Limiar Semântico no relatório PDF para manter a transparência metodológica
+    safe_write(f"- Rigor Semântico (Corte): {search_params['limiar']}", size=11)
     pdf.ln(10)
 
-    # 3. DOCUMENT LIST
     for idx, row in dataframe.iterrows():
         new_code = row.get('new_code', 'Sem Cota')
         old_code = row.get('old_code', 'N/A')
@@ -113,7 +115,6 @@ def create_pdf(dataframe, search_params):
         else:
             scribe_text = "Provável" if str(scribe_raw).lower() in ['true', '1', 'sim'] else "Pouco provável"
 
-        # Trocado "•" por ">" para evitar conflito de codificação latin-1 no PDF
         safe_write("> Referência", style='B')
         safe_write(f"Código: {new_code}", style='B')
         safe_write(f"Código Antigo: {old_code}", style='B')
@@ -160,20 +161,33 @@ st.markdown("""
 st.divider()
 
 
-st.subheader("Busca Semântica")
+st.subheader("Busca Semântica Inteligente")
 st.markdown("*Digite um conceito, tema ou evento histórico. O motor buscará documentos pelo significado contextual.*")
 
 query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha':")
 
-# NOVO CONTROLE DE RIGOR DA BUSCA
-limiar_semantico = st.slider(
-    "Rigor da Busca Semântica (Corte de Relevância):", 
-    min_value=0.10, 
-    max_value=0.80, 
-    value=0.40, # Padrão agora é bem mais alto e estrito
-    step=0.05,
-    help="Aumente este valor para exigir documentos estritamente ligados à sua pesquisa. Diminua se quiser ver documentos que abordam o tema de forma mais distante."
+# NOVO CONTROLE DE RIGOR (Caixa de Texto)
+limiar_str = st.text_input(
+    "Rigor da Busca Semântica (Corte de Relevância - preencha as casas decimais após o '0.'):", 
+    value="50", 
+    max_chars=2,
+    help="Aumente para exigir documentos estritamente ligados à sua pesquisa. Se digitar apenas um número (ex: 5), será lido como 50 (0.50)."
 )
+
+# Lógica de conversão e segurança
+try:
+    limiar_limpo = limiar_str.strip()
+    if not limiar_limpo:
+        limiar_limpo = "50"
+    elif len(limiar_limpo) == 1:
+        limiar_limpo += "0" # Transforma '5' em '50'
+        
+    limiar_semantico = float(f"0.{limiar_limpo}")
+except ValueError:
+    # Se o usuário digitar letras sem querer, volta ao padrão para não crashar o app
+    limiar_semantico = 0.50
+    st.error("Por favor, digite apenas números. Retornando ao rigor padrão (0.50).")
+
 
 st.divider()
 
@@ -241,7 +255,7 @@ if query:
     cosine_scores = util.cos_sim(query_embedding, corpus_embeddings)[0]
     df_filter['semantic_score'] = cosine_scores.cpu().numpy()
     
-    # LIMIAR DINÂMICO CONECTADO AO SLIDER
+    # LIMIAR CONECTADO AO NOVO TEXT INPUT
     mask = mask & (df_filter['semantic_score'] >= limiar_semantico)
     
     results_df = df_filter[mask].sort_values(by='semantic_score', ascending=False)
@@ -249,15 +263,14 @@ else:
     results_df = df_filter[mask].sort_values(by='vernacular_score', ascending=False)
 
 
-st.subheader("Exportar PDF com o Dossiê Documental")
+st.subheader("Exportar Dossiê Documental como PDF")
 st.markdown("*Use os filtros e a busca para isolar um conjunto de documentos. Em seguida, escolha a quantidade e clique abaixo para baixar um PDF formatado (Normas ABNT).*")
 
 if not results_df.empty:
-    # Seletor de quantidade para exportação
     limite_exportacao = st.selectbox(
         "Quantidade de documentos para exportar:",
         [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
-        index=4 # Agora o índice 4 corresponde corretamente ao número 50!
+        index=4 
     )
     
     export_df = results_df.head(limite_exportacao)
@@ -272,7 +285,8 @@ if not results_df.empty:
         "regioes": regioes_str,
         "sv_range": f"{score_range[0]:.1f} a {score_range[1]:.1f}",
         "vetores": ", ".join(vetores) if vetores else "Nenhum",
-        "categorias": ", ".join(categorias) if categorias else "Nenhuma"
+        "categorias": ", ".join(categorias) if categorias else "Nenhuma",
+        "limiar": f"{limiar_semantico:.2f}" # Enviando o rigor exato para imprimir no PDF
     }
     
     pdf_bytes = create_pdf(export_df, current_params)
@@ -292,7 +306,6 @@ st.divider()
 st.subheader(f"Resultados Encontrados: {len(results_df)} documentos")
 
 if not results_df.empty:
-    # CORRIGIDO: Agora o loop desenha 50 cards para bater com o aviso no final
     for idx, row in results_df.head(50).iterrows():
         score = row.get('vernacular_score', 0.0)
         date_id = row.get('document_id_and_date', 'Sem Data')
