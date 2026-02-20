@@ -164,7 +164,7 @@ st.markdown("*Digite um conceito, tema ou evento histórico. O motor buscará do
 query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha':", label_visibility="collapsed")
 
 
-col1, col2, col3 = st.columns([3.4, 0.6, 6.0])
+col1, col2, col3 = st.columns([2.4, 0.4, 7.2])
 
 with col1:
     st.markdown("<p style='margin-top: 8px; font-size: 1rem; text-align: right;'>Rigor da Busca Semântica (Corte de Relevância): <b>0.</b></p>", unsafe_allow_html=True)
@@ -330,5 +330,6 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
