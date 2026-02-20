@@ -157,24 +157,20 @@ st.markdown("""
 
 st.divider()
 
+#semantic engine
 
-st.subheader("Busca Semântica")
+st.subheader("🔍 Busca Semântica Inteligente")
 st.markdown("*Digite um conceito, tema ou evento histórico. O motor buscará documentos pelo significado contextual.*")
 
-query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha':", label_visibility="collapsed")
+query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha':")
 
+col_segura, col_vazia = st.columns([2, 8])
 
-col1, col2, col3 = st.columns([2.4, 0.4, 7.2])
-
-with col1:
-    st.markdown("<p style='margin-top: 8px; font-size: 1rem; text-align: right;'>Rigor da Busca Semântica (Corte de Relevância): <b>0.</b></p>", unsafe_allow_html=True)
-
-with col2:
+with col_segura:
     limiar_str = st.text_input(
-        "Rigor", 
+        "Rigor da Busca Semântica (Corte): 0.", 
         value="50", 
         max_chars=2,
-        label_visibility="collapsed",
         help="Preencha as casas decimais. Ex: se digitar 5, será lido como 0.50."
     )
 
@@ -183,7 +179,7 @@ try:
     if not limiar_limpo:
         limiar_limpo = "50"
     elif len(limiar_limpo) == 1:
-        limiar_limpo += "0" 
+        limiar_limpo += "0" # Transforma '5' em '50' automaticamente
         
     limiar_semantico = float(f"0.{limiar_limpo}")
 except ValueError:
@@ -262,16 +258,32 @@ if query:
 else:
     results_df = df_filter[mask].sort_values(by='vernacular_score', ascending=False)
 
+#export module
 
-st.subheader("Exportar Dossiê Documental como PDF")
+st.subheader("📄 Exportar PDF com o Dossiê Documental")
 st.markdown("*Use os filtros e a busca para isolar um conjunto de documentos. Em seguida, escolha a quantidade e clique abaixo para baixar um PDF formatado (Normas ABNT).*")
 
 if not results_df.empty:
-    limite_exportacao = st.selectbox(
-        "Quantidade de documentos para exportar:",
-        [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
-        index=4 
-    )
+    
+    # CONTROLE DE EXPORTAÇÃO (Padrão Streamlit Blindado - Responsivo)
+    col_exp_segura, col_exp_vazia = st.columns([2, 8])
+    
+    with col_exp_segura:
+        limite_str = st.text_input(
+            "Quantidade a exportar:", 
+            value="50", 
+            max_chars=4,
+            help="Digite a quantidade máxima de documentos para o PDF."
+        )
+        
+    # Lógica de conversão e segurança (garante número inteiro)
+    try:
+        limite_exportacao = int(limite_str.strip())
+        if limite_exportacao <= 0:
+            limite_exportacao = 50
+    except ValueError:
+        limite_exportacao = 50
+        st.error("Por favor, digite apenas números inteiros. Retornando ao limite padrão (50).")
     
     export_df = results_df.head(limite_exportacao)
     
@@ -286,7 +298,7 @@ if not results_df.empty:
         "sv_range": f"{score_range[0]:.1f} a {score_range[1]:.1f}",
         "vetores": ", ".join(vetores) if vetores else "Nenhum",
         "categorias": ", ".join(categorias) if categorias else "Nenhuma",
-        "limiar": f"{limiar_semantico:.2f}" # Enviando o rigor exato para imprimir no PDF
+        "limiar": f"{limiar_semantico:.2f}"
     }
     
     pdf_bytes = create_pdf(export_df, current_params)
@@ -330,6 +342,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
