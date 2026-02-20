@@ -165,6 +165,16 @@ st.markdown("*Digite um conceito, tema ou evento histórico. O motor buscará do
 
 query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha':")
 
+# NOVO CONTROLE DE RIGOR DA BUSCA
+limiar_semantico = st.slider(
+    "Rigor da Busca Semântica (Corte de Relevância):", 
+    min_value=0.10, 
+    max_value=0.80, 
+    value=0.40, # Padrão agora é bem mais alto e estrito
+    step=0.05,
+    help="Aumente este valor para exigir documentos estritamente ligados à sua pesquisa. Diminua se quiser ver documentos que abordam o tema de forma mais distante."
+)
+
 st.divider()
 
 
@@ -231,8 +241,8 @@ if query:
     cosine_scores = util.cos_sim(query_embedding, corpus_embeddings)[0]
     df_filter['semantic_score'] = cosine_scores.cpu().numpy()
     
-    # LIMIAR DE CORTE DA BUSCA SEMÂNTICA (0.20 = 20% de alinhamento contextual mínimo)
-    mask = mask & (df_filter['semantic_score'] >= 0.20)
+    # LIMIAR DINÂMICO CONECTADO AO SLIDER
+    mask = mask & (df_filter['semantic_score'] >= limiar_semantico)
     
     results_df = df_filter[mask].sort_values(by='semantic_score', ascending=False)
 else:
@@ -247,7 +257,7 @@ if not results_df.empty:
     limite_exportacao = st.selectbox(
         "Quantidade de documentos para exportar:",
         [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
-        index=1 # Padrão é 50
+        index=4 # Agora o índice 4 corresponde corretamente ao número 50!
     )
     
     export_df = results_df.head(limite_exportacao)
@@ -282,7 +292,8 @@ st.divider()
 st.subheader(f"Resultados Encontrados: {len(results_df)} documentos")
 
 if not results_df.empty:
-    for idx, row in results_df.head(20).iterrows():
+    # CORRIGIDO: Agora o loop desenha 50 cards para bater com o aviso no final
+    for idx, row in results_df.head(50).iterrows():
         score = row.get('vernacular_score', 0.0)
         date_id = row.get('document_id_and_date', 'Sem Data')
         folder = row.get('folder', 'Local Desconhecido')
@@ -305,7 +316,4 @@ if not results_df.empty:
             st.markdown(f"**Análise Sociolinguística:**\n*{reasoning}*")
             
     if len(results_df) > 50:
-
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
-
-
