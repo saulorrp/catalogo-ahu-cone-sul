@@ -5,9 +5,7 @@ import torch
 from fpdf import FPDF
 import numpy as np
 
-# ==========================================
-# PAGE CONFIGURATION & ACADEMIC CSS
-# ==========================================
+
 st.set_page_config(page_title="Catálogo do AHU para o Cone Sul+", layout="wide")
 
 st.markdown("""
@@ -18,14 +16,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# ==========================================
-# 🚀 ULTRA-FAST DATA LOADING
-# ==========================================
+
 @st.cache_data
 def load_data():
     df = pd.read_parquet('mar_do_sul.parquet')
     
-    # Prevenção extra para garantir que a pasta nunca seja nula
     df['folder'] = df['folder'].fillna('Sem região definida')
     
     if 'vernacular_score' in df.columns:
@@ -47,9 +42,7 @@ df = load_data()
 model = load_semantic_model()
 corpus_embeddings = load_precomputed_embeddings()
 
-# ==========================================
-# 📄 PDF GENERATOR CLASS (Normas ABNT)
-# ==========================================
+
 class PDF(FPDF):
     def header(self):
         self.set_font('Times', 'B', 14)
@@ -79,7 +72,6 @@ def create_pdf(dataframe, search_params):
         encoded = cleaned.encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, line_height, encoded)
 
-    # 1. DEFAULT EXPLANATION
     safe_write("Sobre a Elaboração deste Dossiê", style='B')
     intro_text = (
         "Este dossiê foi gerado automaticamente pelo Classificador de Obras do Catálogo do Arquivo "
@@ -92,7 +84,6 @@ def create_pdf(dataframe, search_params):
     safe_write(intro_text)
     pdf.ln(5)
 
-    # 2. SEARCH PARAMETERS
     safe_write("Parâmetros de Busca Utilizados:", style='B')
     safe_write(f"- Busca Semântica: {search_params['query']}", size=11)
     safe_write(f"- Perfil (Lente): {search_params['lente']}", size=11)
@@ -154,9 +145,7 @@ def create_pdf(dataframe, search_params):
         
     return bytes(pdf.output())
 
-# ==========================================
-# THE PRESENTATION 
-# ==========================================
+
 st.title("Classificador de Obras do Catálogo do AHU para Documentos da Macro Região Sul do Brasil")
 
 st.markdown("""
@@ -170,19 +159,15 @@ st.markdown("""
 
 st.divider()
 
-# ==========================================
-# THE SEMANTIC ENGINE
-# ==========================================
-st.subheader("Busca Semântica Inteligente")
+
+st.subheader("Busca Semântica")
 st.markdown("*Digite um conceito, tema ou evento histórico. O motor buscará documentos pelo significado contextual.*")
 
 query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha':")
 
 st.divider()
 
-# ==========================================
-# THE SIDEBAR (LENSES & FILTERS)
-# ==========================================
+
 with st.sidebar:
     st.header("Perfis de Busca (Lentes)")
     lente = st.radio(
@@ -228,14 +213,11 @@ with st.sidebar:
                                 categorias_disponiveis, 
                                 default=remetente_padrao)
 
-# ==========================================
-# FILTERING & SEARCH LOGIC
-# ==========================================
+
 df_filter = df.copy()
 df_filter['vector'] = df_filter['vector'].fillna('Unknown')
 df_filter['sender_category'] = df_filter['sender_category'].fillna('Unknown')
 
-# MÁSCARA BASE (Filtros Laterais)
 mask = (
     (df_filter['folder'].isin(regioes_selecionadas)) &
     (df_filter['vector'].isin(vetores)) &
@@ -256,10 +238,8 @@ if query:
 else:
     results_df = df_filter[mask].sort_values(by='vernacular_score', ascending=False)
 
-# ==========================================
-# EXPORT MODULE
-# ==========================================
-st.subheader("📄 Exportar PDF com o Dossiê Documental")
+
+st.subheader("Exportar PDF com o Dossiê Documental")
 st.markdown("*Use os filtros e a busca para isolar um conjunto de documentos. Em seguida, escolha a quantidade e clique abaixo para baixar um PDF formatado (Normas ABNT).*")
 
 if not results_df.empty:
@@ -298,9 +278,7 @@ else:
 
 st.divider()
 
-# ==========================================
-# RESULTS DISPLAY
-# ==========================================
+
 st.subheader(f"Resultados Encontrados: {len(results_df)} documentos")
 
 if not results_df.empty:
@@ -309,7 +287,6 @@ if not results_df.empty:
         date_id = row.get('document_id_and_date', 'Sem Data')
         folder = row.get('folder', 'Local Desconhecido')
         
-        # Opcional: mostrar o score semântico no título se a busca estiver ativa
         if query:
             sem_score = row.get('semantic_score', 0.0)
             expander_title = f"Relevância: {sem_score:.2f} | SV: {score:.1f} | {date_id} | {folder}"
@@ -328,4 +305,5 @@ if not results_df.empty:
             st.markdown(f"**Análise Sociolinguística:**\n*{reasoning}*")
             
     if len(results_df) > 20:
+
         st.info(f"Mostrando os 20 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
