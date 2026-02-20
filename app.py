@@ -56,9 +56,7 @@ class PDF(FPDF):
 
 def create_pdf(dataframe, search_params):
     pdf = PDF()
-    # MARGENS ABNT EM MILÍMETROS: Esquerda 30, Cima 30, Direita 20.
     pdf.set_margins(left=30, top=30, right=20)
-    # Margem inferior de 20mm para quebra de página
     pdf.set_auto_page_break(auto=True, margin=20)
     pdf.add_page()
     
@@ -92,7 +90,6 @@ def create_pdf(dataframe, search_params):
     safe_write(f"- Direção da Comunicação: {search_params['vetores']}", size=11)
     safe_write(f"- Categoria do Remetente: {search_params['categorias']}", size=11)
     
-    # Adicionando o Limiar Semântico no relatório PDF para manter a transparência metodológica
     safe_write(f"- Rigor Semântico (Corte): {search_params['limiar']}", size=11)
     pdf.ln(10)
 
@@ -161,33 +158,37 @@ st.markdown("""
 st.divider()
 
 
-st.subheader("Busca Semântica Inteligente")
+st.subheader("Busca Semântica")
 st.markdown("*Digite um conceito, tema ou evento histórico. O motor buscará documentos pelo significado contextual.*")
 
-query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha':")
+query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha':", label_visibility="collapsed")
 
-# NOVO CONTROLE DE RIGOR (Caixa de Texto)
-limiar_str = st.text_input(
-    "Rigor da Busca Semântica (Corte de Relevância - preencha as casas decimais após o '0.'):", 
-    value="50", 
-    max_chars=2,
-    help="Aumente para exigir documentos estritamente ligados à sua pesquisa. Se digitar apenas um número (ex: 5), será lido como 50 (0.50)."
-)
 
-# Lógica de conversão e segurança
+col1, col2, col3 = st.columns([3.8, 0.7, 5.5])
+
+with col1:
+    st.markdown("<p style='margin-top: 8px; font-size: 1rem; text-align: right;'>Rigor da Busca Semântica (Corte de Relevância): <b>0.</b></p>", unsafe_allow_html=True)
+
+with col2:
+    limiar_str = st.text_input(
+        "Rigor", 
+        value="50", 
+        max_chars=2,
+        label_visibility="collapsed",
+        help="Preencha as casas decimais. Ex: se digitar 5, será lido como 0.50."
+    )
+
 try:
     limiar_limpo = limiar_str.strip()
     if not limiar_limpo:
         limiar_limpo = "50"
     elif len(limiar_limpo) == 1:
-        limiar_limpo += "0" # Transforma '5' em '50'
+        limiar_limpo += "0" 
         
     limiar_semantico = float(f"0.{limiar_limpo}")
 except ValueError:
-    # Se o usuário digitar letras sem querer, volta ao padrão para não crashar o app
     limiar_semantico = 0.50
     st.error("Por favor, digite apenas números. Retornando ao rigor padrão (0.50).")
-
 
 st.divider()
 
@@ -255,7 +256,6 @@ if query:
     cosine_scores = util.cos_sim(query_embedding, corpus_embeddings)[0]
     df_filter['semantic_score'] = cosine_scores.cpu().numpy()
     
-    # LIMIAR CONECTADO AO NOVO TEXT INPUT
     mask = mask & (df_filter['semantic_score'] >= limiar_semantico)
     
     results_df = df_filter[mask].sort_values(by='semantic_score', ascending=False)
@@ -330,3 +330,4 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
