@@ -246,8 +246,8 @@ if not results_df.empty:
     # Seletor de quantidade para exportação
     limite_exportacao = st.selectbox(
         "Quantidade de documentos para exportar:",
-        [10, 30, 60, 100],
-        index=1 # Padrão é 30
+        [10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+        index=1 # Padrão é 50
     )
     
     export_df = results_df.head(limite_exportacao)
@@ -299,11 +299,12 @@ if not results_df.empty:
             st.markdown(f"**Remetente:** {row.get('sender_name', 'N/A')} *(Classe: {row.get('sender_category', 'N/A')})*")
             st.markdown(f"**Hierarquia:** {row.get('vector', 'N/A')}")
             st.markdown("---")
-            st.markdown(f"**Resumo do Arquivo:**\n{row.get('description', '')}")
+            st.markdown(f"**Resumo do Arquivo (de autoria do AHU):**\n{row.get('description', '')}")
             st.markdown("---")
             reasoning = row.get('sociolinguistic_reasoning_by_deepseek_v3', '')
             st.markdown(f"**Análise Sociolinguística:**\n*{reasoning}*")
             
-    if len(results_df) > 20:
+    if len(results_df) > 50:
 
-        st.info(f"Mostrando os 20 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+        st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
