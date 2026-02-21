@@ -200,9 +200,9 @@ with st.sidebar:
     )
     
     st.divider()
-    st.header(":material/filter_alt: Filtros Manuais")
+    st.header(":material/filter_alt: Filtros Espaciais")
     
-    st.subheader("Contexto Espacial")
+    st.subheader("Seções do AHU")
     todas_regioes = df['folder'].unique().tolist()
     regioes_selecionadas = st.multiselect("Regiões/Capitanias:", todas_regioes, default=todas_regioes)
     
@@ -342,6 +342,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
