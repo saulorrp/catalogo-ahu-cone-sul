@@ -75,7 +75,7 @@ def create_pdf(dataframe, search_params):
         "Este dossiê foi gerado automaticamente pelo Classificador de Obras do Catálogo do Arquivo "
         "Histórico Ultramarino (AHU) para a Macro Região Sul do Brasil. O sistema utiliza extração de "
         "metadados e processamento de linguagem natural (DeepSeek v3) para analisar os resumos arquivísticos. "
-        "Os documentos são classificados por tipologia, hierarquia comunicativa e um Score de Vernacularidade (SV), "
+        "Os documentos são classificados por tipologia, hierarquia comunicativa e um Score de Probabilidade de Vernacularidade (SPV), "
         "que estima a probabilidade de o texto original conter evidências de sintaxe diacrônica e oralidade do "
         "português brasileiro colonial."
     )
@@ -86,7 +86,7 @@ def create_pdf(dataframe, search_params):
     safe_write(f"- Busca Semântica: {search_params['query']}", size=11)
     safe_write(f"- Perfil (Lente): {search_params['lente']}", size=11)
     safe_write(f"- Regiões: {search_params['regioes']}", size=11)
-    safe_write(f"- Score de Vernacularidade (SV): {search_params['sv_range']}", size=11)
+    safe_write(f"- Score de Probabilidade de Vernacularidade (SPV): {search_params['sv_range']}", size=11)
     safe_write(f"- Direção da Comunicação: {search_params['vetores']}", size=11)
     safe_write(f"- Categoria do Remetente: {search_params['categorias']}", size=11)
     
@@ -132,7 +132,7 @@ def create_pdf(dataframe, search_params):
         safe_write("> Análise Sociolinguística Automatizada", style='B')
         safe_write(f"Vetor de Comunicação: {vector}")
         safe_write(f"Mediação por Escrivão: {scribe_text}")
-        safe_write(f"Score de vernacularidade: {score:.1f}")
+        safe_write(f"Score de Probabilidade de Vernacularidade: {score:.1f}")
         safe_write(f"Justificativa do Score: {reasoning}")
         
         pdf.ln(5)
@@ -150,9 +150,9 @@ st.markdown("""
 ### Sobre esta ferramenta
 **1. Motor de Busca e Triagem:** Este sistema não contém as imagens digitalizadas dos manuscritos originais. Ele funciona como um classificador avançado para os resumos do catálogo do **Arquivo Histórico Ultramarino (AHU)**. O objetivo é permitir que pesquisadores cruzem recortes geográficos, temas históricos e variáveis sociolinguísticas para obter as **cotas arquivísticas exatas** (ex: *AHU_ACL_CU_...*) antes de acessar o arquivo físico ou o Projeto Resgate.
 
-**2. O Score de Vernacularidade (SV):** Cada documento teve sua descrição processada pelo DeepSeek (v3) para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0.0 a 1.0**.
-* Um **SV próximo a 1.0** indica alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
-* Um **SV próximo a 0.0** indica baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
+**2. O Score de Probabilidade de Vernacularidade (SPV):** Cada documento teve sua descrição processada pelo DeepSeek (v3) para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0.0 a 1.0**.
+* Um **SPV próximo a 1.0** indica alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
+* Um **SPV próximo a 0.0** indica baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
 """)
 
 st.divider()
@@ -224,7 +224,7 @@ with st.sidebar:
         vetor_padrao = ["Top-Down", "Horizontal"]
         remetente_padrao = ["Metropolitan Elite", "Local Elite"]
         
-    score_range = st.slider("Score de Vernacularidade (SV):", 0.0, 1.0, (min_score, max_score), step=0.1)
+    score_range = st.slider("Score de Probabilidade de Vernacularidade (SPV):", 0.0, 1.0, (min_score, max_score), step=0.1)
     
     vetores = st.multiselect("Direção da Comunicação:", 
                              ["Bottom-Up", "Horizontal", "Top-Down", "Unknown"], 
@@ -342,6 +342,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
