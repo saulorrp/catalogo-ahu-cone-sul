@@ -206,7 +206,7 @@ with st.sidebar:
     todas_regioes = df['folder'].unique().tolist()
     regioes_selecionadas = st.multiselect("Regiões/Capitanias:", todas_regioes, default=todas_regioes)
     
-    st.subheader("Variáveis Sociolinguísticas")
+    st.subheader("Hierarquia Comunicacional")
     
     min_score = 0.0
     max_score = 1.0
@@ -342,6 +342,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
