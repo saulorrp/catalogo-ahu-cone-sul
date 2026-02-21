@@ -159,7 +159,7 @@ st.divider()
 
 #semantic engine
 
-st.subheader(":material/search: Busca Semântica Inteligente")
+st.subheader(":material/search: Busca Semântica")
 st.markdown("*Digite um conceito, tema ou evento histórico. O motor buscará documentos pelo significado contextual.*")
 
 query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha':")
@@ -190,7 +190,7 @@ st.divider()
 
 
 with st.sidebar:
-    st.header(":material/tune: Perfis de Busca (Lentes)")
+    st.header(":material/tune: Perfis de Busca Predefinidos")
     lente = st.radio(
         "Selecione uma lente metodológica:",
         ["Busca Livre (Personalizada)", 
@@ -342,6 +342,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
