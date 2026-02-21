@@ -338,10 +338,11 @@ if not results_df.empty:
             st.markdown(f"**Resumo do Arquivo (de autoria do AHU):**\n{row.get('description', '')}")
             st.markdown("---")
             reasoning = row.get('sociolinguistic_reasoning_by_deepseek_v3', '')
-            st.markdown(f"**Justificativa do DeepSeek para o score:**\n*{reasoning}*")
+            st.markdown(f"**Justificativa do DeepSeek para o Score:**\n*{reasoning}*")
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
