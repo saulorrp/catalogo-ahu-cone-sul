@@ -168,7 +168,7 @@ col_segura, col_vazia = st.columns([2, 8])
 
 with col_segura:
     limiar_str = st.text_input(
-        "Valor de Corte de Relevância:", 
+        "Valor de Corte da Relevância:", 
         value="50", 
         max_chars=2,
         help="Rigor da Busca Semântica: Valores altos exigem uma correspondência mais estrita com o tema pesquisado. Valores baixos ampliam o escopo, incluindo documentos com relação mais distante. Preencha as casas decimais, se digitar 5, será lido como 0.50."
@@ -342,6 +342,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
