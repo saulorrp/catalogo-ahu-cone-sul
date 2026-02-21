@@ -325,9 +325,9 @@ if not results_df.empty:
         
         if query:
             sem_score = row.get('semantic_score', 0.0)
-            expander_title = f"Relevância: {sem_score:.2f} | SV: {score:.1f} | {date_id} | {folder}"
+            expander_title = f"Relevância: {sem_score:.2f} | SPV: {score:.1f} | {date_id} | {folder}"
         else:
-            expander_title = f"SV: {score:.1f} | {date_id} | {folder}"
+            expander_title = f"SPV: {score:.1f} | {date_id} | {folder}"
         
         with st.expander(expander_title):
             st.markdown(f"**Cota:** {row.get('new_code', 'N/A')}")
@@ -338,10 +338,11 @@ if not results_df.empty:
             st.markdown(f"**Resumo do Arquivo (de autoria do AHU):**\n{row.get('description', '')}")
             st.markdown("---")
             reasoning = row.get('sociolinguistic_reasoning_by_deepseek_v3', '')
-            st.markdown(f"**Justificativa do DeepSeek para o SV:**\n*{reasoning}*")
+            st.markdown(f"**Justificativa do DeepSeek para o SPV:**\n*{reasoning}*")
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
