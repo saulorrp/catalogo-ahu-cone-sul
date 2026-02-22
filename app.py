@@ -157,7 +157,7 @@ st.markdown("""
 **3. O Corte de Relevância (Rigor da Busca Semântica):** Este parâmetro define o limiar matemático de similaridade exigido para que o motor neural considere um documento pertinente à sua consulta. Esse valro também varia entre 0 e 1.
 * Um valor de corte de relevância próximo a 1 exige uma correspondência semântica extremamente estrita com o tema pesquisado, restringindo os resultados apenas aos documentos cujo núcleo informacional esteja diretamente alinhado à busca.
 * Um valor de corte mais próximo a 0 amplia o escopo da pesquisa, relaxando o filtro para incluir documentos com uma relação conceitual mais distante, periférica ou apenas tangencial ao termo inserido.
-"""
+""")
 st.divider()
 
 #semantic engine
@@ -344,6 +344,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
