@@ -152,9 +152,12 @@ st.markdown("""
 
 **2. O Score de Probabilidade de Vernacularidade (SPV):** Cada documento teve sua descrição processada pelo DeepSeek (v3) para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0.0 a 1.0**.
 * Um **SPV próximo a 1.0** indica alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
-* Um **SPV próximo a 0.0** indica baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
-""")
+* Um **SPV próximo a 0.0** indica baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários)
 
+**3. O Corte de Relevância (Rigor da Busca Semântica):** Este parâmetro define o limiar matemático de similaridade exigido para que o motor neural considere um documento pertinente à sua consulta. Esse valro também varia entre 0 e 1.
+* Um valor de corte de relevância próximo a 1 exige uma correspondência semântica extremamente estrita com o tema pesquisado, restringindo os resultados apenas aos documentos cujo núcleo informacional esteja diretamente alinhado à busca.
+* Um valor de corte mais próximo a 0 amplia o escopo da pesquisa, relaxando o filtro para incluir documentos com uma relação conceitual mais distante, periférica ou apenas tangencial ao termo inserido.
+"""
 st.divider()
 
 #semantic engine
@@ -171,7 +174,7 @@ with col_segura:
         "Valor de Corte de Relevância:", 
         value="50", 
         max_chars=2,
-        help="Rigor da Busca Semântica: Valores altos exigem uma correspondência mais estrita com o tema pesquisado. Valores baixos ampliam o escopo, incluindo documentos com relação mais distante. Preencha as casas decimais, se digitar 5, será lido como 0.50."
+        help="Preencha as casas decimais, se digitar 5, será lido como 0.50."
     )
 
 try:
@@ -341,6 +344,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
