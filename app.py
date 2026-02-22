@@ -150,13 +150,14 @@ st.markdown("""
 ### Sobre esta ferramenta
 **1. Motor de Busca e Triagem:** Este sistema não contém as imagens digitalizadas dos manuscritos originais. Ele funciona como um classificador avançado para os resumos do catálogo do **Arquivo Histórico Ultramarino (AHU)**. O objetivo é permitir que pesquisadores cruzem recortes geográficos, temas históricos e variáveis sociolinguísticas para obter as **cotas arquivísticas exatas** (ex: *AHU_ACL_CU_...*) antes de acessar o arquivo físico ou o Projeto Resgate.
 
-**2. O Score de Probabilidade de Vernacularidade (SPV):** Cada documento teve sua descrição processada pelo DeepSeek (v3) para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0.0 a 1.0**.
-* Um **SPV próximo a 1** indica alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
-* Um **SPV próximo a 0** indica baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários)
+**2. O Score de Probabilidade de Vernacularidade (SPV):** Cada documento teve sua descrição processada pelo DeepSeek (v3) para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0 e 1**.
+* Um **SPV próximo a 0** indica que o LLM que avaliou a descrição indicou baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
+* Um **SPV próximo a 1** indica que o LLM que avaliou a descrição indicou alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
 
-**3. O Corte de Relevância (Rigor da Busca Semântica):** Este parâmetro define o limiar matemático de similaridade exigido para que o motor neural considere um documento pertinente à sua consulta. Esse valro também varia entre 0 e 1.
-* **Relevância próxima a 1** exige uma correspondência semântica extremamente estrita com o tema pesquisado, de forma a restringir os resultados apenas aos documentos cujo núcleo informacional esteja diretamente alinhado à busca.
+**3. O Corte de Relevância (Rigor da Busca Semântica):** Este parâmetro define o limite matemático de similaridade exigido para que o motor neural considere um documento pertinente à sua consulta. Esse valro também varia entre 0 e 1.
 * **Relevância próxima a 0** amplia o escopo da pesquisa e relaxa o filtro para incluir documentos com uma relação conceitual mais distante, periférica ou apenas tangencial ao termo inserido.
+* **Relevância próxima a 1** exige uma correspondência semântica extremamente estrita com o tema pesquisado, de forma a restringir os resultados apenas aos documentos cujo núcleo informacional esteja diretamente alinhado à busca.
+
 """)
 st.divider()
 
@@ -344,6 +345,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
