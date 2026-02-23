@@ -73,7 +73,7 @@ def create_pdf(dataframe, search_params):
     safe_write("Sobre a Elaboração deste Dossiê", style='B')
     intro_text = (
         "Este dossiê foi gerado automaticamente pelo Classificador de Obras do Catálogo do Arquivo "
-        "Histórico Ultramarino (AHU) para a Macro Região Sul do Brasil. O sistema utiliza extração de "
+        "Histórico Ultramarino (AHU) para a Macrorregião Sul do Brasil. O sistema utiliza extração de "
         "metadados e processamento de linguagem natural (DeepSeek v3) para analisar os resumos arquivísticos. "
         "Os documentos são classificados por tipologia, hierarquia comunicativa e um Score de Probabilidade de Vernacularidade (SPV), "
         "que estima a probabilidade de o texto original conter evidências de sintaxe diacrônica e oralidade do "
@@ -144,7 +144,7 @@ def create_pdf(dataframe, search_params):
     return bytes(pdf.output())
 
 
-st.title("Classificador de Obras do Catálogo do AHU para Documentos da Macro Região Sul do Brasil")
+st.title("Classificador de Obras do Catálogo do AHU para Documentos da Macrorregião Sul do Brasil")
 
 st.markdown("""
 ### Sobre esta ferramenta
@@ -346,6 +346,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
