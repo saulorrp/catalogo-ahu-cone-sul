@@ -154,11 +154,11 @@ st.markdown("""
 * Um **SPV próximo a 0** indica que o LLM que avaliou a descrição indicou baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
 * Um **SPV próximo a 1** indica que o LLM que avaliou a descrição indicou alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
 
-**3. O Corte de Relevância (Rigor da Busca Semântica):** Este parâmetro define o limite matemático de similaridade exigido para que o motor neural considere um documento pertinente à sua consulta. Esse valro também varia entre 0 e 1.
+**3. O Corte de Relevância (Rigor da Busca Semântica):** Este parâmetro define o limite matemático de similaridade exigido para que o motor neural considere um documento pertinente à sua consulta. Esse valor também varia entre 0 e 1.
 * **Relevância próxima a 0** amplia o escopo da pesquisa e relaxa o filtro para incluir documentos com uma relação conceitual mais distante, periférica ou apenas tangencial ao termo inserido.
 * **Relevância próxima a 1** exige uma correspondência semântica extremamente estrita com o tema pesquisado, de forma a restringir os resultados apenas aos documentos cujo núcleo informacional esteja diretamente alinhado à busca.
 
-**4. A Geração de Dossiê Documental (Exportar PDF):** Concluída a aplicação dos filtros de busca, a ferramenta permite compilar os resultados num dossiê exportável. Este documento apresenta os metadados e resumos dos manuscritos selecionados, registrando também, em seu cabeçalho, todos os filtros exatos que originaram aquele recorte.
+**4. A Geração de Dossiê Documental (Exportar PDF):** Concluída a aplicação dos filtros de busca, a ferramenta permite compilar os resultados num dossiê exportável. Este documento apresenta os metadados, resumos dos manuscritos selecionados, assim como, em seu cabeçalho, todos os filtros que originaram aquele recoret.
 """)
 st.divider()
 
@@ -346,6 +346,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
