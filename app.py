@@ -136,7 +136,7 @@ def create_pdf(dataframe, search_params):
         safe_write(f"Justificativa do Score: {reasoning}")
         
         pdf.ln(5)
-        pdf.set_x(30)
+        pdf.set_x(30)    
         pdf.set_font('Times', 'B', 12)
         pdf.cell(0, line_height, "-" * 50, ln=1, align='C')
         pdf.ln(5)
@@ -144,7 +144,7 @@ def create_pdf(dataframe, search_params):
     return bytes(pdf.output())
 
 
-st.title("Classificador de Obras do Catálogo do AHU para Documentos da Macrorregião Sul do Brasil")
+st.title("Classificador Semântico e Preditor de Vernacularidade para o Catálogo AHU da Macrorregião Sul do Brasil ")
 
 st.markdown("""
 ### Sobre esta ferramenta
@@ -346,6 +346,7 @@ if not results_df.empty:
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
+
 
 
 
