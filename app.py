@@ -347,6 +347,19 @@ if not results_df.empty:
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
 
+st.divider()
+st.markdown(
+    """
+    <div style='text-align: center; color: gray; font-size: 0.9em;'>
+        O presente trabalho foi realizado com apoio da Coordenação de 
+        Aperfeiçoamento de Pessoal de Nível Superior - Brasil (CAPES) - Código 
+        de Financiamento 001.
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
+
+
 
 
 
