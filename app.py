@@ -353,11 +353,14 @@ st.markdown(
     <div style='text-align: center; color: gray; font-size: 0.9em;'>
         O presente trabalho foi realizado com apoio da Coordenação de 
         Aperfeiçoamento de Pessoal de Nível Superior - Brasil (CAPES) - Código 
-        de Financiamento 001.
+        de Financiamento 001.<br><br>
+        Desenvolvido por Saulo R. Em caso de dúvidas ou erros, contatar: 
+        <a href="mailto:saulorrp@gmail.com" style="color: gray; text-decoration: underline;">saulorrp@gmail.com</a>
     </div>
     """, 
     unsafe_allow_html=True
 )
+
 
 
 
