@@ -160,7 +160,7 @@ st.markdown("""
 
 **4. A Geração de Dossiê Documental (Exportar PDF):** Concluída a aplicação dos filtros de busca, a ferramenta permite compilar os resultados num dossiê exportável. Este documento apresenta os metadados, resumos dos manuscritos selecionados, assim como, em seu cabeçalho, todos os filtros que originaram aquele recorte.
 
-**5. Recomenda-se a pesquisa das cotas dos documentos de interesse no site do Projeto Resgate, fonte original das informações organizadas aqui: <resgate.bn.gov.br>**""")
+**5. Recomenda-se a pesquisa das cotas dos documentos de interesse no site do Projeto Resgate, fonte original das informações organizadas aqui: <https://resgate.bn.gov.br>**""")
 st.divider()
 
 #semantic engine
@@ -360,6 +360,7 @@ st.markdown(
     """, 
     unsafe_allow_html=True
 )
+
 
 
 
