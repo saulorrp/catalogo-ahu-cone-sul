@@ -159,7 +159,8 @@ st.markdown("""
 * **Relevância próxima a 1** exige uma correspondência semântica extremamente estrita com o tema pesquisado, de forma a restringir os resultados apenas aos documentos cujo núcleo informacional esteja diretamente alinhado à busca.
 
 **4. A Geração de Dossiê Documental (Exportar PDF):** Concluída a aplicação dos filtros de busca, a ferramenta permite compilar os resultados num dossiê exportável. Este documento apresenta os metadados, resumos dos manuscritos selecionados, assim como, em seu cabeçalho, todos os filtros que originaram aquele recorte.
-""")
+
+**5. Recomenda-se a pesquisa das cotas dos documentos de interesse no site do Projeto Resgate, fonte original das informações organizadas aqui: <resgate.bn.gov.br>""")
 st.divider()
 
 #semantic engine
@@ -359,6 +360,7 @@ st.markdown(
     """, 
     unsafe_allow_html=True
 )
+
 
 
 
