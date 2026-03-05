@@ -175,7 +175,7 @@ col_segura, col_vazia = st.columns([2, 8])
 with col_segura:
     limiar_str = st.text_input(
         "Valor de Corte de Relevância:", 
-        value="50", 
+        value="30", 
         max_chars=2,
         help="Preencha as casas decimais, se digitar 5, será lido como 0.50."
     )
@@ -190,7 +190,7 @@ try:
     limiar_semantico = float(f"0.{limiar_limpo}")
 except ValueError:
     limiar_semantico = 0.50
-    st.error("Por favor, digite apenas números. Retornando ao rigor padrão (0.50).")
+    st.error("Por favor, digite apenas números. Retornando ao rigor padrão (0.30).")
 
 st.divider()
 
@@ -315,7 +315,7 @@ if not results_df.empty:
         mime="application/pdf"
     )
 else:
-    st.warning("Nenhum documento encontrado para exportar com os filtros atuais.")
+    st.warning("Nenhum documento encontrado para exportar com os filtros atuais, experimente diminuir o valor de corte da relevância.")
 
 st.divider()
 
@@ -360,6 +360,7 @@ st.markdown(
     """, 
     unsafe_allow_html=True
 )
+
 
 
 
