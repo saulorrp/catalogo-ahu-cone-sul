@@ -315,7 +315,7 @@ if not results_df.empty:
         mime="application/pdf"
     )
 else:
-    st.warning("Nenhum documento encontrado para exportar com os filtros atuais, experimente diminuir o valor de corte da relevância.")
+    st.warning("Nenhum documento encontrado para exportar com os filtros atuais, experimente diminuir o valor de corte da relevância ou aumentar o intervalo de SPV.")
 
 st.divider()
 
@@ -360,6 +360,7 @@ st.markdown(
     """, 
     unsafe_allow_html=True
 )
+
 
 
 
