@@ -8,7 +8,7 @@ import pickle
 import urllib.parse
 from rank_bm25 import BM25Okapi
 
-st.set_page_config(page_title="Catálogo do AHU para a macrorregião Sul", layout="wide")
+st.set_page_config(page_title="Classificador AHU Sul", layout="wide")
 
 st.markdown("""
     <style>
