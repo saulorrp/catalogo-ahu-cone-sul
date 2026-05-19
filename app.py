@@ -10,10 +10,11 @@ from rank_bm25 import BM25Okapi
 
 st.set_page_config(page_title="Classificador AHU Sul", layout="wide")
 
+# Fonte alterada para Monospace (padrão EDSS/Terminal)
 st.markdown("""
     <style>
     html, body, [class*="css"] {
-        font-family: 'Times New Roman', Times, serif !important;
+        font-family: 'Consolas', 'Courier New', monospace !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -32,9 +33,14 @@ def load_data():
     else:
         df['vernacular_score'] = 0.0
         
+    # ATUALIZADO: Agora as cotas arquivísticas (novas, antigas e CRAV) compõem o corpus do buscador lexical
     corpus = (df['description'].fillna('') + " " + 
               df['sender_name'].fillna('') + " " + 
-              df['folder'].fillna('')).str.lower().tolist()
+              df['folder'].fillna('') + " " +
+              df['reference_code'].fillna('') + " " +
+              df['new_code'].fillna('') + " " +
+              df['old_code'].fillna('')).str.lower().tolist()
+    
     tokenized_corpus = [doc.split() for doc in corpus]
     bm25 = BM25Okapi(tokenized_corpus)
     
@@ -64,13 +70,13 @@ reference_codes_list = semantic_index['reference_codes']
 # --- 2. GERADOR DE PDF COM LINKS NATIVOS ---
 class PDF(FPDF):
     def header(self):
-        self.set_font('Times', 'B', 14)
+        self.set_font('Courier', 'B', 14)
         self.cell(0, 10, 'Dossiê Documental: Catálogo do AHU para a macrorregião Sul', ln=1, align='C')
         self.ln(5)
 
     def footer(self):
         self.set_y(-15)
-        self.set_font('Times', 'I', 10)
+        self.set_font('Courier', 'I', 10)
         self.cell(0, 10, f'Página {self.page_no()}', align='C')
 
 def create_pdf(dataframe, search_params):
@@ -81,30 +87,26 @@ def create_pdf(dataframe, search_params):
     
     line_height = 6 
     
-    def safe_write(text, style='', size=12):
+    def safe_write(text, style='', size=11):
         pdf.set_x(30) 
-        pdf.set_font('Times', style, size)
+        pdf.set_font('Courier', style, size)
         cleaned = str(text).replace('\n', ' ').strip()
         encoded = cleaned.encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, line_height, encoded)
 
     def write_link_line(label, code, link_text, url):
-        """Escreve uma linha híbrida com texto em negrito e link clicável em azul no PDF."""
         pdf.set_x(30)
-        # Parte em negrito (O Código em si)
-        pdf.set_font('Times', 'B', 12)
+        pdf.set_font('Courier', 'B', 11)
         label_encoded = f"{label}: {code} ".encode('latin-1', 'replace').decode('latin-1')
         pdf.write(line_height, label_encoded)
         
-        # Parte do Link (Azul e sublinhado)
         pdf.set_text_color(0, 0, 255)
-        pdf.set_font('Times', 'U', 12)
+        pdf.set_font('Courier', 'U', 11)
         link_encoded = link_text.encode('latin-1', 'replace').decode('latin-1')
         pdf.write(line_height, link_encoded, url)
         
-        # Reseta as cores e fonte para as próximas linhas
         pdf.set_text_color(0, 0, 0)
-        pdf.set_font('Times', '', 12)
+        pdf.set_font('Courier', '', 11)
         pdf.ln(line_height + 2)
 
     safe_write("Sobre a Elaboração deste Dossiê", style='B')
@@ -120,13 +122,13 @@ def create_pdf(dataframe, search_params):
     pdf.ln(5)
 
     safe_write("Parâmetros de Busca Utilizados:", style='B')
-    safe_write(f"- Busca Semântica: {search_params['query']}", size=11)
-    safe_write(f"- Perfil (Lente): {search_params['lente']}", size=11)
-    safe_write(f"- Regiões: {search_params['regioes']}", size=11)
-    safe_write(f"- Score de Probabilidade de Vernacularidade (SPV): {search_params['sv_range']}", size=11)
-    safe_write(f"- Direção da Comunicação: {search_params['vetores']}", size=11)
-    safe_write(f"- Categoria do Remetente: {search_params['categorias']}", size=11)
-    safe_write(f"- Rigor Semântico (Corte): {search_params['limiar']}", size=11)
+    safe_write(f"- Busca Semântica: {search_params['query']}", size=10)
+    safe_write(f"- Perfil (Lente): {search_params['lente']}", size=10)
+    safe_write(f"- Regiões: {search_params['regioes']}", size=10)
+    safe_write(f"- Score de Probabilidade de Vernacularidade (SPV): {search_params['sv_range']}", size=10)
+    safe_write(f"- Direção da Comunicação: {search_params['vetores']}", size=10)
+    safe_write(f"- Categoria do Remetente: {search_params['categorias']}", size=10)
+    safe_write(f"- Rigor Semântico (Corte): {search_params['limiar']}", size=10)
     pdf.ln(10)
 
     for idx, row in dataframe.iterrows():
@@ -148,7 +150,6 @@ def create_pdf(dataframe, search_params):
 
         safe_write("> Referência", style='B')
         
-        # Geração dos Links Nativos no PDF
         if crav_code.startswith("PT/AHU"):
             encoded_crav = urllib.parse.quote(crav_code, safe='')
             crav_url = f"https://digitarq.arquivos.pt/search?query={encoded_crav}&isAdvancedSearch=false"
@@ -182,7 +183,7 @@ def create_pdf(dataframe, search_params):
         
         pdf.ln(5)
         pdf.set_x(30)    
-        pdf.set_font('Times', 'B', 12)
+        pdf.set_font('Courier', 'B', 12)
         pdf.cell(0, line_height, "-" * 50, ln=1, align='C')
         pdf.ln(5)
         
@@ -210,9 +211,9 @@ st.markdown("""
 st.divider()
 
 st.subheader(":material/search: Busca Semântica/Lexical")
-st.markdown("*Digite um conceito, tema ou evento histórico. O motor buscará documentos pelo significado contextual e pela correspondência literal.*")
+st.markdown("*Digite um conceito, tema, evento histórico ou **cota arquivística**.*")
 
-query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', 'escassez de farinha', 'pesca de baleias':")
+query = st.text_input("Ex: 'conflitos de terra', 'deserção de soldados', ou 'PT/AHU/CU/021/0006/00390':")
 
 col_segura, col_vazia = st.columns([2, 8])
 
@@ -310,6 +311,17 @@ if query:
         
     final_hybrid_scores = (lexical_normalized * lexical_weight) + (semantic_normalized * semantic_weight)
     df_filter['semantic_score'] = final_hybrid_scores
+    
+    # --- NOVO: BOOSTER PARA COTAS ARQUIVÍSTICAS EXATAS ---
+    # Verifica se o termo pesquisado bate com alguma das chaves de códigos
+    exact_match_mask = (
+        df_filter['reference_code'].str.contains(query, case=False, na=False, regex=False) |
+        df_filter['new_code'].str.contains(query, case=False, na=False, regex=False) |
+        df_filter['old_code'].str.contains(query, case=False, na=False, regex=False)
+    )
+    # Se encontrar a cota exata, força o score semântico para 1.0 (nota máxima) 
+    # para garantir que o documento ignore o corte de relevância e vá para o topo
+    df_filter.loc[exact_match_mask, 'semantic_score'] = 1.0
     
     mask = mask & (df_filter['semantic_score'] >= limiar_semantico)
     results_df = df_filter[mask].sort_values(by='semantic_score', ascending=False)
