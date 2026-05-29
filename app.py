@@ -225,7 +225,7 @@ def create_pdf(dataframe, search_params):
 # 3. STREAMLIT USER INTERFACE
 # ==========================================
 
-st.title("Classificador Semântico e Preditor de Vernacularidade para o Catálogo AHU da Macrorregião Sul do Brasil")
+st.title("Classificador de Documentos do Catálogo do AHU para a Macrorregião Sul do Brasil")
 
 st.markdown("""
 ### Sobre esta ferramenta
