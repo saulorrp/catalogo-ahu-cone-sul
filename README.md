@@ -1,4 +1,4 @@
-# AHU Catalog Document Classifier for the Southern Macro-Region of Brazil
+# Classificador de Documentos do Catálogo do AHU para a Macrorregião Sul do Brasil
 
 ## Visão Geral (Overview)
 Este conjunto de dados dataset e o aplicativo web que o acompanha fornecem um corpus legível por máquina e semanticamente anotado de resumos de catálogos do Arquivo Histórico Ultramarino (AHU). Focado na "Macrorregião Sul do Brasil" durante o final do período colonial (1737–1828), estes arquivos são o produto de uma *pipeline* que utilizou Grandes Modelos de Linguagem (LLMs), Motores de Busca Lexical e *embeddings* de vetores densos para quantificar variáveis sociolinguísticas. 
