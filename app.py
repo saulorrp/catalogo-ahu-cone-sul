@@ -233,7 +233,7 @@ st.markdown("""
 
 **2. Score de Relevância Sociolinguística Potencial (SRSP):** Cada documento teve sua descrição processada pelo DeepSeek para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0 e 1**.
 * Um **Score próximo a 0** indica baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
-* Um **Score próximo a 1** indica alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
+* Um **Score próximo a 1** indica alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português brasileiro colonial.
 
 **3. O Corte de Relevância (Rigor da Busca):** Este parâmetro define o limite matemático exigido para que o motor considere um documento pertinente à sua consulta. Ele cruza o sentido do texto com a correspondência exata das palavras.
 * **Relevância próxima a 0** amplia o escopo da pesquisa e relaxa o filtro para incluir documentos com uma relação conceitual mais distante, periférica ou apenas tangencial ao termo inserido.
@@ -314,7 +314,7 @@ with st.sidebar:
         <div style="display: flex; text-align: center; font-size: 0.75em; color: gray; margin-top: -15px; margin-bottom: 15px;">
             <div style="flex: 0.35; border-right: 2px solid #555;">0.0 - 0.3<br>Formulaico</div>
             <div style="flex: 0.30; border-right: 2px solid #555;">0.4 - 0.6<br>Moderado</div>
-            <div style="flex: 0.35;">0.7 - 1.0<br>Vernáculo</div>
+            <div style="flex: 0.35;">0.7 - 1.0<br>Potencial</div>
         </div>
     """, unsafe_allow_html=True)
     
