@@ -8,9 +8,10 @@ import pickle
 import urllib.parse
 from rank_bm25 import BM25Okapi
 
+# --- PAGE CONFIGURATION ---
 st.set_page_config(page_title="Classificador AHU Sul", layout="wide")
 
-# Fonte alterada para Monospace (padrão EDSS/Terminal)
+# Force Monospace font (EDSS/Terminal standard aesthetic)
 st.markdown("""
     <style>
     html, body, [class*="css"] {
@@ -20,20 +21,31 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 
-# --- 1. NOVA ARQUITETURA DE DADOS ---
+# ==========================================
+# 1. DATA ARCHITECTURE & CACHING
+# ==========================================
+
 @st.cache_data
 def load_data():
-    df = pd.read_json('ahu_documents_phase2_by_deepseek_v7_crav.json')
+    """
+    Loads the main JSON catalog and initializes the Lexical Search Engine (BM25).
+    The JSON file contains the metadata and the LLM (DeepSeek) inferences.
+    """
+    # Updated to the new Zenodo release filename
+    df = pd.read_json('ahu_sul_catalog.json')
     
+    # Fill missing folder data to avoid grouping errors
     df['folder'] = df['folder'].fillna('Sem região definida')
     
+    # Normalize the Vernacular Score (IRSP/SRSP) from a 1-10 scale to a 0.0-1.0 float scale
     if 'vernacular_score' in df.columns:
         df['vernacular_score'] = pd.to_numeric(df['vernacular_score'], errors='coerce').fillna(0)
         df['vernacular_score'] = df['vernacular_score'] / 10.0
     else:
         df['vernacular_score'] = 0.0
         
-    # ATUALIZADO: Agora as cotas arquivísticas (novas, antigas e CRAV) compõem o corpus do buscador lexical
+    # Build the corpus for the BM25 Lexical Engine. 
+    # Includes descriptions, names, regions, and all archival reference codes.
     corpus = (df['description'].fillna('') + " " + 
               df['sender_name'].fillna('') + " " + 
               df['folder'].fillna('') + " " +
@@ -48,27 +60,35 @@ def load_data():
 
 @st.cache_data
 def load_semantic_index():
+    """Loads the pre-computed semantic embeddings (Dense Vectors) from a pickle file."""
     with open('ahu_semantic_index.pkl', 'rb') as f:
         data = pickle.load(f)
     return data
 
 @st.cache_resource
 def load_semantic_model(model_name):
+    """Loads the SentenceTransformer model for real-time query embedding."""
     return SentenceTransformer(model_name)
 
+# Initialize Data and Models
 df, bm25_engine = load_data()
 semantic_index = load_semantic_index()
 
 model_name = semantic_index.get('model_used', 'intfloat/multilingual-e5-large')
 model = load_semantic_model(model_name)
 
+# Move embeddings to the appropriate device (CPU/GPU)
 device = model.device
 corpus_embeddings = torch.tensor(semantic_index['embeddings']).to(device)
 reference_codes_list = semantic_index['reference_codes']
 
 
-# --- 2. GERADOR DE PDF COM LINKS NATIVOS ---
+# ==========================================
+# 2. PDF GENERATOR (DOCUMENT DOSSIER)
+# ==========================================
+
 class PDF(FPDF):
+    """Custom FPDF class to handle headers, footers, and native hyperlinking."""
     def header(self):
         self.set_font('Courier', 'B', 14)
         self.cell(0, 10, 'Dossiê Documental: Catálogo do AHU para a macrorregião Sul', ln=1, align='C')
@@ -80,6 +100,10 @@ class PDF(FPDF):
         self.cell(0, 10, f'Página {self.page_no()}', align='C')
 
 def create_pdf(dataframe, search_params):
+    """
+    Generates an ABNT-compliant PDF report containing the filtered documents,
+    their sociolinguistic metadata, and clickable URLs to the official archives.
+    """
     pdf = PDF()
     pdf.set_margins(left=30, top=30, right=20)
     pdf.set_auto_page_break(auto=True, margin=20)
@@ -88,6 +112,7 @@ def create_pdf(dataframe, search_params):
     line_height = 6 
     
     def safe_write(text, style='', size=11):
+        """Helper to handle Latin-1 encoding issues with Portuguese characters."""
         pdf.set_x(30) 
         pdf.set_font('Courier', style, size)
         cleaned = str(text).replace('\n', ' ').strip()
@@ -95,42 +120,46 @@ def create_pdf(dataframe, search_params):
         pdf.multi_cell(0, line_height, encoded)
 
     def write_link_line(label, code, link_text, url):
+        """Helper to create clickable hyperlinks within the PDF."""
         pdf.set_x(30)
         pdf.set_font('Courier', 'B', 11)
         label_encoded = f"{label}: {code} ".encode('latin-1', 'replace').decode('latin-1')
         pdf.write(line_height, label_encoded)
         
-        pdf.set_text_color(0, 0, 255)
+        pdf.set_text_color(0, 0, 255) # Blue link color
         pdf.set_font('Courier', 'U', 11)
         link_encoded = link_text.encode('latin-1', 'replace').decode('latin-1')
         pdf.write(line_height, link_encoded, url)
         
-        pdf.set_text_color(0, 0, 0)
+        pdf.set_text_color(0, 0, 0) # Reset to black
         pdf.set_font('Courier', '', 11)
         pdf.ln(line_height + 2)
 
+    # --- PDF Header & Context ---
     safe_write("Sobre a Elaboração deste Dossiê", style='B')
     intro_text = (
         "Este dossiê foi gerado automaticamente pelo Classificador de Obras do Catálogo do Arquivo "
         "Histórico Ultramarino (AHU) para a Macrorregião Sul do Brasil. O sistema utiliza extração de "
-        "metadados e processamento de linguagem natural (DeepSeek v3) para analisar os resumos arquivísticos. "
-        "Os documentos são classificados por tipologia, hierarquia comunicativa e um Score de Relevância Sociolinguística Potencial (), "
+        "metadados e processamento de linguagem natural (DeepSeek) para analisar os resumos arquivísticos. "
+        "Os documentos são classificados por tipologia, hierarquia comunicativa e um Índice de Relevância Sociolinguística Potencial (IRSP), "
         "que estima a probabilidade de o texto original conter evidências de sintaxe diacrônica e oralidade do "
         "português brasileiro colonial."
     )
     safe_write(intro_text)
     pdf.ln(5)
 
+    # --- Print Search Parameters for Reproducibility ---
     safe_write("Parâmetros de Busca Utilizados:", style='B')
     safe_write(f"- Busca Semântica: {search_params['query']}", size=10)
     safe_write(f"- Perfil (Lente): {search_params['lente']}", size=10)
     safe_write(f"- Regiões: {search_params['regioes']}", size=10)
-    safe_write(f"- Score de Relevância Sociolinguística Potencial (): {search_params['sv_range']}", size=10)
+    safe_write(f"- Relevância Sociolinguística Potencial: {search_params['sv_range']}", size=10)
     safe_write(f"- Direção da Comunicação: {search_params['vetores']}", size=10)
     safe_write(f"- Categoria do Remetente: {search_params['categorias']}", size=10)
     safe_write(f"- Rigor Semântico (Corte): {search_params['limiar']}", size=10)
     pdf.ln(10)
 
+    # --- Document Iteration ---
     for idx, row in dataframe.iterrows():
         crav_code = row.get('reference_code', 'Sem Cota CRAV')
         new_code = row.get('new_code', 'Sem Cota')
@@ -150,6 +179,7 @@ def create_pdf(dataframe, search_params):
 
         safe_write("> Referência", style='B')
         
+        # Format CRAV URL
         if crav_code.startswith("PT/AHU"):
             encoded_crav = urllib.parse.quote(crav_code, safe='')
             crav_url = f"https://digitarq.arquivos.pt/search?query={encoded_crav}&isAdvancedSearch=false"
@@ -178,9 +208,10 @@ def create_pdf(dataframe, search_params):
         safe_write("> Análise Sociolinguística Automatizada", style='B')
         safe_write(f"Vetor de Comunicação: {vector}")
         safe_write(f"Mediação por Escrivão: {scribe_text}")
-        safe_write(f"Score de Probabilidade de Vernacularidade: {score:.1f}")
-        safe_write(f"Justificativa do Score: {reasoning}")
+        safe_write(f"Índice de Probabilidade de Vernacularidade: {score:.1f}")
+        safe_write(f"Justificativa do Índice: {reasoning}")
         
+        # Visual separator between documents
         pdf.ln(5)
         pdf.set_x(30)    
         pdf.set_font('Courier', 'B', 12)
@@ -190,16 +221,19 @@ def create_pdf(dataframe, search_params):
     return pdf.output(dest='S').encode('latin-1')
 
 
-# --- 3. INTERFACE ---
-st.title("Classificador Semântico e Preditor de Vernacularidade para o Catálogo AHU da Macrorregião Sul do Brasil ")
+# ==========================================
+# 3. STREAMLIT USER INTERFACE
+# ==========================================
+
+st.title("Classificador Semântico e Preditor de Vernacularidade para o Catálogo AHU da Macrorregião Sul do Brasil")
 
 st.markdown("""
 ### Sobre esta ferramenta
 **1. Motor de Busca e Triagem:** Este sistema não contém as imagens digitalizadas dos manuscritos originais. Ele funciona como um classificador para os resumos do catálogo do **Arquivo Histórico Ultramarino (AHU)**. O objetivo é permitir que pesquisadores cruzem recortes geográficos, temas históricos e variáveis sociolinguísticas para obter as **cotas arquivísticas** (ex: *PT/AHU/CU/...*) antes de acessar o arquivo físico ou o Projeto Resgate.
 
-**2. Score de Relevância Sociolinguística Potencial ():** Cada documento teve sua descrição processada pelo DeepSeek (v3) para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0 e 1**.
-* Um ** próximo a 0** indica que o LLM que avaliou a descrição indicou baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
-* Um ** próximo a 1** indica que o LLM que avaliou a descrição indicou alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
+**2. Índice de Relevância Sociolinguística Potencial (IRSP):** Cada documento teve sua descrição processada pelo DeepSeek para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0 e 1**.
+* Um **Índice próximo a 0** indica baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
+* Um **Índice próximo a 1** indica alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
 
 **3. O Corte de Relevância (Rigor da Busca):** Este parâmetro define o limite matemático exigido para que o motor considere um documento pertinente à sua consulta. Ele cruza o sentido do texto com a correspondência exata das palavras.
 * **Relevância próxima a 0** amplia o escopo da pesquisa e relaxa o filtro para incluir documentos com uma relação conceitual mais distante, periférica ou apenas tangencial ao termo inserido.
@@ -207,9 +241,11 @@ st.markdown("""
 
 **4. A Geração de Dossiê Documental (Exportar PDF):** Concluída a aplicação dos filtros de busca, a ferramenta permite compilar os resultados num dossiê exportável. Este documento apresenta os metadados, resumos dos manuscritos selecionados, assim como, em seu cabeçalho, todos os filtros que originaram aquele recorte.
 
-**5. Acesso Direto aos Acervos:** A ferramenta gera automaticamente links para as plataformas oficiais. Ao expandir um resultado na tela, você pode usar o Código de Refência para abrir a ficha de controle arquivístico no DigitArq, ou usar o Código Atual para buscar as imagens microfilmadas no portal do Projeto Resgate (Biblioteca Nacional). Essa funcionalidade de redirecionamento também é preservada nos Dossiês em PDF exportados""")
+**5. Acesso Direto aos Acervos:** A ferramenta gera automaticamente links para as plataformas oficiais. Ao expandir um resultado na tela, você pode usar o Código de Referência para abrir a ficha de controle arquivístico no DigitArq, ou usar o Código Atual para buscar as imagens microfilmadas no portal do Projeto Resgate (Biblioteca Nacional).
+""")
 st.divider()
 
+# --- Search Bar & Semantic Rigor ---
 st.subheader(":material/search: Busca Semântica/Lexical")
 st.markdown("*Digite um conceito, tema, evento histórico ou **cota arquivística**.*")
 
@@ -236,13 +272,14 @@ except ValueError:
 
 st.divider()
 
+# --- Sidebar Filters ---
 with st.sidebar:
     st.header(":material/tune: Perfis de Busca Predefinidos")
     lente = st.radio(
         "Selecione uma lente metodológica:",
         ["Busca Livre (Personalizada)", 
          "Vozes Marginalizadas & História Social", 
-         "Sintaxe Diacrônica (Alto SV)", 
+         "Sintaxe Diacrônica (Alto IRSP)", 
          "Máquina Administrativa (Top-Down)"]
     )
     
@@ -253,6 +290,7 @@ with st.sidebar:
     
     st.header(":material/groups_2: Filtros Sociolinguísticos")
     
+    # Preset logic based on the selected methodological lens
     min_score = 0.0
     max_score = 1.0
     vetor_padrao = ["Bottom-Up", "Horizontal", "Top-Down", "Unknown"]
@@ -262,16 +300,37 @@ with st.sidebar:
     if lente == "Vozes Marginalizadas & História Social":
         vetor_padrao = ["Bottom-Up"]
         remetente_padrao = ["Commoner", "Marginalized", "Low Military"]
-    elif lente == "Sintaxe Diacrônica (Alto SV)":
+    elif lente == "Sintaxe Diacrônica (Alto IRSP)":
         min_score = 0.7
     elif lente == "Máquina Administrativa (Top-Down)":
         vetor_padrao = ["Top-Down", "Horizontal"]
         remetente_padrao = ["Metropolitan Elite", "Local Elite"]
         
-    score_range = st.slider("Score de Relevância Sociolinguística Potencial (SRSP):", 0.0, 1.0, (min_score, max_score), step=0.1)
+    irsp_mapeamento = {
+        0.0: "0 (Nulo)",
+        0.1: "1 (Baixo)", 
+        0.2: "2 (Baixo)", 
+        0.3: "3 (Baixo)",
+        0.4: "4 (Moderado)", 
+        0.5: "5 (Moderado)", 
+        0.6: "6 (Moderado)",
+        0.7: "7 (Alto)", 
+        0.8: "8 (Alto)", 
+        0.9: "9 (Alto)",
+        1.0: "10 (Máximo)"
+    }
+    
+    score_range = st.select_slider(
+        "Índice de Relevância Sociolinguística Potencial (IRSP):",
+        options=list(irsp_mapeamento.keys()),
+        value=(min_score, max_score),
+        format_func=lambda x: irsp_mapeamento[x]
+    )
+    
     vetores = st.multiselect("Direção da Comunicação:", ["Bottom-Up", "Horizontal", "Top-Down", "Unknown"], default=vetor_padrao)
     categorias = st.multiselect("Perfil Social do Remetente:", categorias_disponiveis, default=remetente_padrao)
 
+# Apply Metadata Filters
 df_filter = df.copy()
 df_filter['vector'] = df_filter['vector'].fillna('Unknown')
 df_filter['sender_category'] = df_filter['sender_category'].fillna('Unknown')
@@ -284,15 +343,21 @@ mask = (
     (df_filter['vernacular_score'] <= score_range[1])
 )
 
-# --- 4. MOTOR ENSEMBLE RAG ---
+
+# ==========================================
+# 4. HYBRID SEARCH ENGINE (ENSEMBLE RETRIEVAL)
+# ==========================================
+
 if query:
     query_lower = query.lower().strip()
     tokenized_query = query_lower.split()
     
+    # 4.1 Lexical Scoring (BM25)
     lexical_scores_raw = bm25_engine.get_scores(tokenized_query)
     max_lex = np.max(lexical_scores_raw) if np.max(lexical_scores_raw) > 0 else 1
     lexical_normalized = lexical_scores_raw / max_lex
     
+    # 4.2 Semantic Scoring (Dense Vector Embeddings)
     e5_query = f"query: {query}"
     query_embedding = model.encode(e5_query, convert_to_tensor=True)
     semantic_scores_raw = util.cos_sim(query_embedding, corpus_embeddings)[0].cpu().numpy()
@@ -302,6 +367,8 @@ if query:
     range_sem = (max_sem - min_sem) if (max_sem - min_sem) > 0 else 1 
     semantic_normalized = (semantic_scores_raw - min_sem) / range_sem
     
+    # 4.3 Dynamic Score Fusion (Linear Combination)
+    # Calibrate weights based on query length (Short queries favor BM25, Long queries favor Semantics)
     if len(tokenized_query) <= 2:
         lexical_weight = 0.75
         semantic_weight = 0.25
@@ -312,24 +379,28 @@ if query:
     final_hybrid_scores = (lexical_normalized * lexical_weight) + (semantic_normalized * semantic_weight)
     df_filter['semantic_score'] = final_hybrid_scores
     
-    # --- NOVO: BOOSTER PARA COTAS ARQUIVÍSTICAS EXATAS ---
-    # Verifica se o termo pesquisado bate com alguma das chaves de códigos
+    # 4.4 Exact Archival Code Booster
+    # If the user searches for a specific archival code, bypass the semantic threshold
     exact_match_mask = (
         df_filter['reference_code'].str.contains(query, case=False, na=False, regex=False) |
         df_filter['new_code'].str.contains(query, case=False, na=False, regex=False) |
         df_filter['old_code'].str.contains(query, case=False, na=False, regex=False)
     )
-    # Se encontrar a cota exata, força o score semântico para 1.0 (nota máxima) 
-    # para garantir que o documento ignore o corte de relevância e vá para o topo
+    # Force maximum semantic score for exact matches
     df_filter.loc[exact_match_mask, 'semantic_score'] = 1.0
     
+    # Apply threshold mask and sort
     mask = mask & (df_filter['semantic_score'] >= limiar_semantico)
     results_df = df_filter[mask].sort_values(by='semantic_score', ascending=False)
 else:
+    # If no query, just sort by the pre-calculated sociolinguistic index
     results_df = df_filter[mask].sort_values(by='vernacular_score', ascending=False)
 
 
-# --- 5. RESULTADOS E PDF ---
+# ==========================================
+# 5. RENDER RESULTS & EXPORT OPTIONS
+# ==========================================
+
 st.subheader(":material/picture_as_pdf: Exportar PDF com o Dossiê Documental")
 st.markdown("*Use os filtros e a busca para isolar um conjunto de documentos. Em seguida, escolha a quantidade e clique abaixo para baixar um PDF formatado (Normas ABNT).*")
 
@@ -347,6 +418,7 @@ if not results_df.empty:
     
     export_df = results_df.head(limite_exportacao)
     
+    # Prepare parameters string for the PDF header
     regioes_str = ", ".join(regioes_selecionadas) if regioes_selecionadas else "Nenhuma"
     if len(regioes_selecionadas) == len(todas_regioes): regioes_str = "Todas"
     
@@ -360,33 +432,36 @@ if not results_df.empty:
         "limiar": f"{limiar_semantico:.2f}"
     }
     
+    # Generate and serve PDF
     pdf_bytes = create_pdf(export_df, current_params)
     st.download_button(label=f"Baixar Dossiê (Top {len(export_df)} documentos)", data=pdf_bytes, file_name="Dossie_AHU.pdf", mime="application/pdf")
 else:
-    st.warning("Nenhum documento encontrado com os filtros atuais, experimente diminuir o valor de corte da relevância ou aumentar o intervalo de SRSP.")
+    st.warning("Nenhum documento encontrado com os filtros atuais. Experimente diminuir o valor de corte da relevância ou aumentar o intervalo do índice.")
 
 st.divider()
 
 st.subheader(f"Resultados Encontrados: {len(results_df)} documentos")
 
+# Render individual result cards
 if not results_df.empty:
     for idx, row in results_df.head(50).iterrows():
         score = row.get('vernacular_score', 0.0)
         date_id = row.get('document_id_and_date', 'Sem Data')
         folder = row.get('folder', 'Local Desconhecido')
         
+        # Dynamic Expander Title
         if query:
             sem_score = row.get('semantic_score', 0.0)
-            expander_title = f"Relevância: {sem_score:.2f} | SRSP: {score:.1f} | {date_id} | {folder} "
+            expander_title = f"Relevância: {sem_score:.2f} | IRSP: {score:.1f} | {date_id} | {folder} "
         else:
-            expander_title = f" {date_id} | {folder} | SRSP: {score:.1f}"
+            expander_title = f" {date_id} | {folder} | IRSP: {score:.1f}"
         
         with st.expander(expander_title):
             crav_code = row.get('reference_code', 'Sem Cota CRAV')
             new_code = row.get('new_code', 'N/A')
             resgate_url = "https://resgate.bn.gov.br/"
             
-            # Formatação do Digitarq
+            # CRAV / Digitarq formatting
             if crav_code.startswith("PT/AHU"):
                 encoded_crav = urllib.parse.quote(crav_code, safe='')
                 crav_url = f"https://digitarq.arquivos.pt/search?query={encoded_crav}&isAdvancedSearch=false"
@@ -394,7 +469,7 @@ if not results_df.empty:
             else:
                 st.markdown(f"**Código de Referência:** {crav_code}")
             
-            # Formatação do Projeto Resgate
+            # Projeto Resgate formatting
             st.markdown(f"**Código Atual:** {new_code} ([Busca no Projeto Resgate]({resgate_url}))")
             
             st.markdown(f"**Tipologia:** {row.get('extracted_typology', 'N/A')}")
@@ -404,12 +479,14 @@ if not results_df.empty:
             st.markdown(f"**Resumo do Arquivo (de autoria do AHU):**\n{row.get('description', '')}")
             st.markdown("---")
             reasoning = row.get('sociolinguistic_reasoning_by_deepseek_v3', '')
-            st.markdown(f"**Justificativa do DeepSeek para o SRSP:**\n*{reasoning}*")
+            st.markdown(f"**Justificativa Analítica para o Índice (LLM):**\n*{reasoning}*")
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
 
 st.divider()
+
+# Footer
 st.markdown(
     """
     <div style='text-align: center; color: gray; font-size: 0.9em;'>
