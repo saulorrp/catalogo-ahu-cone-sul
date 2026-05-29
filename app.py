@@ -37,7 +37,7 @@ def load_data():
     # Fill missing folder data to avoid grouping errors
     df['folder'] = df['folder'].fillna('Sem região definida')
     
-    # Normalize the Vernacular Score (IRSP/SRSP) from a 1-10 scale to a 0.0-1.0 float scale
+    # Normalize the Vernacular Score (SRSP/SRSP) from a 1-10 scale to a 0.0-1.0 float scale
     if 'vernacular_score' in df.columns:
         df['vernacular_score'] = pd.to_numeric(df['vernacular_score'], errors='coerce').fillna(0)
         df['vernacular_score'] = df['vernacular_score'] / 10.0
@@ -141,7 +141,7 @@ def create_pdf(dataframe, search_params):
         "Este dossiê foi gerado automaticamente pelo Classificador de Obras do Catálogo do Arquivo "
         "Histórico Ultramarino (AHU) para a Macrorregião Sul do Brasil. O sistema utiliza extração de "
         "metadados e processamento de linguagem natural (DeepSeek) para analisar os resumos arquivísticos. "
-        "Os documentos são classificados por tipologia, hierarquia comunicativa e um Índice de Relevância Sociolinguística Potencial (IRSP), "
+        "Os documentos são classificados por tipologia, hierarquia comunicativa e um Score de Relevância Sociolinguística Potencial (SRSP), "
         "que estima a probabilidade de o texto original conter evidências de sintaxe diacrônica e oralidade do "
         "português brasileiro colonial."
     )
@@ -208,8 +208,8 @@ def create_pdf(dataframe, search_params):
         safe_write("> Análise Sociolinguística Automatizada", style='B')
         safe_write(f"Vetor de Comunicação: {vector}")
         safe_write(f"Mediação por Escrivão: {scribe_text}")
-        safe_write(f"Índice de Probabilidade de Vernacularidade: {score:.1f}")
-        safe_write(f"Justificativa do Índice: {reasoning}")
+        safe_write(f"Score de Probabilidade de Vernacularidade: {score:.1f}")
+        safe_write(f"Justificativa do Score: {reasoning}")
         
         # Visual separator between documents
         pdf.ln(5)
@@ -231,9 +231,9 @@ st.markdown("""
 ### Sobre esta ferramenta
 **1. Motor de Busca e Triagem:** Este sistema não contém as imagens digitalizadas dos manuscritos originais. Ele funciona como um classificador para os resumos do catálogo do **Arquivo Histórico Ultramarino (AHU)**. O objetivo é permitir que pesquisadores cruzem recortes geográficos, temas históricos e variáveis sociolinguísticas para obter as **cotas arquivísticas** (ex: *PT/AHU/CU/...*) antes de acessar o arquivo físico ou o Projeto Resgate.
 
-**2. Índice de Relevância Sociolinguística Potencial (IRSP):** Cada documento teve sua descrição processada pelo DeepSeek para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0 e 1**.
-* Um **Índice próximo a 0** indica baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
-* Um **Índice próximo a 1** indica alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
+**2. Score de Relevância Sociolinguística Potencial (SRSP):** Cada documento teve sua descrição processada pelo DeepSeek para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0 e 1**.
+* Um **Score próximo a 0** indica baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
+* Um **Score próximo a 1** indica alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
 
 **3. O Corte de Relevância (Rigor da Busca):** Este parâmetro define o limite matemático exigido para que o motor considere um documento pertinente à sua consulta. Ele cruza o sentido do texto com a correspondência exata das palavras.
 * **Relevância próxima a 0** amplia o escopo da pesquisa e relaxa o filtro para incluir documentos com uma relação conceitual mais distante, periférica ou apenas tangencial ao termo inserido.
@@ -279,7 +279,7 @@ with st.sidebar:
         "Selecione uma lente metodológica:",
         ["Busca Livre (Personalizada)", 
          "Vozes Marginalizadas & História Social", 
-         "Sintaxe Diacrônica (Alto IRSP)", 
+         "Sintaxe Diacrônica (Alto SRSP)", 
          "Máquina Administrativa (Top-Down)"]
     )
     
@@ -300,32 +300,23 @@ with st.sidebar:
     if lente == "Vozes Marginalizadas & História Social":
         vetor_padrao = ["Bottom-Up"]
         remetente_padrao = ["Commoner", "Marginalized", "Low Military"]
-    elif lente == "Sintaxe Diacrônica (Alto IRSP)":
+    elif lente == "Sintaxe Diacrônica (Alto SRSP)":
         min_score = 0.7
     elif lente == "Máquina Administrativa (Top-Down)":
         vetor_padrao = ["Top-Down", "Horizontal"]
         remetente_padrao = ["Metropolitan Elite", "Local Elite"]
         
-    irsp_mapeamento = {
-        0.0: "0 (Nulo)",
-        0.1: "1 (Baixo)", 
-        0.2: "2 (Baixo)", 
-        0.3: "3 (Baixo)",
-        0.4: "4 (Moderado)", 
-        0.5: "5 (Moderado)", 
-        0.6: "6 (Moderado)",
-        0.7: "7 (Alto)", 
-        0.8: "8 (Alto)", 
-        0.9: "9 (Alto)",
-        1.0: "10 (Máximo)"
-    }
+   # Slider limpo e minimalista apenas com os números
+    score_range = st.slider("Score de Relevância Sociolinguística Potencial (SRSP):", 0.0, 1.0, (min_score, max_score), step=0.1)
     
-    score_range = st.select_slider(
-        "Índice de Relevância Sociolinguística Potencial (IRSP):",
-        options=list(irsp_mapeamento.keys()),
-        value=(min_score, max_score),
-        format_func=lambda x: irsp_mapeamento[x]
-    )
+    # Barra visual criando os "vincos" de separação entre as categorias
+    st.markdown("""
+        <div style="display: flex; text-align: center; font-size: 0.75em; color: gray; margin-top: -15px; margin-bottom: 15px;">
+            <div style="flex: 0.35; border-right: 2px solid #555;">0.0 - 0.3<br>Formulaico</div>
+            <div style="flex: 0.30; border-right: 2px solid #555;">0.4 - 0.6<br>Moderado</div>
+            <div style="flex: 0.35;">0.7 - 1.0<br>Vernáculo</div>
+        </div>
+    """, unsafe_allow_html=True)
     
     vetores = st.multiselect("Direção da Comunicação:", ["Bottom-Up", "Horizontal", "Top-Down", "Unknown"], default=vetor_padrao)
     categorias = st.multiselect("Perfil Social do Remetente:", categorias_disponiveis, default=remetente_padrao)
@@ -436,7 +427,7 @@ if not results_df.empty:
     pdf_bytes = create_pdf(export_df, current_params)
     st.download_button(label=f"Baixar Dossiê (Top {len(export_df)} documentos)", data=pdf_bytes, file_name="Dossie_AHU.pdf", mime="application/pdf")
 else:
-    st.warning("Nenhum documento encontrado com os filtros atuais. Experimente diminuir o valor de corte da relevância ou aumentar o intervalo do índice.")
+    st.warning("Nenhum documento encontrado com os filtros atuais. Experimente diminuir o valor de corte da relevância ou aumentar o intervalo do Score.")
 
 st.divider()
 
@@ -452,9 +443,9 @@ if not results_df.empty:
         # Dynamic Expander Title
         if query:
             sem_score = row.get('semantic_score', 0.0)
-            expander_title = f"Relevância: {sem_score:.2f} | IRSP: {score:.1f} | {date_id} | {folder} "
+            expander_title = f"Relevância: {sem_score:.2f} | SRSP: {score:.1f} | {date_id} | {folder} "
         else:
-            expander_title = f" {date_id} | {folder} | IRSP: {score:.1f}"
+            expander_title = f" {date_id} | {folder} | SRSP: {score:.1f}"
         
         with st.expander(expander_title):
             crav_code = row.get('reference_code', 'Sem Cota CRAV')
@@ -479,7 +470,7 @@ if not results_df.empty:
             st.markdown(f"**Resumo do Arquivo (de autoria do AHU):**\n{row.get('description', '')}")
             st.markdown("---")
             reasoning = row.get('sociolinguistic_reasoning_by_deepseek_v3', '')
-            st.markdown(f"**Justificativa Analítica para o Índice (LLM):**\n*{reasoning}*")
+            st.markdown(f"**Justificativa Analítica para o Score (LLM):**\n*{reasoning}*")
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
