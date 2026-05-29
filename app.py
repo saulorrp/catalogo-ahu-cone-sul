@@ -114,7 +114,7 @@ def create_pdf(dataframe, search_params):
         "Este dossiê foi gerado automaticamente pelo Classificador de Obras do Catálogo do Arquivo "
         "Histórico Ultramarino (AHU) para a Macrorregião Sul do Brasil. O sistema utiliza extração de "
         "metadados e processamento de linguagem natural (DeepSeek v3) para analisar os resumos arquivísticos. "
-        "Os documentos são classificados por tipologia, hierarquia comunicativa e um Score de Probabilidade de Vernacularidade (SPV), "
+        "Os documentos são classificados por tipologia, hierarquia comunicativa e um Score de Relevância Sociolinguística Potencial (SRSP), "
         "que estima a probabilidade de o texto original conter evidências de sintaxe diacrônica e oralidade do "
         "português brasileiro colonial."
     )
@@ -125,7 +125,7 @@ def create_pdf(dataframe, search_params):
     safe_write(f"- Busca Semântica: {search_params['query']}", size=10)
     safe_write(f"- Perfil (Lente): {search_params['lente']}", size=10)
     safe_write(f"- Regiões: {search_params['regioes']}", size=10)
-    safe_write(f"- Score de Probabilidade de Vernacularidade (SPV): {search_params['sv_range']}", size=10)
+    safe_write(f"- Score de Relevância Sociolinguística Potencial (SRSP): {search_params['sv_range']}", size=10)
     safe_write(f"- Direção da Comunicação: {search_params['vetores']}", size=10)
     safe_write(f"- Categoria do Remetente: {search_params['categorias']}", size=10)
     safe_write(f"- Rigor Semântico (Corte): {search_params['limiar']}", size=10)
@@ -197,9 +197,9 @@ st.markdown("""
 ### Sobre esta ferramenta
 **1. Motor de Busca e Triagem:** Este sistema não contém as imagens digitalizadas dos manuscritos originais. Ele funciona como um classificador para os resumos do catálogo do **Arquivo Histórico Ultramarino (AHU)**. O objetivo é permitir que pesquisadores cruzem recortes geográficos, temas históricos e variáveis sociolinguísticas para obter as **cotas arquivísticas** (ex: *PT/AHU/CU/...*) antes de acessar o arquivo físico ou o Projeto Resgate.
 
-**2. O Score de Probabilidade de Vernacularidade (SPV):** Cada documento teve sua descrição processada pelo DeepSeek (v3) para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0 e 1**.
-* Um **SPV próximo a 0** indica que o LLM que avaliou a descrição indicou baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
-* Um **SPV próximo a 1** indica que o LLM que avaliou a descrição indicou alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
+**2. Score de Relevância Sociolinguística Potencial (SRSP):** Cada documento teve sua descrição processada pelo DeepSeek (v3) para a atribuição de um valor numérico indicativo da probabilidade de o documento conter indícios de vernacularidade. Esse valor varia entre **0 e 1**.
+* Um **SRSP próximo a 0** indica que o LLM que avaliou a descrição indicou baixa probabilidade (fórmulas diplomáticas rígidas, linguagem erudita metropolitana ou forte padronização de notários).
+* Um **SRSP próximo a 1** indica que o LLM que avaliou a descrição indicou alta probabilidade de que o manuscrito original contenha marcas de oralidade, inovações sintáticas e vazamento do português vernáculo brasileiro colonial.
 
 **3. O Corte de Relevância (Rigor da Busca):** Este parâmetro define o limite matemático exigido para que o motor considere um documento pertinente à sua consulta. Ele cruza o sentido do texto com a correspondência exata das palavras.
 * **Relevância próxima a 0** amplia o escopo da pesquisa e relaxa o filtro para incluir documentos com uma relação conceitual mais distante, periférica ou apenas tangencial ao termo inserido.
@@ -268,7 +268,7 @@ with st.sidebar:
         vetor_padrao = ["Top-Down", "Horizontal"]
         remetente_padrao = ["Metropolitan Elite", "Local Elite"]
         
-    score_range = st.slider("Score de Probabilidade de Vernacularidade (SPV):", 0.0, 1.0, (min_score, max_score), step=0.1)
+    score_range = st.slider("Score de Relevância Sociolinguística Potencial (SRSP):", 0.0, 1.0, (min_score, max_score), step=0.1)
     vetores = st.multiselect("Direção da Comunicação:", ["Bottom-Up", "Horizontal", "Top-Down", "Unknown"], default=vetor_padrao)
     categorias = st.multiselect("Perfil Social do Remetente:", categorias_disponiveis, default=remetente_padrao)
 
@@ -363,7 +363,7 @@ if not results_df.empty:
     pdf_bytes = create_pdf(export_df, current_params)
     st.download_button(label=f"Baixar Dossiê (Top {len(export_df)} documentos)", data=pdf_bytes, file_name="Dossie_AHU.pdf", mime="application/pdf")
 else:
-    st.warning("Nenhum documento encontrado com os filtros atuais, experimente diminuir o valor de corte da relevância ou aumentar o intervalo de SPV.")
+    st.warning("Nenhum documento encontrado com os filtros atuais, experimente diminuir o valor de corte da relevância ou aumentar o intervalo de SRSP.")
 
 st.divider()
 
@@ -377,9 +377,9 @@ if not results_df.empty:
         
         if query:
             sem_score = row.get('semantic_score', 0.0)
-            expander_title = f"Relevância: {sem_score:.2f} | SPV: {score:.1f} | {date_id} | {folder}"
+            expander_title = f"Relevância: {sem_score:.2f} | {date_id} | {folder} | SRSP: {score:.1f}"
         else:
-            expander_title = f"SPV: {score:.1f} | {date_id} | {folder}"
+            expander_title = f"| {date_id} | {folder} | SRSP: {score:.1f}"
         
         with st.expander(expander_title):
             crav_code = row.get('reference_code', 'Sem Cota CRAV')
@@ -404,7 +404,7 @@ if not results_df.empty:
             st.markdown(f"**Resumo do Arquivo (de autoria do AHU):**\n{row.get('description', '')}")
             st.markdown("---")
             reasoning = row.get('sociolinguistic_reasoning_by_deepseek_v3', '')
-            st.markdown(f"**Justificativa do DeepSeek para o SPV:**\n*{reasoning}*")
+            st.markdown(f"**Justificativa do DeepSeek para o SRSP:**\n*{reasoning}*")
             
     if len(results_df) > 50:
         st.info(f"Mostrando os 50 resultados mais relevantes no navegador de um total de {len(results_df)}. Ajuste o seletor acima para incluir mais no PDF.")
