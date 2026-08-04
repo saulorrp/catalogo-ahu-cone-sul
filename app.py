@@ -760,10 +760,20 @@ else:
         st.markdown("*Top 50 remetentes por volume de documentos, com metadados sociais e geográficos.*")
 
         if not df_filtered.empty:
+            paises_disponiveis = sorted([p for p in df_filtered['pais_normalizado'].unique() if pd.notnull(p)])
+            default_selection = [p for p in selected_countries if p in paises_disponiveis]
+
+            paises_selecionados_tabela = st.multiselect(
+                "Filtrar tabela por País de Nascimento:",
+                options=paises_disponiveis,
+                default=default_selection,
+                help="Selecione aqui ou clique nas barras do gráfico acima para filtrar os autores da tabela abaixo."
+            )
+
             df_table = df_filtered
-            if selected_countries:
-                df_table = df_table[df_table['pais_normalizado'].isin(selected_countries)]
-                st.info(f"Filtro ativo no gráfico acima. Mostrando autores de: **{', '.join(sorted(selected_countries))}**")
+            if paises_selecionados_tabela:
+                df_table = df_table[df_table['pais_normalizado'].isin(paises_selecionados_tabela)]
+                st.info(f"Mostrando autores de: **{', '.join(paises_selecionados_tabela)}**")
 
             author_stats = (
                 df_table.groupby('sender_name')
