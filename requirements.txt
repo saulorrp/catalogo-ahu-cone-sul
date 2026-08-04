@@ -2,6 +2,6 @@ streamlit
 pandas
 sentence-transformers
 torch
-fpdf
 numpy
-rank-bm25
+rank_bm25
+plotly
