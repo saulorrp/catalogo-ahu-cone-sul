@@ -735,9 +735,23 @@ else:
                 height=500,
                 font=dict(family="Consolas, Courier New, monospace"),
             )
-            st.plotly_chart(fig, use_container_width=True)
+            
+            event = st.plotly_chart(
+                fig, 
+                use_container_width=True,
+                on_select="rerun",
+                selection_mode="points"
+            )
+            
+            selected_countries = set()
+            if event and "selection" in event and "points" in event.selection:
+                for pt in event.selection["points"]:
+                    if "curveNumber" in pt:
+                        trace_name = fig.data[pt["curveNumber"]].name
+                        selected_countries.add(trace_name)
         else:
             st.info("Nenhum documento com data válida encontrado para gerar o gráfico temporal.")
+            selected_countries = set()
 
         st.divider()
 
@@ -746,22 +760,33 @@ else:
         st.markdown("*Top 50 remetentes por volume de documentos, com metadados sociais e geográficos.*")
 
         if not df_filtered.empty:
+            df_table = df_filtered
+            if selected_countries:
+                df_table = df_table[df_table['pais_normalizado'].isin(selected_countries)]
+                st.info(f"Filtro ativo no gráfico acima. Mostrando autores de: **{', '.join(sorted(selected_countries))}**")
+
             author_stats = (
-                df_filtered.groupby('sender_name')
+                df_table.groupby('sender_name')
                 .agg(
                     total_docs=('sender_name', 'size'),
                     categoria_social=('sender_category', 'first'),
                     pais=('pais_normalizado', 'first'),
                     cidade=('cidade_nascimento', 'first'),
                     confianca_bio=('confianca', 'first'),
+                    conferir=('link_fonte', 'first'),
                 )
-                .sort_index()
+                .sort_values(by='total_docs', ascending=False)
                 .head(50)
                 .reset_index()
             )
+            
+            author_stats['conferir'] = author_stats['conferir'].apply(
+                lambda x: x if pd.notnull(x) and str(x).strip() != "" else None
+            )
+
             author_stats.columns = [
                 'Autor/Remetente', 'Nº de Documentos', 'Categoria Social',
-                'País de Nascimento', 'Cidade de Nascimento', 'Confiança'
+                'País de Nascimento', 'Cidade de Nascimento', 'Confiança', 'Conferir'
             ]
 
             st.dataframe(
@@ -770,6 +795,7 @@ else:
                 hide_index=True,
                 column_config={
                     "Nº de Documentos": st.column_config.NumberColumn(format="%d"),
+                    "Conferir": st.column_config.LinkColumn("Conferir", display_text="link"),
                 }
             )
         else:
