@@ -824,7 +824,7 @@ st.markdown(
         O presente trabalho foi realizado com apoio da Coordenação de 
         Aperfeiçoamento de Pessoal de Nível Superior - Brasil (CAPES).<br><br>
         Desenvolvido por Saulo R. com auxílio de IAs generativas. Em caso de dúvidas ou erros, contatar: 
-        <a href="mailto:saulorrp@gmail.com" style="color: gray; text-decoration: underline;">aulorrp@gmail.com</a>
+        <a href="mailto:saulorrp@gmail.com" style="color: gray; text-decoration: underline;">saulorrp@gmail.com</a>
     </div>
     """,
     unsafe_allow_html=True
