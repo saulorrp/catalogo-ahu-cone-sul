@@ -1,0 +1,15 @@
+{
+  "versao_corpus": "0.1.0",
+  "colecoes": {
+    "ahu-sul": {
+      "atualizado_em": "2026-10-07T22:26:41+00:00",
+      "arquivos": {
+        "colecoes/ahu-sul/documentos.parquet": "3cbf27c555bfef0861ead298ce63dca2f3d73c86f85c9e883a1445a578adcb10",
+        "colecoes/ahu-sul/registro_ids.json": "866a227f9b05ac7a9c31709d1b0b4df45aa64417aed342a5fce42d6b216f3d03",
+        "colecoes/ahu-sul/camada.json": "cea0602ef0e80924b133d7b585d93f9926596e1fbbeb823230b8205fb1ee06ae"
+      }
+    }
+  },
+  "camadas": {},
+  "gerado_em": "2026-10-07T22:26:41+00:00"
+}

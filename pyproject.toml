@@ -1,0 +1,19 @@
+[project]
+name = "classificador-ahu-sul"
+version = "3.0.0.dev0"
+description = "Classificador AHU-Sul v3: triagem documental sobre o catálogo do AHU"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = ["legado", "corpus", "app_dados"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]

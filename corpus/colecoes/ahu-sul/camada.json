@@ -1,0 +1,32 @@
+{
+  "nome": "base_ahu-sul",
+  "tipo": "base",
+  "versao": "1",
+  "colecao": "ahu-sul",
+  "processo": {
+    "script": "build/importar_base.py",
+    "versao_script": "1.0.0",
+    "commit": "sem-commit"
+  },
+  "entrada": {
+    "arquivo": "ahu_sul_catalog_biografias.json",
+    "sha256": "996feb761829f84863db528c44a9a8d85d33f1c9afd95b1d92ebed37576bf40d"
+  },
+  "data": "2026-10-07T22:26:41+00:00",
+  "documentos": 7051,
+  "esquema": {
+    "doc_uid": "object",
+    "colecao": "object",
+    "folder": "object",
+    "description": "object",
+    "old_code": "object",
+    "new_code": "object",
+    "reference_code": "object",
+    "document_id_and_date": "object",
+    "ano_isolado": "Int64",
+    "extracted_typology": "object",
+    "sender_name": "object",
+    "recipient_name": "object"
+  },
+  "origem": "Arquivo Histórico Ultramarino (AHU) e Projeto Resgate 'Barão do Rio Branco'. Resumos e cotas pertencem a essas instituições e são creditados como tal."
+}

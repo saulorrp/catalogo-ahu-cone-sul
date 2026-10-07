@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.venv/
+.env
+*.key
+perplexity_api_keys.txt
+*.pkl
+!app_dados/lexico.pkl
+*.npy
+!app_dados/embeddings.f16.npy
