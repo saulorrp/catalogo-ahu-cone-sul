@@ -3,7 +3,7 @@
 Ferramenta de **triagem documental** sobre o catálogo do Arquivo Histórico Ultramarino (coleção AHU-Sul, 7.051 documentos).
 Leva o pesquisador de uma pergunta a um conjunto de cotas que ele possa justificar, citar e levar ao arquivo.
 
-> **Estado:** em construção (v3.0.0.dev0). O app em produção continua sendo a versão anterior (`main` do repositório `saulorrp/catalogo-ahu-cone-sul`). Veja o estado de cada pacote em [`AGENTS.md`](AGENTS.md).
+> **Estado:** em construção (v3.0.0.dev0). O app em produção continua sendo a versão anterior (`main` do repositório `saulorrp/catalogo-ahu-cone-sul`); a publicação da v3 núcleo é o WP 2.5, descrita em [`docs/publicacao.md`](docs/publicacao.md). Veja o estado de cada pacote em [`AGENTS.md`](AGENTS.md).
 
 ## Base teórica
 
@@ -23,6 +23,7 @@ Nomes e escalas usados em todo o projeto (iguais aos do preprint):
 - [Especificação técnica](../spec_catalogo_ahu_v3.md)
 - [Plano de implementação](../plano_implementacao_v3.md)
 - [Guia para agentes](AGENTS.md)
+- [Publicação, memória e troca de modelo (WP 2.5)](docs/publicacao.md)
 
 ## Estrutura
 
@@ -47,10 +48,14 @@ python build/importar_base.py           # base e doc_uid (WP 1.1)
 python build/importar_camadas.py        # tipologia e sociolinguística (WP 1.2)
 python build/importar_biografias_v2.py  # entidades e biografias v2 (WP 1.3)
 python build/construir_indice.py        # índice semântico (WP 1.4); 97,6 min em CPU nos 7.051 docs
+#   para o modelo que vai para o ar (WP 2.5), em lugar da linha acima:
+#   python build/construir_indice.py --modelo intfloat/multilingual-e5-small --desativar-outras
 python build/construir_app.py           # artefatos que o app lê (WP 1.5)
 ```
 
-Python 3.11 (declarado em `runtime.txt`); 3.12 funciona localmente.
+Python 3.11 (declarado em `runtime.txt`); 3.12 funciona localmente. No Streamlit Community Cloud o
+`runtime.txt` não é lido: a versão do Python vem das *Advanced settings* do deploy.
+O `torch` é fixado na variante só-CPU — ver [`docs/publicacao.md`](docs/publicacao.md).
 Custo zero em funcionamento: nenhuma API paga é usada pelo app. As chamadas pagas (DeepSeek, Perplexity) ocorrem só na construção do corpus.
 
 ## Licença

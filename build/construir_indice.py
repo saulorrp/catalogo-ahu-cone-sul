@@ -16,7 +16,7 @@ Os vetores parciais ficam em corpus/camadas/<camada>/parciais/ e são apagados a
 Uso:
     python build/construir_indice.py                      # e5-large, coleção ahu-sul
     python build/construir_indice.py --limite 200         # teste rápido (camada *_amostra)
-    python build/construir_indice.py --modelo intfloat/multilingual-e5-base   # WP 4.2
+    python build/construir_indice.py --modelo intfloat/multilingual-e5-small --desativar-outras
     python build/construir_indice.py --forcar             # refaz mesmo que esteja atualizado
 """
 from __future__ import annotations
@@ -246,7 +246,15 @@ def gravar_camada(
     return camada
 
 
-def registrar_no_manifesto(corpus: Path, pasta: Path, camada: dict) -> None:
+def registrar_no_manifesto(corpus: Path, pasta: Path, camada: dict,
+                           desativar_outras: bool = False, log=print) -> list[str]:
+    """Grava a camada no manifesto. Devolve as camadas que foram desativadas.
+
+    `desativar_outras` existe para a troca de modelo do WP 2.5: sem ela, indexar com outro
+    modelo deixa **duas** camadas de embeddings ativas, e o `construir_app.py` recusa escolher
+    por conta própria (é o manifesto que decide, não o código — spec §3.1). O padrão continua
+    sendo não mexer em camada alheia; a troca tem de ser pedida na linha de comando.
+    """
     arq = corpus / "manifest.json"
     manifesto = {"versao_corpus": "0.1.0", "colecoes": {}, "camadas": {}}
     if arq.exists():
@@ -256,14 +264,24 @@ def registrar_no_manifesto(corpus: Path, pasta: Path, camada: dict) -> None:
         f"camadas/{pasta.name}/{nome}": sha256_arquivo(pasta / nome)
         for nome in ("embeddings.f16.npy", "indice.parquet", "camada.json")
     }
+    ativa = not camada["amostra"] and camada["sanidade_aprovada"]
     manifesto.setdefault("camadas", {})[pasta.name] = {
         "tipo": "embeddings", "versao": camada["versao"], "modelo": camada["modelo"],
         "documentos": camada["documentos"], "arquivos": arquivos,
-        "ativa": not camada["amostra"] and camada["sanidade_aprovada"],
+        "ativa": ativa,
     }
+    desativadas = []
+    if desativar_outras and ativa:
+        for nome, c in manifesto["camadas"].items():
+            if nome != pasta.name and c.get("tipo") == "embeddings" and c.get("ativa"):
+                c["ativa"] = False
+                desativadas.append(nome)
+        for nome in desativadas:
+            log(f"  camada {nome} marcada como inativa (--desativar-outras).")
     manifesto["gerado_em"] = camada["data"]
     with open(arq, "w", encoding="utf-8") as f:
         json.dump(manifesto, f, ensure_ascii=False, indent=2)
+    return desativadas
 
 
 def indice_atualizado(pasta: Path, hashes: list[str], uids: list[str]) -> bool:
@@ -307,6 +325,7 @@ def construir_indice(
     corpus: Path, colecao: str | list[str] | None, modelo: str, encoder: Encoder,
     limite: int | None = None, forcar: bool = False, manter_parciais: bool = False,
     tamanho_chunk: int = TAMANHO_CHUNK, log: Callable[[str], None] = print,
+    desativar_outras: bool = False,
 ) -> dict:
     """Indexa uma coleção, várias, ou (com `colecao=None`) todas as do manifesto, nessa ordem."""
     if colecao is None:
@@ -346,7 +365,7 @@ def construir_indice(
     emb = construir_embeddings(textos, uids, hashes, encoder, pasta / "parciais", tamanho_chunk, log)
     sanidade = verificar_sanidade(df, emb, encoder)
     camada = gravar_camada(pasta, df, emb, hashes, modelo, colecoes, sanidade, nome, amostra)
-    registrar_no_manifesto(corpus, pasta, camada)
+    desativadas = registrar_no_manifesto(corpus, pasta, camada, desativar_outras, log)
     if not manter_parciais:
         shutil.rmtree(pasta / "parciais", ignore_errors=True)
 
@@ -358,6 +377,7 @@ def construir_indice(
         "atualizado": True,
         "documentos": len(uids),
         "sanidade_aprovada": camada["sanidade_aprovada"],
+        "desativadas": desativadas,
     }
 
 
@@ -376,12 +396,16 @@ def main() -> int:
     )
     ap.add_argument("--forcar", action="store_true")
     ap.add_argument("--manter-parciais", action="store_true")
+    ap.add_argument("--desativar-outras", action="store_true",
+                    help="desativa no manifesto as outras camadas de embeddings ativas "
+                         "(troca de modelo; WP 2.5)")
     args = ap.parse_args()
 
     try:
         encoder = criar_encoder(args.modelo, args.lote, args.dispositivo)
         r = construir_indice(Path(args.corpus), args.colecao, args.modelo, encoder, args.limite,
-                             args.forcar, args.manter_parciais)
+                             args.forcar, args.manter_parciais,
+                             desativar_outras=args.desativar_outras)
     except FileNotFoundError as e:
         print(f"ERRO: {e}", file=sys.stderr)
         return 1

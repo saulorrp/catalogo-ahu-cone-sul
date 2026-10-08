@@ -1,9 +1,14 @@
+# Índice do PyTorch só-CPU. Sem esta linha, o `torch` do PyPI em Linux arrasta as bibliotecas
+# CUDA da NVIDIA (alguns GB) que o app nunca usa, e a instalação no Streamlit Community Cloud
+# fica pesada ou quebra. O sufixo `+cpu` só existe neste índice, por isso o pin é explícito.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 streamlit==1.55.0
 pandas==2.3.3
 pyarrow==23.0.1
 numpy==2.4.3
 rank-bm25==0.2.2
 sentence-transformers==5.2.3
-torch==2.8.0
+torch==2.8.0+cpu
 plotly==6.9.0
 fpdf2==2.8.9

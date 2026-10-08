@@ -52,10 +52,21 @@ def rss_mb() -> float:
                         ("PagefileUsage", ctypes.c_size_t),
                         ("PeakPagefileUsage", ctypes.c_size_t)]
 
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.GetCurrentProcess.restype = wt.HANDLE
+        # `K32GetProcessMemoryInfo` está no kernel32 desde o Windows 7; o `psapi.dll` é só o
+        # apelido antigo. Sem `argtypes`, o handle de 64 bits chega truncado e a chamada falha
+        # devolvendo zero — era por isso que a medição saía 0,0 MiB.
+        funcao = getattr(kernel32, "K32GetProcessMemoryInfo", None)
+        if funcao is None:
+            funcao = ctypes.WinDLL("psapi", use_last_error=True).GetProcessMemoryInfo
+        funcao.argtypes = [wt.HANDLE, ctypes.POINTER(Contagem), wt.DWORD]
+        funcao.restype = wt.BOOL
+
         contagem = Contagem()
         contagem.cb = ctypes.sizeof(Contagem)
-        ctypes.windll.psapi.GetProcessMemoryInfo(
-            ctypes.windll.kernel32.GetCurrentProcess(), ctypes.byref(contagem), contagem.cb)
+        if not funcao(kernel32.GetCurrentProcess(), ctypes.byref(contagem), contagem.cb):
+            raise OSError(ctypes.get_last_error(), "GetProcessMemoryInfo falhou")
         return contagem.WorkingSetSize / MB
     try:
         with open(f"/proc/{os.getpid()}/statm") as f:

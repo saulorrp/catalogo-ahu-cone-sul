@@ -10,6 +10,7 @@ Quatro tarefas: **T1 Encontrar · T2 Recortar · T3 Amostrar · T4 Levar e citar
 ## Documentos de referência
 - Spec: [`../spec_catalogo_ahu_v3.md`](../spec_catalogo_ahu_v3.md) (v2.0)
 - Plano: [`../plano_implementacao_v3.md`](../plano_implementacao_v3.md)
+- Publicação, memória medida e troca de modelo (WP 2.5): [`docs/publicacao.md`](docs/publicacao.md)
 - Entrada do pipeline de biografias: [`../biografias_v2/`](../biografias_v2/) (p1–p5)
 - App antigo (referência, não editar): [`../legacy app/`](../legacy%20app/), [`../lista_ahu_pacote/`](../lista_ahu_pacote/)
 
@@ -26,7 +27,9 @@ Quatro tarefas: **T1 Encontrar · T2 Recortar · T3 Amostrar · T4 Levar e citar
    uma constante do código: sai de `"escala_srsp": [min, max]` no `camada.json` da camada ativa
    (hoje `[1, 9]` em `sociolinguistica_deepseek_v3`). Uma reclassificação com outra escala é uma
    **camada nova**, que declara a sua. O prompt do §2 é registro histórico e não se edita.
-10. Dependências fixadas com versão, em número mínimo (R2).
+10. Dependências fixadas com versão, em número mínimo (R2). O `torch` é o **só-CPU**
+    (`--extra-index-url https://download.pytorch.org/whl/cpu` e `torch==2.8.0+cpu`): o do PyPI em
+    Linux arrasta as bibliotecas CUDA, que o app nunca usa.
 11. Arquivos grandes de dados são tratados em lotes e com retomada; nunca duplicar o catálogo inteiro em memória sem necessidade.
 
 ## Estrutura
@@ -50,6 +53,8 @@ python build/importar_base.py     # WP 1.1
 python build/importar_camadas.py  # WP 1.2 (tipologia_v1 + sociolinguistica_deepseek_v3)
 python build/importar_biografias_v2.py  # WP 1.3 (entidades_v2 + biografias_v2)
 python build/construir_indice.py  # WP 1.4 (CPU: 97,6 min medidos nos 7.051 docs; com retomada)
+python build/construir_indice.py --modelo intfloat/multilingual-e5-small --desativar-outras
+                                  # WP 2.5: troca o modelo e desativa a camada antiga no manifesto
 python build/construir_app.py     # WP 1.5 (artefatos de app_dados/; ~7 s)
 
 streamlit run app.py              # WP 2.3/2.4: o app novo, em http://localhost:8501
@@ -79,12 +84,17 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F2 | 2.2 Consulta e filtros | feito (A6 na ida e volta; §6.1 inteira) |
 | F2 | 2.3 Interface de busca e ficha | feito (A1 nas 7.051 fichas; app sobe em ~4 s) |
 | F2 | 2.4 Pessoas | feito (A2: "Lavradio" -> 1 pessoa, 163 documentos) |
-| F2 | 2.5 Publicação da v3 núcleo | em curso (medição feita; merge e publicação aguardam o autor) |
+| F2 | 2.5 Publicação da v3 núcleo | medição e decisão feitas; `main` criado; **push e deploy aguardam o autor** |
 | F3–F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.
 
 **Pendências para o autor:**
+- **reindexar com o e5-small e publicar (WP 2.5).** Os artefatos de `app_dados/` neste commit
+  ainda são do **e5-large**, que não cabe na memória do Community Cloud: a decisão está tomada, a
+  reindexação é a do comando acima e os passos de publicação estão em
+  [`docs/publicacao.md`](docs/publicacao.md). O `push` e o deploy dependem de você — este
+  repositório não tem `remote` configurado;
 - **limite conhecido do aviso de consulta distante (§5.5).** A regra nova (nenhum termo no corpus
   **e** destaque < 4,5) acerta as nove consultas medidas, mas basta **um** termo existir no corpus
   para o aviso calar, mesmo que o casamento seja acidental: `military desertion` escapa porque
@@ -103,6 +113,14 @@ Atualize esta tabela ao concluir cada pacote.
   que a consulta foi ignorada, em vez de devolver zero sem explicação.
 - **o modelo semântico carrega na primeira consulta que precisa dele**, não na abertura: abrir o
   app e buscar por cota não pagam os ~56 s do e5.
+
+**Decidido no WP 2.5 (08/10): o modelo que vai para o ar é o `multilingual-e5-small`.** Medido
+em `scripts/medir_memoria.py`, o pico de RSS de uma consulta semântica é de 1.771 MiB com o
+e5-large, 1.204 MiB com o e5-base e 717 MiB com o e5-small; o mínimo garantido pelo Streamlit
+Community Cloud é 690 MiB. Só o small cabe. A calibração fina (margens de rigor, pesos do RRF,
+`LIMITE_DESTAQUE`) foi medida no e5-large e refaz-se no WP 4.2; os números estão todos em
+constantes de `ahu/busca.py`. O raciocínio inteiro, a reindexação e os passos de publicação estão
+em [`docs/publicacao.md`](docs/publicacao.md).
 
 **Decidido e já no código (08/10):** os rótulos da §6.3 (tabela na spec); o tempo real da
 indexação (97,6 min); a escala do SRSP como dado da camada (regra 9), com o prompt preservado como

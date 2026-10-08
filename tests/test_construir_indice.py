@@ -179,3 +179,42 @@ def test_manifesto_registra_hashes_e_camada_ativa(corpus):
 def test_base_inexistente(tmp_path):
     with pytest.raises(FileNotFoundError, match="importar_base"):
         ci.construir_indice(tmp_path / "corpus", "t", "m", Falso(), log=lambda *_: None)
+
+
+def test_trocar_de_modelo_deixa_duas_camadas_ativas(corpus):
+    """Sem `--desativar-outras`, o manifesto fica com duas camadas de embeddings ativas.
+
+    É o estado que o `construir_app.py` recusa, e de propósito: quem decide qual camada vale é o
+    manifesto, não o código (spec §3.1).
+    """
+    ci.construir_indice(corpus, "t", "intfloat/multilingual-e5-large", Falso(),
+                        log=lambda *_: None)
+    ci.construir_indice(corpus, "t", "intfloat/multilingual-e5-small", Falso(),
+                        log=lambda *_: None)
+    camadas = json.loads((corpus / "manifest.json").read_text(encoding="utf-8"))["camadas"]
+    ativas = [n for n, c in camadas.items() if c.get("tipo") == "embeddings" and c.get("ativa")]
+    assert sorted(ativas) == ["embeddings_e5_v1", "embeddings_e5small_v1"]
+
+
+def test_desativar_outras_troca_a_camada_ativa(corpus):
+    """WP 2.5: a troca de modelo em um comando, sem editar o manifesto à mão."""
+    ci.construir_indice(corpus, "t", "intfloat/multilingual-e5-large", Falso(),
+                        log=lambda *_: None)
+    r = ci.construir_indice(corpus, "t", "intfloat/multilingual-e5-small", Falso(),
+                            log=lambda *_: None, desativar_outras=True)
+    assert r["desativadas"] == ["embeddings_e5_v1"]
+    camadas = json.loads((corpus / "manifest.json").read_text(encoding="utf-8"))["camadas"]
+    ativas = [n for n, c in camadas.items() if c.get("tipo") == "embeddings" and c.get("ativa")]
+    assert ativas == ["embeddings_e5small_v1"]
+    assert camadas["embeddings_e5small_v1"]["modelo"] == "intfloat/multilingual-e5-small"
+
+
+def test_desativar_outras_nao_ativa_amostra(corpus):
+    """Uma camada de amostra não é ativa, e por isso não pode desativar a camada boa."""
+    ci.construir_indice(corpus, "t", "intfloat/multilingual-e5-large", Falso(),
+                        log=lambda *_: None)
+    ci.construir_indice(corpus, "t", "intfloat/multilingual-e5-small", Falso(), limite=8,
+                        log=lambda *_: None, desativar_outras=True)
+    camadas = json.loads((corpus / "manifest.json").read_text(encoding="utf-8"))["camadas"]
+    ativas = [n for n, c in camadas.items() if c.get("tipo") == "embeddings" and c.get("ativa")]
+    assert ativas == ["embeddings_e5_v1"]

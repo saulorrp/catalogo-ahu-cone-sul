@@ -24,9 +24,19 @@ def test_python_311_declarado():
 
 def test_dependencias_fixadas_sem_openai():
     texto = (RAIZ / "requirements.txt").read_text(encoding="utf-8")
-    linhas = [ln.strip() for ln in texto.splitlines() if ln.strip()]
+    # Comentário e opção do pip (`--extra-index-url`, do WP 2.5) não são dependência.
+    linhas = [ln.strip() for ln in texto.splitlines()
+              if ln.strip() and not ln.lstrip().startswith(("#", "-"))]
+    assert linhas
     assert all("==" in ln for ln in linhas)
     assert not any(ln.lower().startswith("openai") for ln in linhas)
+
+
+def test_torch_e_so_cpu():
+    """WP 2.5: no Streamlit Community Cloud o torch do PyPI arrasta as bibliotecas CUDA."""
+    texto = (RAIZ / "requirements.txt").read_text(encoding="utf-8")
+    assert "--extra-index-url https://download.pytorch.org/whl/cpu" in texto
+    assert "torch==2.8.0+cpu" in texto
 
 
 def test_readme_usa_nomes_do_preprint():
