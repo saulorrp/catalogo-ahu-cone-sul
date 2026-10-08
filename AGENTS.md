@@ -86,7 +86,8 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F2 | 2.4 Pessoas | feito (A2: "Lavradio" -> 1 pessoa, 163 documentos) |
 | F2 | 2.5 Publicação da v3 núcleo | **aberto**: índice e5-small no ar localmente; deploy adiado para depois da F3; A10 pendente do primeiro deploy |
 | F3 | 3.1 Seleção | feito (teto de 500, atravessa buscas, JSON para baixar e carregar) |
-| F3 | 3.2 3.3 3.3a 3.4 3.5 | pendente |
+| F3 | 3.2 Exportação CSV e JSON | feito (o CSV reabre igual; proveniência com Consulta, versões e DOI) |
+| F3 | 3.3 3.3a 3.4 3.5 | pendente |
 | F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.

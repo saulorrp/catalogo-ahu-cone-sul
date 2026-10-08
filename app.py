@@ -18,6 +18,7 @@ import pandas as pd
 import streamlit as st
 
 from ahu import busca
+from ahu import exportar as mod_exportar
 from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
 from ahu import graficos as mod_graficos
@@ -298,6 +299,7 @@ def aba_busca(dados, consulta: Consulta) -> None:
         st.caption(f"Cada motor contribui com os {busca.LIMITE_MOTOR} primeiros documentos.")
 
     painel_de_selecao(dados, consulta, resposta)
+    painel_de_exportacao(dados, consulta, resposta)
 
     colunas = st.columns([3, 6, 3])
     ordenacao = colunas[0].selectbox(
@@ -360,7 +362,8 @@ def painel_de_selecao(dados, consulta: Consulta, resposta) -> None:
             st.rerun()
         acoes[2].download_button(
             "Baixar a seleção (JSON)",
-            data=selecao.para_json(),
+            data=selecao.para_json(
+                mod_exportar.proveniencia(dados, origem="selecao", total=len(selecao))),
             file_name="selecao_ahu_sul.json", mime="application/json",
             use_container_width=True, disabled=not len(selecao))
 
@@ -391,6 +394,43 @@ def painel_de_selecao(dados, consulta: Consulta, resposta) -> None:
                              key="ordem_selecao")
         st.dataframe(selecao.tabela(dados, ordem), use_container_width=True, hide_index=True)
 
+
+
+# ---------------------------------------------------------------------------
+# Exportação (WP 3.2, §8.2)
+# ---------------------------------------------------------------------------
+
+def painel_de_exportacao(dados, consulta: Consulta, resposta) -> None:
+    """CSV e JSON do resultado atual ou da seleção, sempre com proveniência (§8.2)."""
+    selecao = selecao_atual()
+    with st.expander("Exportar (CSV · JSON)", expanded=False):
+        opcoes = [("resultado", f"O resultado desta busca ({resposta.total})")]
+        if len(selecao):
+            opcoes.append(("selecao", f"A seleção ({len(selecao)})"))
+        origem = st.radio("O que exportar", [o for o, _ in opcoes],
+                          format_func=lambda o: dict(opcoes)[o], horizontal=True,
+                          key="origem_exportacao")
+        uids = (selecao.ordenar(dados, st.session_state.get("ordem_selecao", "chegada"))
+                if origem == "selecao" else [r.doc_uid for r in resposta.resultados])
+        st.caption(
+            f"{len(uids)} documento(s). O CSV sai em UTF-8 com BOM e `;` por separador, para "
+            "abrir no Excel em português. Os dois arquivos levam o bloco de proveniência: a "
+            "consulta inteira, as camadas ativas com as versões, o SHA-256 do manifesto e o DOI."
+        )
+        if not uids:
+            st.info("Nada a exportar.")
+            return
+        prov = mod_exportar.proveniencia(dados, consulta, len(uids), origem=origem)
+        colunas = st.columns(2)
+        colunas[0].download_button(
+            "Baixar CSV", data=mod_exportar.para_csv(dados, uids, prov),
+            file_name="ahu_sul_resultado.csv", mime="text/csv", use_container_width=True)
+        colunas[1].download_button(
+            "Baixar JSON", data=mod_exportar.para_json(dados, uids, prov),
+            file_name="ahu_sul_resultado.json", mime="application/json",
+            use_container_width=True)
+        st.caption("A inferência sobre mediação de escrivão não entra em nenhum dos dois: ela "
+                   "sai só no dossiê em PDF, com a ressalva metodológica do preprint (D1).")
 
 
 # ---------------------------------------------------------------------------
