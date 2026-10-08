@@ -84,17 +84,19 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F2 | 2.2 Consulta e filtros | feito (A6 na ida e volta; §6.1 inteira) |
 | F2 | 2.3 Interface de busca e ficha | feito (A1 nas 7.051 fichas; app sobe em ~4 s) |
 | F2 | 2.4 Pessoas | feito (A2: "Lavradio" -> 1 pessoa, 163 documentos) |
-| F2 | 2.5 Publicação da v3 núcleo | medição e decisão feitas; `main` criado; **push e deploy aguardam o autor** |
-| F3–F4 | restantes | pendente |
+| F2 | 2.5 Publicação da v3 núcleo | **aberto**: índice e5-small no ar localmente; deploy adiado para depois da F3; A10 pendente do primeiro deploy |
+| F3 | 3.1 Seleção | feito (teto de 500, atravessa buscas, JSON para baixar e carregar) |
+| F3 | 3.2 3.3 3.3a 3.4 3.5 | pendente |
+| F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.
 
 **Pendências para o autor:**
-- **reindexar com o e5-small e publicar (WP 2.5).** Os artefatos de `app_dados/` neste commit
-  ainda são do **e5-large**, que não cabe na memória do Community Cloud: a decisão está tomada, a
-  reindexação é a do comando acima e os passos de publicação estão em
-  [`docs/publicacao.md`](docs/publicacao.md). O `push` e o deploy dependem de você — este
-  repositório não tem `remote` configurado;
+- **publicar (WP 2.5), depois da F3.** A reindexação com o e5-small está feita (7.051 docs, 8,3
+  min, sanidade 5/5, `embeddings_e5small_v1` ativa) e os artefatos de `app_dados/` já são de 384
+  dimensões. O que falta é o `push` e o deploy, adiados por decisão do autor até a F3 terminar; os
+  passos estão em [`docs/publicacao.md`](docs/publicacao.md). **A10 segue pendente do primeiro
+  deploy**: tempo de resposta e carga fria só se medem na nuvem;
 - **limite conhecido do aviso de consulta distante (§5.5).** A regra nova (nenhum termo no corpus
   **e** destaque < 4,5) acerta as nove consultas medidas, mas basta **um** termo existir no corpus
   para o aviso calar, mesmo que o casamento seja acidental: `military desertion` escapa porque

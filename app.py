@@ -22,6 +22,7 @@ from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
 from ahu import graficos as mod_graficos
 from ahu import pessoas as mod_pessoas
+from ahu import selecao as mod_selecao
 from ahu.consulta import TAMANHO_PAGINA, Consulta, ErroDeLink, executar
 from ahu.dados import ErroDados, carregar
 
@@ -64,6 +65,13 @@ def consulta_atual() -> Consulta:
 def guardar(consulta: Consulta) -> None:
     st.session_state.consulta = consulta
     st.query_params.from_dict(consulta.para_url())
+
+
+def selecao_atual() -> mod_selecao.Selecao:
+    """A seleção vive só em `st.session_state` (§8.1, R4): nada é gravado no servidor."""
+    if "selecao" not in st.session_state:
+        st.session_state.selecao = mod_selecao.Selecao()
+    return st.session_state.selecao
 
 
 def tema() -> str:
@@ -205,7 +213,20 @@ def barra_de_busca(consulta: Consulta) -> Consulta:
 
 def desenhar_ficha(dados, doc_uid: str, termos: list[str], resultado=None) -> None:
     f = mod_ficha.montar(dados, doc_uid, termos)
-    with st.expander(f.titulo, expanded=False):
+    selecao = selecao_atual()
+
+    # §8.1: a caixa fica **fora** do expansor, senão ela só existiria com a ficha aberta.
+    caixa, titulo = st.columns([1, 20])
+    marcado = caixa.checkbox(
+        "Selecionar", value=doc_uid in selecao, key=f"sel_{doc_uid}", label_visibility="collapsed",
+        help="Selecionar este documento. A seleção atravessa buscas.")
+    if marcado != (doc_uid in selecao):
+        sobraram = selecao.alternar(doc_uid, marcado)
+        if sobraram:
+            st.warning(f"A seleção já tem {mod_selecao.LIMITE} documentos, o máximo.")
+        st.rerun()
+
+    with titulo.expander(f.titulo, expanded=False):
         st.markdown(f.resumo_marcado)
         if f.tipologia_a_revisar:
             st.caption("Tipologia fora do vocabulário canônico: a revisar.")
@@ -276,6 +297,8 @@ def aba_busca(dados, consulta: Consulta) -> None:
     if resposta.truncado_por_motor:
         st.caption(f"Cada motor contribui com os {busca.LIMITE_MOTOR} primeiros documentos.")
 
+    painel_de_selecao(dados, consulta, resposta)
+
     colunas = st.columns([3, 6, 3])
     ordenacao = colunas[0].selectbox(
         "Ordenar por", ("relevancia", "ano_asc", "ano_desc"),
@@ -306,6 +329,69 @@ def aba_busca(dados, consulta: Consulta) -> None:
     st.divider()
     st.caption("Resumos e cotas: Arquivo Histórico Ultramarino e Projeto Resgate "
                "\"Barão do Rio Branco\".")
+
+# ---------------------------------------------------------------------------
+# Seleção (WP 3.1, §8.1)
+# ---------------------------------------------------------------------------
+
+def painel_de_selecao(dados, consulta: Consulta, resposta) -> None:
+    """Ver, ordenar, esvaziar, baixar e carregar a seleção (§8.1)."""
+    selecao = selecao_atual()
+    titulo = (f"Seleção — {len(selecao)} documento(s)" if len(selecao)
+              else "Seleção — vazia")
+    with st.expander(titulo, expanded=False):
+        st.caption(
+            f"A seleção atravessa buscas e cabe até {mod_selecao.LIMITE} documentos. Ela vive "
+            "só nesta sessão do navegador: nada é guardado no servidor. Para levá-la para outro "
+            "dia, baixe o JSON e carregue-o de volta.")
+
+        acoes = st.columns(3)
+        if acoes[0].button(f"Selecionar os {resposta.total} do resultado",
+                           use_container_width=True, disabled=not resposta.total,
+                           help="Acrescenta todos os documentos desta busca, até o teto."):
+            sobraram = selecao.adicionar([r.doc_uid for r in resposta.resultados])
+            if sobraram:
+                st.warning(f"{sobraram} documento(s) não couberam: o teto é "
+                           f"{mod_selecao.LIMITE}.")
+            st.rerun()
+        if acoes[1].button("Esvaziar a seleção", use_container_width=True,
+                           disabled=not len(selecao)):
+            selecao.limpar()
+            st.rerun()
+        acoes[2].download_button(
+            "Baixar a seleção (JSON)",
+            data=selecao.para_json(),
+            file_name="selecao_ahu_sul.json", mime="application/json",
+            use_container_width=True, disabled=not len(selecao))
+
+        arquivo = st.file_uploader("Carregar uma seleção salva (JSON)", type=["json"],
+                                   key="carregar_selecao")
+        if arquivo is not None and st.session_state.get("selecao_carregada") != arquivo.file_id:
+            try:
+                nova, relatorio = mod_selecao.Selecao.de_json(arquivo.getvalue(), dados)
+            except mod_selecao.ErroDeSelecao as e:
+                st.error(f"**Não foi possível carregar.** {e}")
+            else:
+                st.session_state.selecao = nova
+                st.session_state.selecao_carregada = arquivo.file_id
+                aviso = f"{relatorio['carregados']} documento(s) carregado(s)."
+                if relatorio["desconhecidos"]:
+                    aviso += (f" {len(relatorio['desconhecidos'])} não existe(m) no corpus ativo "
+                              f"e foi(ram) descartado(s): "
+                              f"{', '.join(relatorio['desconhecidos'][:3])}…")
+                if relatorio["excedentes"]:
+                    aviso += f" {relatorio['excedentes']} passaram do teto e ficaram de fora."
+                st.success(aviso)
+                st.rerun()
+
+        if not len(selecao):
+            return
+        ordem = st.selectbox("Ordenar a seleção por", mod_selecao.ORDENS,
+                             format_func=lambda o: mod_selecao.ROTULOS_ORDEM[o],
+                             key="ordem_selecao")
+        st.dataframe(selecao.tabela(dados, ordem), use_container_width=True, hide_index=True)
+
+
 
 # ---------------------------------------------------------------------------
 # Pessoas (WP 2.4, §7.1)
