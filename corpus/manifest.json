@@ -30,7 +30,29 @@
         "camadas/sociolinguistica_deepseek_v3/camada.json": "0ab3a6a2622fad1f6a0175dfa2487a137e10bd3a810b345ec3f6622ed0eda66b"
       },
       "ativa": true
+    },
+    "entidades_v2": {
+      "tipo": "entidades",
+      "versao": "2",
+      "documentos": 7050,
+      "arquivos": {
+        "camadas/entidades_v2/entidades.parquet": "2e6dc27cf45d9a93e72676ef86582bde1bad3c67ffa8bcde89988518e8d003dd",
+        "camadas/entidades_v2/pessoas.parquet": "2d1dcd965c8fad9f6ba10ee762bb439afcc9e438bb243db4e93d9a31ee067ec9",
+        "camadas/entidades_v2/registro_pessoas.json": "a8f210ab1a39f649fc94ed6675f0c965ac183376bbe0b73827c696fc503899ac",
+        "camadas/entidades_v2/camada.json": "811013e5642402565b95f59763e7308f9ec6d361db7aeb3eeb6b5415c34499a9"
+      },
+      "ativa": true
+    },
+    "biografias_v2": {
+      "tipo": "biografias",
+      "versao": "2",
+      "documentos": 7050,
+      "arquivos": {
+        "camadas/biografias_v2/biografias.parquet": "ce1a844284081d1e564a773a59d11ae53beb6b05520b7c22ba34b55dcedfc654",
+        "camadas/biografias_v2/camada.json": "107486b1af5c21d292381010d933ee47364a2f1dfba7480d103f84a18e449999"
+      },
+      "ativa": true
     }
   },
-  "gerado_em": "2026-10-08T08:54:21+00:00"
+  "gerado_em": "2026-10-08T09:09:41+00:00"
 }

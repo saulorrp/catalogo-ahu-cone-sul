@@ -1,0 +1,66 @@
+{
+  "nome": "entidades_v2",
+  "tipo": "entidades",
+  "versao": "2",
+  "colecoes": [
+    "ahu-sul"
+  ],
+  "origem": "pipeline de biografias v2, etapas p1 (extrair entidades) e p2 (consolidar)",
+  "regra_pessoa_uid": "assinatura = chave_nome(nome_principal) | chaves dos títulos em ordem | ano_min-ano_max; pessoa_uid = 'pes:' + sha1(assinatura)[:8]",
+  "assinatura_versao": 1,
+  "documentos": 7050,
+  "entidades": 7229,
+  "pessoas": 1359,
+  "contagem_por_tipo": {
+    "coletivo": 170,
+    "instituicao": 957,
+    "nao_identificado": 233,
+    "pessoa": 5834,
+    "pessoa_nome_incompleto": 19,
+    "titulo": 16
+  },
+  "entidades_com_pessoa_uid": 5850,
+  "processo": {
+    "script": "build/importar_biografias_v2.py",
+    "versao_script": "1.0.0",
+    "commit": "55334ad"
+  },
+  "entradas": {
+    "ahu_sul_catalog_biografias.json": "996feb761829f84863db528c44a9a8d85d33f1c9afd95b1d92ebed37576bf40d",
+    "entidades_por_remetente.json": "510f097e3f921aa19aec2a9bfb9a0b735890be0ccf83c9c2245f1c3000933316",
+    "doc_pessoas.json": "3140c1c9f01dd5527ac211414b977ddbdf9b4eed5036a30720fd205de4f69583",
+    "pessoas.json": "fe4eed6a2e20faeaed7bd52a8f61c2be4cc08e3c3097fe918e2163ca0292925f",
+    "biografias_validadas.json": "d0622530b08662d6589e95a502c84199823520e625a9de5fe340c71d82ce22ab",
+    "revisao_biografias.csv": "0bb7382baea7012a3ab51a7c5043b521eeeda95bafc1c6ad9f8cc31126ef4138"
+  },
+  "esquema": {
+    "entidades.parquet": {
+      "doc_uid": "object",
+      "posicao": "int16",
+      "nome": "object",
+      "tipo": "object",
+      "pessoa_uid": "object",
+      "titulos": "object",
+      "cargos": "object",
+      "autoria_verificada": "bool"
+    },
+    "pessoas.parquet": {
+      "pessoa_uid": "object",
+      "tipo": "object",
+      "nome_principal": "object",
+      "nome_exibicao": "object",
+      "variantes_nome": "object",
+      "titulos": "object",
+      "cargos": "object",
+      "ano_min": "Int64",
+      "ano_max": "Int64",
+      "n_documentos": "Int64",
+      "locais_escrita": "object",
+      "destinatarios": "object",
+      "categorias": "object",
+      "nome_curto": "bool",
+      "pessoa_id_pipeline": "object"
+    }
+  },
+  "data": "2026-10-08T09:09:41+00:00"
+}

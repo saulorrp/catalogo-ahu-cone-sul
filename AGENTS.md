@@ -45,6 +45,7 @@ python scripts/gate.py            # ruff check + pytest; imprime PASS. Rodar ant
 python -m pytest -q
 python build/importar_base.py     # WP 1.1
 python build/importar_camadas.py  # WP 1.2 (tipologia_v1 + sociolinguistica_deepseek_v3)
+python build/importar_biografias_v2.py  # WP 1.3 (entidades_v2 + biografias_v2)
 python build/construir_indice.py  # WP 1.4 (CPU, ~15-30 min, com retomada)
 ```
 Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 também funciona).
@@ -57,7 +58,7 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F0 | 0.3 Busca v2 de referência | pendente |
 | F1 | 1.1 Base e `doc_uid` | feito (7.051 docs, 7.051 uids únicos) |
 | F1 | 1.2 Tipologia e sociolinguística | feito (86 tipologias, 165 a revisar; SRSP 1–9) |
-| F1 | 1.3 Entidades e biografias v2 | pendente |
+| F1 | 1.3 Entidades e biografias v2 | feito (7.229 entidades, 1.359 pessoas, 253 exibíveis) |
 | F1 | 1.4 Índice semântico | script pronto; falta o autor rodar a indexação |
 | F1 | 1.5 Artefatos do app | pendente |
 | F2–F4 | — | pendente |
@@ -69,7 +70,13 @@ Atualize esta tabela ao concluir cada pacote.
 - gravar o prompt do preprint §2 na camada sociolinguística:
   `python build/importar_camadas.py --prompt <arquivo.txt>` (hoje o `camada.json` diz `PENDENTE`);
 - revisar `corpus/correcoes_tipologia.json`: as 165 tipologias ainda marcadas como a revisar
-  (ex.: `PRIMEIRA`, `SEGUNDA`, `QUARTA`, `FORTALEZA`) são erros de extração que a tabela conserta.
+  (ex.: `PRIMEIRA`, `SEGUNDA`, `QUARTA`, `FORTALEZA`) são erros de extração que a tabela conserta;
+- preencher a coluna `decisao_manual` do `revisao_biografias.csv` (hoje vazia nas 1.359 linhas) e
+  rodar `python build/importar_biografias_v2.py` de novo: `aceitar` exibe uma biografia BAIXA ou
+  REJEITADA, `rejeitar` esconde uma ALTA ou MÉDIA;
+- confirmar o rótulo de BAIXA e REJEITADO, hoje "Identificado, nascimento em revisão"
+  (`ROTULOS` em `build/importar_biografias_v2.py`). A §6.3 só fixa os dois rótulos de
+  `IDENTIFICADO_SEM_LOCAL` e `NAO_ENCONTRADO`, e proíbe "Desconhecida".
 
 ## Convenção de trabalho
 - Um pacote de trabalho por vez; terminar com testes passando (`gate.py` = PASS) e um commit.
