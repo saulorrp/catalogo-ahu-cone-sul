@@ -28,7 +28,7 @@ Nomes e escalas usados em todo o projeto (iguais aos do preprint):
 ## Estrutura
 
 ```
-ahu/          módulos do app
+ahu/          módulos do app (inclui fontes/, a DejaVu embutida nos PDFs)
 build/        scripts de construção do corpus e dos artefatos
 avaliacao/    avaliação da busca
 corpus/       base e camadas (dados)
@@ -61,6 +61,7 @@ Custo zero em funcionamento: nenhuma API paga é usada pelo app. As chamadas pag
 ## Licença
 
 - Código: **MIT** ([`LICENSE`](LICENSE)).
+- Fontes embutidas nos PDFs: **DejaVu** (Bitstream Vera + Arev), em [`ahu/fontes/LICENSE-DejaVu.txt`](ahu/fontes/LICENSE-DejaVu.txt).
 - Dados derivados: **CC BY 4.0**, provisório (ver [`LICENSE-DATA.md`](LICENSE-DATA.md)).
 - Resumos e cotas do catálogo: Arquivo Histórico Ultramarino e Projeto Resgate "Barão do Rio Branco".
 

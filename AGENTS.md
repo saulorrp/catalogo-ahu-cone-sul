@@ -35,6 +35,7 @@ Quatro tarefas: **T1 Encontrar · T2 Recortar · T3 Amostrar · T4 Levar e citar
 ## Estrutura
 ```
 ahu/          módulos do app, sem Streamlit exceto app.py
+ahu/fontes/   DejaVu embutida nos PDFs (licença em LICENSE-DejaVu.txt)
 build/        scripts de construção (importar_base, importar_biografias_v2, construir_indice, construir_app)
 avaliacao/    consultas de ouro, julgamento, métricas
 corpus/       base + camadas (spec §3.1)
@@ -88,7 +89,8 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F3 | 3.1 Seleção | feito (teto de 500, atravessa buscas, JSON para baixar e carregar) |
 | F3 | 3.2 Exportação CSV e JSON | feito (o CSV reabre igual; proveniência com Consulta, versões e DOI) |
 | F3 | 3.4 Link da busca | feito (A6 com cinco buscas variadas, de ponta a ponta) |
-| F3 | 3.3 3.3a 3.5 | pendente |
+| F3 | 3.3a Lista de consulta no AHU | feito (portada do pacote antigo; 7.050 de 7.051 cotas com código CRAV) |
+| F3 | 3.3 3.5 | pendente |
 | F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.

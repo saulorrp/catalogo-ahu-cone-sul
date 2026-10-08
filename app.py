@@ -22,6 +22,7 @@ from ahu import exportar as mod_exportar
 from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
 from ahu import graficos as mod_graficos
+from ahu import lista_ahu as mod_lista
 from ahu import pessoas as mod_pessoas
 from ahu import selecao as mod_selecao
 from ahu.consulta import TAMANHO_PAGINA, Consulta, ErroDeLink, executar, url_da_busca
@@ -30,6 +31,11 @@ from ahu.dados import ErroDados, carregar
 TITULO = "Classificador AHU-Sul"
 SUBTITULO = "Triagem documental sobre o catálogo do Arquivo Histórico Ultramarino (coleção AHU-Sul)"
 ABAS = ("Busca", "Pessoas", "Amostras", "Painel", "Sobre e método")
+
+# O que a caixa da lista de consulta mostra vazia (WP 3.3a).
+EXEMPLO_DE_LISTA = """# Dia 1
+AHU_ACL_CU_017, Cx. 5, D. 487 | ver anexo
+PT/AHU/CU/019/0003/00230"""
 
 # §9: proporcional para o texto, monoespaçada só para cotas e números.
 ESTILO = """
@@ -313,6 +319,7 @@ def aba_busca(dados, consulta: Consulta) -> None:
     painel_do_link(consulta)
     painel_de_selecao(dados, consulta, resposta)
     painel_de_exportacao(dados, consulta, resposta)
+    painel_da_lista_ahu(dados, resposta)
 
     colunas = st.columns([3, 6, 3])
     ordenacao = colunas[0].selectbox(
@@ -391,7 +398,7 @@ def painel_de_selecao(dados, consulta: Consulta, resposta) -> None:
         acoes[2].download_button(
             "Baixar a seleção (JSON)",
             data=selecao.para_json(
-                mod_exportar.proveniencia(dados, origem="selecao", total=len(selecao))),
+                mod_exportar.proveniencia(dados, consulta, len(selecao), origem="selecao")),
             file_name="selecao_ahu_sul.json", mime="application/json",
             use_container_width=True, disabled=not len(selecao))
 
@@ -459,6 +466,82 @@ def painel_de_exportacao(dados, consulta: Consulta, resposta) -> None:
             use_container_width=True)
         st.caption("A inferência sobre mediação de escrivão não entra em nenhum dos dois: ela "
                    "sai só no dossiê em PDF, com a ressalva metodológica do preprint (D1).")
+
+
+
+# ---------------------------------------------------------------------------
+# Lista para consulta no AHU (WP 3.3a)
+# ---------------------------------------------------------------------------
+
+def painel_da_lista_ahu(dados, resposta) -> None:
+    """A lista de consulta presencial, do pacote antigo, agora sobre `app_dados/`.
+
+    Duas entradas, como no painel antigo: a seleção do WP 3.1 e uma lista de cotas colada.
+    """
+    selecao = selecao_atual()
+    if "lista_ahu_texto" not in st.session_state:
+        st.session_state.lista_ahu_texto = ""
+
+    with st.expander("Lista para consulta no AHU (PDF)", expanded=False):
+        st.caption(
+            "O PDF que se anexa ao pedido de consulta: A4 paisagem, uma linha por documento, com "
+            "cota, código de referência, link do DigitArq, data, tipologia, remetente, resumo do "
+            "catálogo e duas caixas para marcar à mão. Cotas de outras capitanias também "
+            "funcionam — o código e o link saem da própria cota; o que falta, nesse caso, é só o "
+            "que vem do catálogo.")
+
+        enviar = st.columns([3, 3, 2])
+        agrupar = enviar[1].selectbox(
+            "Agrupar por", (None, "folder", "tipologia", "ano_isolado"),
+            format_func=lambda c: {None: "sem grupos", "folder": "Pasta / região",
+                                   "tipologia": "Tipologia", "ano_isolado": "Ano"}[c],
+            key="agrupar_lista")
+
+        def acrescentar(uids) -> None:
+            """Acrescenta ao que já está na caixa, em vez de substituir."""
+            novo = mod_lista.lista_de_documentos(dados, uids, agrupar)
+            antigo = st.session_state.lista_ahu_texto
+            st.session_state.lista_ahu_texto = "\n".join(x for x in (antigo, novo) if x.strip())
+            st.rerun()
+
+        if enviar[0].button(f"Enviar a seleção ({len(selecao)})", use_container_width=True,
+                            disabled=not len(selecao)):
+            acrescentar(selecao.ordenar(dados, st.session_state.get("ordem_selecao", "chegada")))
+        if enviar[2].button(f"Enviar o resultado ({resposta.total})", use_container_width=True,
+                            disabled=not resposta.total):
+            acrescentar([r.doc_uid for r in resposta.resultados])
+
+        texto = st.text_area(
+            "Documentos (uma cota por linha; `#` abre um grupo, `|` acrescenta nota ou link)",
+            value=st.session_state.lista_ahu_texto, height=220, key="area_lista_ahu",
+            placeholder=EXEMPLO_DE_LISTA)
+        st.session_state.lista_ahu_texto = texto
+        if not texto.strip():
+            return
+
+        grupos = mod_lista.ler_lista(texto, dados)
+        r = mod_lista.relatorio(grupos)
+        st.info(f"{r['total']} documento(s) · {r['no_catalogo']} completado(s) pelo catálogo "
+                f"AHU-Sul · {r['com_digitarq']} com link do DigitArq · {r['grupos']} grupo(s).")
+        if r["sem_referencia"]:
+            st.warning("Cotas não reconhecidas (confira a digitação): "
+                       + "; ".join(r["sem_referencia"][:10]))
+
+        campos = st.columns(2)
+        cabecalho = {
+            "titulo": campos[0].text_input(
+                "Título", "Documentos para consulta presencial e registro fotográfico"),
+            "pesquisador": campos[0].text_input("Pesquisador(a)"),
+            "instituicao": campos[0].text_input("Instituição / vínculo"),
+            "projeto": campos[1].text_input("Projeto"),
+            "datas_consulta": campos[1].text_input("Datas agendadas no CRAV"),
+            "observacao": campos[1].text_input("Observação (opcional)"),
+        }
+        st.download_button(
+            "Baixar a lista em PDF",
+            data=mod_lista.gerar_pdf(grupos, dados, cabecalho),
+            file_name="lista_documentos_AHU.pdf", mime="application/pdf",
+            use_container_width=True)
 
 
 # ---------------------------------------------------------------------------

@@ -210,8 +210,11 @@ def test_fichas_reais_tem_titulo_e_cota():
         sem_cota += not f.cotas
         sem_link += f.links.get("digitarq") is None
     assert sem_titulo == 0 and sem_cota == 0
-    # Os 13 documentos com `UNFORMATTED_CODE` não têm link do DigitArq, e isso é correto.
-    assert sem_link == 13
+    # Só **um** documento fica sem link do DigitArq, e isso é correto: a sua única cota é antiga
+    # e por região ("AHU-São Paulo-MGouveia, cx. 2, doc. 224"), sem número de série, e daí não
+    # sai código CRAV nenhum. Os outros 12 que tinham `UNFORMATTED_CODE` no `reference_code`
+    # passaram a ter link pelo `new_code` do Resgate, desde o WP 3.3a.
+    assert sem_link == 1
 
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
