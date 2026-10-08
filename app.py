@@ -1,22 +1,27 @@
-"""app.py — Classificador AHU-Sul v3 (WP 2.3): interface de busca e ficha (spec §6, §9).
+"""app.py — Classificador AHU-Sul v3: interface (spec §6, §7.1, §9).
 
-Só Streamlit aqui. Toda a lógica está em `ahu/`: busca, filtros, consulta, ficha, links.
+Só Streamlit aqui. Toda a lógica está em `ahu/`: busca, filtros, consulta, ficha, links, pessoas
+e gráficos.
 O app lê **apenas** `app_dados/` (AGENTS.md 3), por `ahu.dados.carregar`, que recusa iniciar com
 artefato desalinhado (A4).
 
-Abas (§9): Busca · Pessoas · Amostras · Painel · Sobre e método. As que dependem da F3 e da F4
-aparecem como "em breve", para que a navegação já seja a definitiva.
+Abas (§9): Busca · Pessoas · Amostras · Painel · Sobre e método. Busca e ficha são o WP 2.3;
+Pessoas e o painel diatópico, o WP 2.4. As que dependem da F3 e da F4 aparecem como "em breve",
+para que a navegação já seja a definitiva.
 
 Rodar:
     streamlit run app.py
 """
 from __future__ import annotations
 
+import pandas as pd
 import streamlit as st
 
 from ahu import busca
 from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
+from ahu import graficos as mod_graficos
+from ahu import pessoas as mod_pessoas
 from ahu.consulta import TAMANHO_PAGINA, Consulta, ErroDeLink, executar
 from ahu.dados import ErroDados, carregar
 
@@ -59,6 +64,17 @@ def consulta_atual() -> Consulta:
 def guardar(consulta: Consulta) -> None:
     st.session_state.consulta = consulta
     st.query_params.from_dict(consulta.para_url())
+
+
+def tema() -> str:
+    """Tema do navegador, para as figuras do WP 2.4 escolherem os seus tons (§9).
+
+    `st.context.theme` não existe em toda versão nem em todo harness de teste; na dúvida, claro.
+    """
+    try:
+        return "dark" if st.context.theme.type == "dark" else "light"
+    except Exception:
+        return "light"
 
 @st.cache_resource(show_spinner="Carregando o modelo semântico (uma vez por sessão)...")
 def encoder_de_consulta(_dados):
@@ -292,6 +308,205 @@ def aba_busca(dados, consulta: Consulta) -> None:
                "\"Barão do Rio Branco\".")
 
 # ---------------------------------------------------------------------------
+# Pessoas (WP 2.4, §7.1)
+# ---------------------------------------------------------------------------
+
+def abrir_pessoa(pessoa_uid: str | None) -> None:
+    st.session_state.pessoa_aberta = pessoa_uid
+
+
+def aba_pessoas(dados) -> None:
+    if st.session_state.get("pessoa_aberta"):
+        pagina_da_pessoa(dados, st.session_state.pessoa_aberta)
+        return
+
+    st.subheader("Pessoas")
+    qual = st.radio(
+        "Lista", ("Pessoas", "Coletivos e instituições"), horizontal=True,
+        label_visibility="collapsed",
+        help="Coletivos e instituições ficam numa lista própria: não são pessoas e não têm "
+             "biografia (§7.1).")
+    if qual == "Pessoas":
+        lista_de_pessoas(dados)
+    else:
+        lista_de_coletivos(dados)
+
+
+def lista_de_pessoas(dados) -> None:
+    opcoes = mod_filtros.opcoes(dados)
+    colunas = st.columns([5, 3, 3])
+    texto = colunas[0].text_input(
+        "Nome, variante ou título", placeholder="Lavradio · Melo e Castro",
+        help="Casa por nome principal, variante gráfica ou título.")
+    ordem = colunas[1].selectbox(
+        "Ordenar por", mod_pessoas.ORDENS,
+        format_func=lambda o: mod_pessoas.ROTULOS_ORDEM[o])
+    with st.expander("Filtros de origem (só biografias exibíveis)"):
+        esquerda, direita = st.columns(2)
+        paises = esquerda.multiselect("País (atual)", opcoes["paises_origem"])
+        cidades = direita.multiselect("Cidade de nascimento", opcoes["cidades_origem"])
+        so_alta = st.checkbox("Só confiança ALTA", help="Desmarcada: ALTA e MÉDIA. Nunca BAIXA.")
+
+    achadas = mod_pessoas.listar(dados, texto=texto, paises=paises, cidades=cidades,
+                                 so_confianca_alta=so_alta, ordem=ordem)
+    colunas[2].metric("Pessoas", f"{len(achadas)} de {len(dados.pessoas)}")
+    if not achadas:
+        st.info("Nenhuma pessoa com esse nome ou com essa origem.")
+        return
+
+    tabela = mod_pessoas.tabela(achadas)
+    escolha = st.dataframe(
+        tabela, use_container_width=True, hide_index=True, on_select="rerun",
+        selection_mode="single-row",
+        column_config={"pessoa_uid": st.column_config.TextColumn("ID público", width="small")},
+    )
+    st.caption("Clique numa linha para abrir a página da pessoa.")
+    linhas = escolha.selection.rows if hasattr(escolha, "selection") else []
+    if linhas:
+        abrir_pessoa(achadas[linhas[0]].pessoa_uid)
+        st.rerun()
+
+
+def lista_de_coletivos(dados) -> None:
+    st.caption('"Conselho Ultramarino", "Oficiais da Câmara…": remetentes que não são pessoas. '
+               "Grafias que diferem só por caixa ou acento aparecem numa linha só.")
+    colunas = st.columns([5, 3, 3])
+    texto = colunas[0].text_input("Nome", placeholder="Câmara · Conselho", key="busca_coletivo")
+    ordem = colunas[1].selectbox(
+        "Ordenar por", tuple(mod_pessoas.ORDENS_COLETIVOS),
+        format_func=lambda o: mod_pessoas.ROTULOS_ORDEM[o], key="ordem_coletivo")
+    coletivos = mod_pessoas.listar_coletivos(dados, texto=texto, ordem=ordem)
+    colunas[2].metric("Coletivos e instituições", len(coletivos))
+    if not coletivos:
+        st.info("Nenhum coletivo ou instituição com esse nome.")
+        return
+    st.dataframe(mod_pessoas.tabela_de_coletivos(coletivos), use_container_width=True,
+                 hide_index=True)
+    papeis = mod_pessoas.contagem_de_remetentes(dados)
+    sem_entidade = sum(papeis.get(t, 0) for t in mod_pessoas.TIPOS_SEM_ENTIDADE)
+    st.caption(f"Fora destas listas há {sem_entidade} vínculo(s) de remetente sem entidade "
+               "(não identificado ou nome incompleto): eles não são pessoa nem instituição.")
+
+
+def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
+    try:
+        pagina = mod_pessoas.pagina(dados, pessoa_uid)
+    except KeyError:
+        st.warning("Essa pessoa não está mais nos dados. Voltando à lista.")
+        abrir_pessoa(None)
+        return
+    p = pagina.pessoa
+
+    if st.button("← Voltar à lista"):
+        abrir_pessoa(None)
+        st.rerun()
+
+    st.subheader(p.nome)
+    st.markdown(f"<span class='rotulo'>{p.n_documentos} documento(s) · atividade "
+                f"<span class='numero'>{p.periodo}</span> · "
+                f"<span class='cota'>{p.pessoa_uid}</span></span>", unsafe_allow_html=True)
+
+    for etiqueta, valores in (("Títulos", p.titulos), ("Cargos", p.cargos),
+                              ("Variantes do nome", p.variantes)):
+        if valores:
+            st.markdown(f"**{etiqueta}:** " + " · ".join(valores))
+
+    # D2: nascimento só para biografia exibível; para o resto, o rótulo da §6.3 e nada mais.
+    if p.exibe_nascimento:
+        linha = [f"**Nascimento:** {p.nascimento or '—'}", f"confiança {p.nivel}"]
+        if p.pais_epoca:
+            linha.append(f"à época: {p.pais_epoca}")
+        if p.origem_do_dado:
+            linha.append(f"origem do dado: {p.origem_do_dado}")
+        if p.fonte:
+            linha.append(f"[fonte]({p.fonte})")
+        st.markdown(" · ".join(linha))
+    elif p.rotulo:
+        st.markdown(f"**Nascimento:** {p.rotulo}")
+
+    acoes = st.columns([2, 3, 2])
+    acoes[0].link_button("Ver documentos", pagina.url_documentos, use_container_width=True,
+                         help="Abre a aba Busca com o filtro desta pessoa aplicado.")
+    acoes[1].button("Gerar amostra diacrônica", disabled=True, use_container_width=True,
+                    help="Em breve: amostra cronológica em lotes, com espaçamento por ano "
+                         "(§7.2, WP 3.5).")
+    acoes[2].link_button("Reportar erro", pagina.url_issue, use_container_width=True,
+                         help="Abre uma issue no GitHub já preenchida com o pessoa_uid, o dado "
+                              "e a fonte.")
+
+    st.markdown("#### Linha do tempo")
+    if pagina.linha_do_tempo.empty:
+        st.caption("Nenhum documento com data.")
+    else:
+        st.plotly_chart(mod_graficos.barras_por_ano(pagina.linha_do_tempo, tema()),
+                        use_container_width=True)
+    if pagina.sem_data:
+        st.caption(f"{pagina.sem_data} documento(s) sem data não aparecem no gráfico.")
+
+    esquerda, direita = st.columns(2)
+    esquerda.markdown("#### Tipologias")
+    esquerda.dataframe(pd.DataFrame(pagina.tipologias, columns=["Tipologia", "Documentos"]),
+                       use_container_width=True, hide_index=True)
+    direita.markdown("#### Destinatários")
+    direita.dataframe(pd.DataFrame(pagina.destinatarios, columns=["Destinatário", "Documentos"]),
+                      use_container_width=True, hide_index=True)
+
+    with st.expander(f"Documentos em ordem cronológica ({len(pagina.documentos)})"):
+        st.dataframe(pagina.documentos.rename(columns={
+            "doc_uid": "ID público", "ano": "Ano", "tipologia": "Tipologia",
+            "destinatario": "Destinatário", "autoria_verificada": "Autoria verificada"}),
+            use_container_width=True, hide_index=True)
+        st.caption("A ficha completa de cada documento está na aba Busca, pelo botão "
+                   "\"Ver documentos\".")
+
+
+# ---------------------------------------------------------------------------
+# Painel diatópico (WP 2.4, §9)
+# ---------------------------------------------------------------------------
+
+def aba_painel(dados) -> None:
+    st.subheader("Painel diatópico")
+    por = st.radio("Contar por", mod_pessoas.POR, horizontal=True,
+                   format_func=lambda x: f"Por {x}",
+                   help="Por documento: quantos documentos têm remetente nascido no país. "
+                        "Por pessoa: quantas pessoas distintas nasceram nele.")
+    painel = mod_pessoas.painel_diatopico(dados, por)
+
+    unidade = "Documentos" if por == "documento" else "Pessoas"
+    colunas = st.columns(3)
+    colunas[0].metric(f"{unidade} no corpus", f"{painel.total:,}".replace(",", "."))
+    colunas[1].metric("Com origem conhecida",
+                      f"{painel.total - painel.sem_origem:,}".replace(",", "."))
+    colunas[2].metric("Sem origem conhecida", f"{painel.sem_origem:,}".replace(",", "."))
+    st.caption(painel.nota)
+
+    if painel.paises.empty:
+        st.info("Nenhuma origem exibível nos dados ativos.")
+        return
+
+    # A tabela ao lado do gráfico não é enfeite: no tema claro três tons da paleta ficam abaixo
+    # de 3:1 contra o branco, e o guia de visualização exige a leitura por número também.
+    grafico, tabela = st.columns([3, 2])
+    grafico.plotly_chart(mod_graficos.barras_por_pais(painel, tema()),
+                         use_container_width=True)
+    tabela.dataframe(painel.paises.rename(columns={"pais": "País", "contagem": unidade}),
+                     use_container_width=True, hide_index=True)
+
+    st.markdown("#### Por década, com a cor do país de nascimento")
+    st.plotly_chart(mod_graficos.barras_por_decada(painel, tema()), use_container_width=True)
+    nomeados = mod_graficos.dobrar_em_outros(painel.paises)
+    if len(painel.paises) > len(nomeados):
+        st.caption(f"Os {len(nomeados)} países mais frequentes têm cor própria; "
+                   "os demais entram como \"Outros\".")
+    st.dataframe(painel.decadas.rename(columns={
+        "decada": "Década", "pais": "País", "contagem": unidade}),
+        use_container_width=True, hide_index=True)
+
+    st.info("Em breve: o mapa das cidades de nascimento, com coordenadas da Wikidata "
+            "(P625, WP 5.2).")
+
+
+# ---------------------------------------------------------------------------
 # Abas que ainda não existem (F3/F4)
 # ---------------------------------------------------------------------------
 
@@ -364,13 +579,12 @@ def main() -> None:
     with busca_:
         aba_busca(dados, consulta)
     with pessoas_:
-        em_breve("Pessoas", "lista de pessoas, página da pessoa e painel diatópico", "WP 2.4")
+        aba_pessoas(dados)
     with amostras_:
         em_breve("Amostras", "amostra diacrônica por pessoa e amostra estratificada com semente",
                  "WP 3.5")
     with painel_:
-        em_breve("Painel", "contagem por documento ou por pessoa, por década e por país de "
-                           "nascimento", "WP 2.4 e WP 5.2")
+        aba_painel(dados)
     with sobre_:
         aba_sobre(dados)
 

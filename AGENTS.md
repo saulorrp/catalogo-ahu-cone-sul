@@ -52,7 +52,8 @@ python build/importar_biografias_v2.py  # WP 1.3 (entidades_v2 + biografias_v2)
 python build/construir_indice.py  # WP 1.4 (CPU: 97,6 min medidos nos 7.051 docs; com retomada)
 python build/construir_app.py     # WP 1.5 (artefatos de app_dados/; ~7 s)
 
-streamlit run app.py              # WP 2.3: o app novo, em http://localhost:8501
+streamlit run app.py              # WP 2.3/2.4: o app novo, em http://localhost:8501
+python scripts/medir_memoria.py   # WP 2.5: RSS e tempo da carga fria (A10)
 ```
 A busca do WP 2.1 está em `ahu/busca.py`: `buscar(dados, texto, modo, rigor, encoder)`. Sem
 `encoder` ela é só léxica (útil em teste); com `criar_encoder_consulta(dados)` o motor semântico
@@ -77,8 +78,9 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F2 | 2.1 Normalização e busca | feito (A3 passa; híbrida em ~330 ms) |
 | F2 | 2.2 Consulta e filtros | feito (A6 na ida e volta; §6.1 inteira) |
 | F2 | 2.3 Interface de busca e ficha | feito (A1 nas 7.051 fichas; app sobe em ~4 s) |
-| F2 | 2.4 Pessoas | próximo |
-| F2–F4 | restantes | pendente |
+| F2 | 2.4 Pessoas | feito (A2: "Lavradio" -> 1 pessoa, 163 documentos) |
+| F2 | 2.5 Publicação da v3 núcleo | em curso (medição feita; merge e publicação aguardam o autor) |
+| F3–F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.
 
