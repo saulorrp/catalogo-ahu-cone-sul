@@ -15,7 +15,11 @@
     "scribe_mediation_likely": "scribe_mediation_likely",
     "sociolinguistic_reasoning_by_deepseek_v3": "justificativa"
   },
-  "escala_srsp": "inteira 1-9, como no dado; nunca dividida por 10",
+  "escala_srsp": [
+    1,
+    9
+  ],
+  "escala_srsp_nota": "inteira de 1 a 9, como no dado; nunca dividida por 10. É esta escala que a importação exige: outra classificação é outra camada, com a sua própria escala.",
   "auditoria": {
     "escala": "inteira 1-9 (SRSP)",
     "mae": 1.13,
@@ -68,7 +72,7 @@
   "processo": {
     "script": "build/importar_camadas.py",
     "versao_script": "1.0.0",
-    "commit": "58d6d34"
+    "commit": "1ee2ba6"
   },
   "entrada": {
     "arquivo": "ahu_sul_catalog_biografias.json",
@@ -84,5 +88,5 @@
     "scribe_mediation_likely": "bool",
     "justificativa": "object"
   },
-  "data": "2026-10-08T11:54:59+00:00"
+  "data": "2026-10-08T12:05:35+00:00"
 }

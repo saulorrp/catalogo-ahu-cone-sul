@@ -178,6 +178,41 @@ def test_srsp_dividido_ou_fora_da_escala_para_a_importacao(tmp_path, valor):
         ic.importar_camadas(entrada, tmp_path / "corpus", "t")
 
 
+def test_escala_do_srsp_sai_do_camada_json(corpus_com_base):
+    """A escala é um dado da camada: uma camada que a declara 1-10 aceita um 10 (decisão 08/10)."""
+    entrada, corpus, _ = corpus_com_base
+    ic.importar_camadas(entrada, corpus, "t")
+    arq = corpus / "camadas" / ic.CAMADA_SOCIO / "camada.json"
+    assert json.loads(arq.read_text("utf-8"))["escala_srsp"] == [1, 9]
+
+    # Com a escala de 1 a 9, um 10 para a importação...
+    docs = json.loads(entrada.read_text(encoding="utf-8"))
+    docs[0]["vernacular_score"] = 10
+    entrada.write_text(json.dumps(docs, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(ErroImportacao, match="fora da escala 1-9"):
+        ic.importar_camadas(entrada, corpus, "t")
+
+    # ...e passa a entrar quando a camada declara 1 a 10.
+    camada = json.loads(arq.read_text("utf-8"))
+    camada["escala_srsp"] = [1, 10]
+    arq.write_text(json.dumps(camada, ensure_ascii=False), encoding="utf-8")
+    ic.importar_camadas(entrada, corpus, "t")
+    df = pd.read_parquet(corpus / "camadas" / ic.CAMADA_SOCIO / "sociolinguistica.parquet")
+    assert df["vernacular_score"].max() == 10
+    assert json.loads(arq.read_text("utf-8"))["escala_srsp"] == [1, 10]
+
+
+def test_escala_mal_formada_para_a_importacao(corpus_com_base):
+    entrada, corpus, _ = corpus_com_base
+    ic.importar_camadas(entrada, corpus, "t")
+    arq = corpus / "camadas" / ic.CAMADA_SOCIO / "camada.json"
+    camada = json.loads(arq.read_text("utf-8"))
+    camada["escala_srsp"] = [9, 1]
+    arq.write_text(json.dumps(camada, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(ErroImportacao, match="escala_srsp"):
+        ic.importar_camadas(entrada, corpus, "t")
+
+
 def test_campo_do_deepseek_faltando_para_a_importacao(tmp_path):
     d = doc(1)
     del d["vector"]

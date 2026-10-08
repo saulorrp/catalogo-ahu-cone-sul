@@ -72,6 +72,10 @@ CAMPOS_SOCIO = {
 }
 
 # Números da auditoria do preprint §2.1, mostrados na interface (spec §6.2).
+# Escala do SRSP desta camada. É um dado da camada, não uma regra do código: uma reclassificação
+# futura é uma camada nova, que declara a sua própria escala no seu camada.json (decisão 2026-10-08).
+ESCALA_PADRAO = [1, 9]
+
 AUDITORIA_SRSP = {
     "escala": "inteira 1-9 (SRSP)",
     "mae": 1.13,
@@ -190,28 +194,56 @@ def montar_tipologia(docs: list[dict], uids: list[str], correcoes: dict[str, str
 # Sociolinguística
 # ---------------------------------------------------------------------------
 
-def validar_srsp(valor, uid: str) -> int:
-    """SRSP é inteiro de 1 a 9 (AGENTS.md 9). Fração ou valor fora da escala para a importação."""
+def ler_escala(pasta: Path) -> list[int]:
+    """A escala do SRSP sai do `camada.json` da camada, não do código (decisão 2026-10-08).
+
+    Uma camada que ainda não existe nasce com `ESCALA_PADRAO`; uma reclassificação com outra
+    escala é uma camada nova, e basta declarar `"escala_srsp": [min, max]` no seu `camada.json`.
+    """
+    arq = pasta / "camada.json"
+    if not arq.exists():
+        return list(ESCALA_PADRAO)
+    with open(arq, encoding="utf-8") as f:
+        escala = json.load(f).get("escala_srsp")
+    if escala is None or isinstance(escala, str):
+        # Camadas escritas antes da decisão de 08/10 guardavam aqui uma frase; valem o padrão.
+        return list(ESCALA_PADRAO)
+    if (not isinstance(escala, list) or len(escala) != 2
+            or not all(isinstance(v, int) and not isinstance(v, bool) for v in escala)
+            or escala[0] >= escala[1]):
+        raise ErroImportacao(
+            f"{arq}: 'escala_srsp' deve ser [minimo, maximo] com dois inteiros crescentes, "
+            f"veio {escala!r}."
+        )
+    return list(escala)
+
+
+def validar_srsp(valor, uid: str, escala: list[int] | None = None) -> int:
+    """SRSP é inteiro, na escala que a camada declara. Fração ou valor fora dela para a importação."""
+    minimo, maximo = escala or ESCALA_PADRAO
     if isinstance(valor, bool) or valor is None:
         raise ErroImportacao(f"{uid}: vernacular_score ausente ou inválido ({valor!r}).")
     if isinstance(valor, float) and not valor.is_integer():
         raise ErroImportacao(
-            f"{uid}: vernacular_score veio fracionário ({valor!r}). A escala SRSP é inteira de 1 a 9; "
-            "o valor nunca é dividido por 10."
+            f"{uid}: vernacular_score veio fracionário ({valor!r}). A escala SRSP desta camada é "
+            f"inteira de {minimo} a {maximo}; o valor nunca é dividido por 10."
         )
     try:
         n = int(valor)
     except (TypeError, ValueError) as e:
         raise ErroImportacao(f"{uid}: vernacular_score não é um número ({valor!r}).") from e
-    if not 1 <= n <= 9:
+    if not minimo <= n <= maximo:
         raise ErroImportacao(
-            f"{uid}: vernacular_score fora da escala 1-9 ({valor!r}). Se vier de 0 a 1, o p5 dividiu "
-            "o valor por 10 — rode o p5 de novo sem dividir."
+            f"{uid}: vernacular_score fora da escala {minimo}-{maximo} desta camada ({valor!r}). "
+            f"Se vier de 0 a 1, o p5 dividiu o valor por 10 — rode o p5 de novo sem dividir. "
+            f"Se a reclassificação usa outra escala, ela é uma camada nova, com o seu "
+            f"'escala_srsp' no camada.json."
         )
     return n
 
 
-def montar_sociolinguistica(docs: list[dict], uids: list[str]) -> pd.DataFrame:
+def montar_sociolinguistica(docs: list[dict], uids: list[str],
+                            escala: list[int] | None = None) -> pd.DataFrame:
     linhas = []
     for doc, uid in zip(docs, uids):
         faltam = [c for c in CAMPOS_SOCIO if c not in doc]
@@ -224,7 +256,8 @@ def montar_sociolinguistica(docs: list[dict], uids: list[str]) -> pd.DataFrame:
             raise ErroImportacao(
                 f"{uid}: scribe_mediation_likely deveria ser verdadeiro ou falso, veio {mediacao!r}."
             )
-        linha = {"doc_uid": uid, "vernacular_score": validar_srsp(doc["vernacular_score"], uid),
+        linha = {"doc_uid": uid,
+                 "vernacular_score": validar_srsp(doc["vernacular_score"], uid, escala),
                  "scribe_mediation_likely": mediacao}
         for origem, coluna in CAMPOS_SOCIO.items():
             if coluna in linha:
@@ -401,7 +434,9 @@ def importar_camadas(
     if so in (None, "sociolinguistica"):
         pasta = corpus / "camadas" / CAMADA_SOCIO
         cobertas = colecoes_cobertas(pasta, colecao)
-        df = mesclar_colecoes(pasta, "sociolinguistica.parquet", montar_sociolinguistica(docs, uids))
+        escala = ler_escala(pasta)
+        df = mesclar_colecoes(pasta, "sociolinguistica.parquet",
+                              montar_sociolinguistica(docs, uids, escala))
         anterior = pasta / "camada.json"
         if prompt is None and anterior.exists():  # não perde um prompt já gravado
             with open(anterior, encoding="utf-8") as f:
@@ -415,7 +450,10 @@ def importar_camadas(
             "modelo": MODELO_SOCIO,
             "prompt": prompt or PROMPT_PENDENTE,
             "campos_de_origem": CAMPOS_SOCIO,
-            "escala_srsp": "inteira 1-9, como no dado; nunca dividida por 10",
+            "escala_srsp": escala,
+            "escala_srsp_nota": f"inteira de {escala[0]} a {escala[1]}, como no dado; nunca "
+                                "dividida por 10. É esta escala que a importação exige: outra "
+                                "classificação é outra camada, com a sua própria escala.",
             "auditoria": AUDITORIA_SRSP,
             "uso_restrito": {
                 "scribe_mediation_likely": "só o dossiê em PDF (D1); nunca interface, filtros, CSV ou JSON",

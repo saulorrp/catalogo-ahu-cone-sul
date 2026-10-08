@@ -1,14 +1,14 @@
 {
   "versao_artefatos": "1",
-  "gerado_em": "2026-10-08T11:55:04+00:00",
+  "gerado_em": "2026-10-08T12:18:04+00:00",
   "processo": {
     "script": "build/construir_app.py",
     "versao_script": "1.0.0",
-    "commit": "58d6d34"
+    "commit": "1ee2ba6"
   },
   "corpus": {
     "versao_corpus": "0.1.0",
-    "gerado_em": "2026-10-08T11:54:59+00:00",
+    "gerado_em": "2026-10-08T12:05:35+00:00",
     "colecoes": [
       "ahu-sul"
     ],
@@ -38,7 +38,7 @@
           "documentos": 7051,
           "arquivos": {
             "camadas/tipologia_v1/tipologia.parquet": "13a401f84e073ee84ca5b6e1a78a010c638bab78a25e6e1daa58c1c4d312b13e",
-            "camadas/tipologia_v1/camada.json": "5b2f43d9af4835c5cee532ebb9384736719b9186922e6f3dc882cb927c954863"
+            "camadas/tipologia_v1/camada.json": "cdf3e03d3f7c6f9267983b06a258674e1aef99588bad30831944c23ca525774c"
           },
           "ativa": true
         },
@@ -48,7 +48,7 @@
           "documentos": 7051,
           "arquivos": {
             "camadas/sociolinguistica_deepseek_v3/sociolinguistica.parquet": "836164036eac56a8fae83d23918785796936360917ddce6e92b520ec48b64643",
-            "camadas/sociolinguistica_deepseek_v3/camada.json": "053c77aa0b3a8b194cec40c32aa8d81cb9cde8f540a5cd060b7760043c9f8a20"
+            "camadas/sociolinguistica_deepseek_v3/camada.json": "202c5144368e229155d06feb5dce166dc3e4b9acdd8c04f60cbfd4aa6a612d6e"
           },
           "ativa": true
         },
@@ -99,7 +99,7 @@
           "ativa": true
         }
       },
-      "gerado_em": "2026-10-08T11:54:59+00:00"
+      "gerado_em": "2026-10-08T12:05:35+00:00"
     }
   },
   "modelo_embeddings": {
@@ -142,6 +142,6 @@
     "doc_pessoa.parquet": "424a7387ddb0af7d3c1d91e36b9e43fbed9f77d177fe83bf305e230b783da22b",
     "pdf_extra.parquet": "798bfc17be554ce8ca3812f44b27053e92aada4ea24d3054049d9b92619dd5eb",
     "embeddings.f16.npy": "a8d3d6566b24656f3625dc5d5dfd353e064757247184440cfac12d15235f6035",
-    "lexico.pkl": "c7f97a0bbfc84000e1d985209d23080d9aeb37cb48a28b03c7881ec0418f3fc7"
+    "lexico.pkl": "e7cc8d6b31143aa74f054962e4abb003d4e90ef592f59fe174d6d1183d8d51c4"
   }
 }

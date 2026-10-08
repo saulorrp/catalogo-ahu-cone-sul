@@ -22,7 +22,10 @@ Quatro tarefas: **T1 Encontrar · T2 Recortar · T3 Amostrar · T4 Levar e citar
 6. **IDs públicos são `doc_uid` e `pessoa_uid`.** Nunca `P0001`, nem posição de linha.
 7. **Pastas, coleções e tipologias vêm dos dados, nunca do código** (D6).
 8. Nenhum segredo no código. Chaves ficam no `.env` local (via `ApiKeyManager`) e nunca são versionadas.
-9. Nomes: **SRSP**, escala inteira **1–9** (nunca dividida por 10).
+9. Nomes: **SRSP**, valor **inteiro**, nunca dividido por 10. A escala é um **dado da camada**, não
+   uma constante do código: sai de `"escala_srsp": [min, max]` no `camada.json` da camada ativa
+   (hoje `[1, 9]` em `sociolinguistica_deepseek_v3`). Uma reclassificação com outra escala é uma
+   **camada nova**, que declara a sua. O prompt do §2 é registro histórico e não se edita.
 10. Dependências fixadas com versão, em número mínimo (R2).
 11. Arquivos grandes de dados são tratados em lotes e com retomada; nunca duplicar o catálogo inteiro em memória sem necessidade.
 
@@ -49,6 +52,9 @@ python build/importar_biografias_v2.py  # WP 1.3 (entidades_v2 + biografias_v2)
 python build/construir_indice.py  # WP 1.4 (CPU: 97,6 min medidos nos 7.051 docs; com retomada)
 python build/construir_app.py     # WP 1.5 (artefatos de app_dados/; ~7 s)
 ```
+A busca do WP 2.1 está em `ahu/busca.py`: `buscar(dados, texto, modo, rigor, encoder)`. Sem
+`encoder` ela é só léxica (útil em teste); com `criar_encoder_consulta(dados)` o motor semântico
+entra, e a primeira chamada carrega o e5 (~56 s).
 A ordem acima é a ordem de construção. O `construir_app.py` lê as camadas que o
 `corpus/manifest.json` marca como ativas, e é ele que faz valer a D1 e a D2 nos dados: o que não
 é exibível não chega a `app_dados/`.
@@ -66,26 +72,29 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F1 | 1.4 Índice semântico | feito (7.051 vetores e5-large, 97,6 min, sanidade 5/5) |
 | F1 | 1.5 Artefatos do app | feito (A4 e A11 nos testes; carga em ~2 s) |
 | **F1** | **completa** | **o corpus modular está pronto** |
-| F2 | 2.1 Normalização e busca | próximo |
+| F2 | 2.1 Normalização e busca | feito (A3 passa; híbrida em ~330 ms) |
+| F2 | 2.2 Consulta e filtros | próximo |
 | F2–F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.
 
 **Pendências para o autor:**
+- **decidir o rigor da §5.5.** A spec pede um limiar **absoluto** sobre o cosseno bruto. Medido no
+  corpus, isso não funciona: para "deserção de soldados" (máximo 0,843) há 7.051 documentos acima
+  de 0,76 e 1.225 acima de 0,80; para "Lavradio" (máximo 0,779) há 135 acima de 0,76 e **nenhum**
+  acima de 0,80. O mesmo corte dá o corpus inteiro numa consulta e nada na outra. Está implementada
+  uma **margem abaixo do máximo daquela consulta** (alto 0,010 · médio 0,020 · baixo 0,035), que dá
+  entre 2 e 540 documentos nas cinco consultas medidas e continua usando o cosseno bruto, sem
+  inventar relevância de 0 a 1 (C4). Se concordar, a §5.5 precisa ser reescrita nesses termos;
 - revisar `corpus/correcoes_tipologia.json`: as 165 tipologias ainda marcadas como a revisar
   (ex.: `PRIMEIRA`, `SEGUNDA`, `QUARTA`, `FORTALEZA`) são erros de extração que a tabela conserta;
 - preencher a coluna `decisao_manual` do `revisao_biografias.csv` (hoje vazia nas 1.359 linhas) e
   rodar `python build/importar_biografias_v2.py` de novo: `aceitar` exibe uma biografia BAIXA ou
   REJEITADA, `rejeitar` esconde uma ALTA ou MÉDIA;
-- **o prompt do §2 pede `vernacular_score` de 1 a 10**, e a spec §6.2, o README e a regra 9 fixam a
-  escala inteira **1 a 9**. Nos 7.051 documentos nenhum 10 saiu, por isso o dado está coerente; mas
-  uma reclassificação pode produzir um 10, e `validar_srsp` (em `build/importar_camadas.py`) o
-  recusaria. Corrigir o prompt para 1 a 9, ou abrir a escala nos dois lugares — é decisão do autor;
-- decidir se a `fonetica` da busca segue o `p4_validar.py`, como está hoje (todo `z` vira `s`, e
-  há `oe -> oi`), ou a lista resumida da spec §5.1 (`z` só no fim, sem `oe`). A §5.1 diz "as mesmas
-  regras do `p4_validar.py`", então seguimos o p4 e anotamos a diferença em `ahu/texto.py`.
-
-**Decidido e já no código:** os rótulos da §6.3 (tabela na spec) e o tempo real da indexação.
+**Decidido e já no código (08/10):** os rótulos da §6.3 (tabela na spec); o tempo real da
+indexação (97,6 min); a escala do SRSP como dado da camada (regra 9), com o prompt preservado como
+registro histórico; e a `fonetica` seguindo o `p4_validar.py`, com a §5.1 corrigida para bater com
+o código (`z→s` em qualquer posição, `oe→oi`).
 
 **Limite conhecido do corpus modular:** uma coleção nova entra na base, na tipologia, na
 sociolinguística e no índice sem mexer no código (A11, testado com `teste-mini`). As camadas de

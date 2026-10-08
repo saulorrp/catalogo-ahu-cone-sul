@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import pickle
 import sys
 from datetime import datetime, timezone
@@ -224,6 +225,27 @@ def textos_por_campo(docs: pd.DataFrame, doc_pessoa: pd.DataFrame,
     }
 
 
+def _corrigir_idf(bm25, n_documentos: int) -> None:
+    """Troca o IDF do `rank_bm25` pelo do Lucene, que nunca é negativo.
+
+    O `BM25Okapi` usa `log((N - df + 0,5) / (df + 0,5))`, que fica **negativo** para um termo que
+    está em mais da metade do corpus, e então o substitui por `epsilon * idf_médio` — um valor que
+    pode ser negativo e não depende do termo. Com isto, 'OFÍCIO' (47% dos documentos) e 'carta'
+    teriam nota arbitrária, às vezes abaixo de zero. A fórmula do Lucene,
+    `log(1 + (N - df + 0,5) / (df + 0,5))`, é sempre positiva e cai junto com a frequência: um
+    termo em todos os documentos quase não pesa, mas também não atrapalha.
+    """
+    frequencia: dict[str, int] = {}
+    for doc in bm25.doc_freqs:
+        for termo in doc:
+            frequencia[termo] = frequencia.get(termo, 0) + 1
+    bm25.idf = {
+        termo: math.log(1 + (n_documentos - df + 0.5) / (df + 0.5))
+        for termo, df in frequencia.items()
+    }
+    bm25.average_idf = (sum(bm25.idf.values()) / len(bm25.idf)) if bm25.idf else 0.0
+
+
 def construir_lexico(docs: pd.DataFrame, doc_pessoa: pd.DataFrame,
                      pessoas: pd.DataFrame) -> dict:
     """Índice BM25 por campo, pronto para o app (§3.4: o único pickle, gerado por nós)."""
@@ -232,12 +254,17 @@ def construir_lexico(docs: pd.DataFrame, doc_pessoa: pd.DataFrame,
     from rank_bm25 import BM25Okapi
 
     textos = textos_por_campo(docs, doc_pessoa, pessoas)
-    indices, vazios = {}, {}
+    indices, normalizados, vazios = {}, {}, {}
     for campo, valores in textos.items():
         tokens = [tokenizar(v) for v in valores]
         vazios[campo] = int(sum(1 for t in tokens if not t))
+        # Os tokens já normalizados, juntos num texto: é neles que a busca por frase entre aspas
+        # procura a sequência literal (§5.5) e de onde sai a evidência de termos (ahu/busca.py).
+        normalizados[campo] = [" ".join(t) for t in tokens]
         # BM25Okapi divide por zero se o corpus for todo vazio; um token-sentinela evita isso.
-        indices[campo] = BM25Okapi([t or ["\x00"] for t in tokens])
+        bm25 = BM25Okapi([t or ["\x00"] for t in tokens])
+        _corrigir_idf(bm25, len(tokens))
+        indices[campo] = bm25
     return {
         "versao": VERSAO_ARTEFATOS,
         "rank_bm25": metadata.version("rank-bm25"),
@@ -245,6 +272,7 @@ def construir_lexico(docs: pd.DataFrame, doc_pessoa: pd.DataFrame,
         "campos": list(textos),
         "doc_uids": docs["doc_uid"].astype(str).tolist(),
         "indices": indices,
+        "normalizados": normalizados,
         "documentos_sem_token": vazios,
     }
 
