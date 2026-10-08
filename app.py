@@ -24,7 +24,7 @@ from ahu import filtros as mod_filtros
 from ahu import graficos as mod_graficos
 from ahu import pessoas as mod_pessoas
 from ahu import selecao as mod_selecao
-from ahu.consulta import TAMANHO_PAGINA, Consulta, ErroDeLink, executar
+from ahu.consulta import TAMANHO_PAGINA, Consulta, ErroDeLink, executar, url_da_busca
 from ahu.dados import ErroDados, carregar
 
 TITULO = "Classificador AHU-Sul"
@@ -73,6 +73,18 @@ def selecao_atual() -> mod_selecao.Selecao:
     if "selecao" not in st.session_state:
         st.session_state.selecao = mod_selecao.Selecao()
     return st.session_state.selecao
+
+
+def endereco_da_pagina() -> str | None:
+    """O endereço onde o app está servido, para o link copiado ser absoluto (§8.3).
+
+    `st.context.url` não existe em toda versão nem no harness de teste; na dúvida, o link sai
+    relativo, que ainda funciona ao ser colado na mesma aba.
+    """
+    try:
+        return st.context.url or None
+    except Exception:
+        return None
 
 
 def tema() -> str:
@@ -298,6 +310,7 @@ def aba_busca(dados, consulta: Consulta) -> None:
     if resposta.truncado_por_motor:
         st.caption(f"Cada motor contribui com os {busca.LIMITE_MOTOR} primeiros documentos.")
 
+    painel_do_link(consulta)
     painel_de_selecao(dados, consulta, resposta)
     painel_de_exportacao(dados, consulta, resposta)
 
@@ -331,6 +344,21 @@ def aba_busca(dados, consulta: Consulta) -> None:
     st.divider()
     st.caption("Resumos e cotas: Arquivo Histórico Ultramarino e Projeto Resgate "
                "\"Barão do Rio Branco\".")
+
+
+# ---------------------------------------------------------------------------
+# Link da busca (WP 3.4, §8.3, A6)
+# ---------------------------------------------------------------------------
+
+def painel_do_link(consulta: Consulta) -> None:
+    """"Copiar link desta busca": abrir o link reproduz a busca, a página e a semente (A6)."""
+    with st.expander("Copiar link desta busca", expanded=False):
+        st.caption(
+            "O link carrega a consulta inteira — texto, modo, rigor, lente, filtros, ordenação, "
+            "página e semente. Abrir de novo reproduz a mesma lista, na mesma ordem. Use o ícone "
+            "de copiar no canto da caixa.")
+        st.code(url_da_busca(consulta, endereco_da_pagina()), language=None)
+
 
 # ---------------------------------------------------------------------------
 # Seleção (WP 3.1, §8.1)

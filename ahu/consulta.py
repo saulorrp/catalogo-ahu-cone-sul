@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, fields
 from typing import Any
+from urllib.parse import urlencode, urlsplit, urlunsplit
 
 import pandas as pd
 
@@ -176,6 +177,33 @@ class Consulta:
                                "pagina": 1})
         filtros = aplicar_lente(dados, nome)
         return Consulta(**{**asdict_raso(self), "lente": nome, "filtros": filtros, "pagina": 1})
+
+
+# ---------------------------------------------------------------------------
+# O link da busca (§8.3, A6)
+# ---------------------------------------------------------------------------
+
+def para_query(consulta: Consulta) -> str:
+    """A consulta como *query string*, com o `?` na frente: `?v=1&q=gado&m=exata`.
+
+    É um link **relativo**, que vale em qualquer endereço onde o app esteja servido — localhost
+    ou o domínio do Streamlit. É o que o "Ver documentos" da aba Pessoas usa.
+    """
+    return "?" + urlencode(consulta.para_url())
+
+
+def url_da_busca(consulta: Consulta, base: str | None = None) -> str:
+    """O link do botão "Copiar link desta busca" (§8.3).
+
+    Com `base` (o endereço da página, que o app lê de `st.context.url`), devolve a URL inteira,
+    que é o que se cola num e-mail. Sem ela, devolve o link relativo — nada é inventado: o
+    módulo não tem como saber em que domínio o app está.
+    """
+    query = urlencode(consulta.para_url())
+    if not base:
+        return "?" + query
+    partes = urlsplit(base)
+    return urlunsplit((partes.scheme, partes.netloc, partes.path or "/", query, ""))
 
 
 def asdict_raso(consulta: Consulta) -> dict:

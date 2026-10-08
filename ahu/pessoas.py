@@ -27,7 +27,6 @@ mesma instituição, e isso é trabalho do pipeline, não da interface (AGENTS.m
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from urllib.parse import urlencode
 
 import pandas as pd
 
@@ -353,10 +352,10 @@ def url_dos_documentos(pessoa_uid: str) -> str:
     primeira aba com o filtro aplicado — e que por isso também pode ser copiado e compartilhado
     (§8.3, A6). Montado aqui, e não no `app.py`, para que o teste o verifique sem interface.
     """
-    from ahu.consulta import Consulta
+    from ahu.consulta import Consulta, para_query
     from ahu.filtros import Filtros
 
-    return "?" + urlencode(Consulta(filtros=Filtros(pessoas=[pessoa_uid])).para_url())
+    return para_query(Consulta(filtros=Filtros(pessoas=[pessoa_uid])))
 
 
 def pagina(dados, pessoa_uid: str) -> PaginaPessoa:
