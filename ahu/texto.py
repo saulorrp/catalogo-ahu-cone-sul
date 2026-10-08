@@ -4,9 +4,9 @@ Esta é a **única** casa de `dobrar`, `chave_nome` e `chave_titulo`. As funçõ
 `comum.py` do pipeline de biografias v2 e têm exatamente o mesmo comportamento: é por elas que
 o `pessoa_uid` é calculado (spec §3.3), por isso mudá-las muda identificadores públicos.
 
-Estado: o WP 1.3 trouxe a parte de nomes, que o `build/importar_biografias_v2.py` usa.
-O WP 2.1 acrescenta a normalização de busca da spec §5.1 (`_fonetica`, rota de cotas) e faz o
-pipeline de biografias importar daqui, para não ficarem duas cópias.
+Estado: o WP 1.3 trouxe a parte de nomes, que o `build/importar_biografias_v2.py` usa. O WP 1.5
+trouxe a normalização de busca da spec §5.1, que o léxico BM25 precisa. Falta ao WP 2.1 a rota de
+cotas (§5.3) e fazer o pipeline de biografias importar daqui, para não ficarem duas cópias.
 
 **Regra:** `chave_nome` e `chave_titulo` são congeladas. Qualquer mudança na sua saída muda a
 assinatura das pessoas e, com ela, os `pessoa_uid` já publicados; ela exige subir
@@ -78,3 +78,52 @@ def chave_titulo(titulo: str) -> str:
     """'9º conde da Feira' -> 'conde feira'; 'marquês do Lavradio' -> 'marques lavradio'."""
     t = _RE_ORDINAL.sub("", dobrar(titulo))
     return " ".join(w for w in t.split() if w not in PARTICULAS)
+
+
+# ---------------------------------------------------------------------------
+# Normalização de busca (spec §5.1), usada igualmente no corpus e na consulta
+# ---------------------------------------------------------------------------
+
+# Lista curta e revisada (spec §5.1, item 4). Fora dela, nada é removido.
+STOPWORDS = frozenset({"de", "do", "da", "dos", "das", "a", "o", "as", "os", "e", "em", "para",
+                       "ao", "aos", "que", "com", "por", "na", "no"})
+
+_RE_DOBRADA = re.compile(r"(.)\1")
+_RE_SEM_ACENTO = re.compile(r"[^a-z0-9\s]+")
+
+
+def fonetica(palavra: str) -> str:
+    """Neutraliza grafia antiga: 'Paes'~'Pais', 'Jozé'~'José', 'Mello'~'Melo', 'Xássim'~'Chassim'.
+
+    São as regras do `_fonetica` do `p4_validar.py`, como a spec §5.1 manda. Duas diferenças em
+    relação à lista resumida da §5.1, que segue o p4: todo `z` vira `s` (não só no fim) e há
+    também `oe -> oi`.
+    """
+    t = _RE_DOBRADA.sub(r"\1", palavra)
+    for antiga, nova in (("ae", "ai"), ("oe", "oi"), ("ch", "x"), ("z", "s"), ("y", "i"),
+                         ("th", "t"), ("ph", "f")):
+        t = t.replace(antiga, nova)
+    return t
+
+
+def normalizar_busca(texto: str) -> str:
+    """NFKD sem acentos, minúsculas, pontuação virando espaço (spec §5.1, itens 1 e 2)."""
+    if not texto:
+        return ""
+    t = unicodedata.normalize("NFKD", str(texto))
+    t = "".join(c for c in t if not unicodedata.combining(c)).lower()
+    return re.sub(r"\s+", " ", _RE_SEM_ACENTO.sub(" ", t)).strip()
+
+
+def tokenizar(texto: str, stopwords: bool = True, foneticamente: bool = True) -> list[str]:
+    """Tokens de busca de um campo ou de uma consulta.
+
+    `stopwords=False` mantém a lista curta da §5.1 (útil para frase entre aspas, no WP 2.1);
+    `foneticamente=False` mantém a grafia como está.
+    """
+    tokens = []
+    for palavra in normalizar_busca(texto).split():
+        if stopwords and palavra in STOPWORDS:
+            continue
+        tokens.append(fonetica(palavra) if foneticamente else palavra)
+    return tokens

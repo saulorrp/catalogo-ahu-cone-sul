@@ -46,8 +46,12 @@ python -m pytest -q
 python build/importar_base.py     # WP 1.1
 python build/importar_camadas.py  # WP 1.2 (tipologia_v1 + sociolinguistica_deepseek_v3)
 python build/importar_biografias_v2.py  # WP 1.3 (entidades_v2 + biografias_v2)
-python build/construir_indice.py  # WP 1.4 (CPU, ~15-30 min, com retomada)
+python build/construir_indice.py  # WP 1.4 (CPU: 97,6 min medidos nos 7.051 docs; com retomada)
+python build/construir_app.py     # WP 1.5 (artefatos de app_dados/; ~7 s)
 ```
+A ordem acima é a ordem de construção. O `construir_app.py` lê as camadas que o
+`corpus/manifest.json` marca como ativas, e é ele que faz valer a D1 e a D2 nos dados: o que não
+é exibível não chega a `app_dados/`.
 Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 também funciona).
 
 ## Estado atual
@@ -59,24 +63,34 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F1 | 1.1 Base e `doc_uid` | feito (7.051 docs, 7.051 uids únicos) |
 | F1 | 1.2 Tipologia e sociolinguística | feito (86 tipologias, 165 a revisar; SRSP 1–9) |
 | F1 | 1.3 Entidades e biografias v2 | feito (7.229 entidades, 1.359 pessoas, 253 exibíveis) |
-| F1 | 1.4 Índice semântico | script pronto; falta o autor rodar a indexação |
-| F1 | 1.5 Artefatos do app | pendente |
-| F2–F4 | — | pendente |
+| F1 | 1.4 Índice semântico | feito (7.051 vetores e5-large, 97,6 min, sanidade 5/5) |
+| F1 | 1.5 Artefatos do app | feito (A4 e A11 nos testes; carga em ~2 s) |
+| **F1** | **completa** | **o corpus modular está pronto** |
+| F2 | 2.1 Normalização e busca | próximo |
+| F2–F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.
 
 **Pendências para o autor:**
-- rodar `python build/construir_indice.py` na sua máquina (WP 1.4);
-- gravar o prompt do preprint §2 na camada sociolinguística:
-  `python build/importar_camadas.py --prompt <arquivo.txt>` (hoje o `camada.json` diz `PENDENTE`);
 - revisar `corpus/correcoes_tipologia.json`: as 165 tipologias ainda marcadas como a revisar
   (ex.: `PRIMEIRA`, `SEGUNDA`, `QUARTA`, `FORTALEZA`) são erros de extração que a tabela conserta;
 - preencher a coluna `decisao_manual` do `revisao_biografias.csv` (hoje vazia nas 1.359 linhas) e
   rodar `python build/importar_biografias_v2.py` de novo: `aceitar` exibe uma biografia BAIXA ou
   REJEITADA, `rejeitar` esconde uma ALTA ou MÉDIA;
-- confirmar o rótulo de BAIXA e REJEITADO, hoje "Identificado, nascimento em revisão"
-  (`ROTULOS` em `build/importar_biografias_v2.py`). A §6.3 só fixa os dois rótulos de
-  `IDENTIFICADO_SEM_LOCAL` e `NAO_ENCONTRADO`, e proíbe "Desconhecida".
+- **o prompt do §2 pede `vernacular_score` de 1 a 10**, e a spec §6.2, o README e a regra 9 fixam a
+  escala inteira **1 a 9**. Nos 7.051 documentos nenhum 10 saiu, por isso o dado está coerente; mas
+  uma reclassificação pode produzir um 10, e `validar_srsp` (em `build/importar_camadas.py`) o
+  recusaria. Corrigir o prompt para 1 a 9, ou abrir a escala nos dois lugares — é decisão do autor;
+- decidir se a `fonetica` da busca segue o `p4_validar.py`, como está hoje (todo `z` vira `s`, e
+  há `oe -> oi`), ou a lista resumida da spec §5.1 (`z` só no fim, sem `oe`). A §5.1 diz "as mesmas
+  regras do `p4_validar.py`", então seguimos o p4 e anotamos a diferença em `ahu/texto.py`.
+
+**Decidido e já no código:** os rótulos da §6.3 (tabela na spec) e o tempo real da indexação.
+
+**Limite conhecido do corpus modular:** uma coleção nova entra na base, na tipologia, na
+sociolinguística e no índice sem mexer no código (A11, testado com `teste-mini`). As camadas de
+pessoas são consolidadas por coleção; juntar a mesma pessoa em duas coleções é o WP 5.4, e até lá
+`importar_biografias_v2.py` para em vez de sobrepor a camada de outra coleção.
 
 ## Convenção de trabalho
 - Um pacote de trabalho por vez; terminar com testes passando (`gate.py` = PASS) e um commit.

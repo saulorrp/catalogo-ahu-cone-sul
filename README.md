@@ -46,7 +46,8 @@ python scripts/gate.py        # ruff + pytest; deve imprimir PASS
 python build/importar_base.py           # base e doc_uid (WP 1.1)
 python build/importar_camadas.py        # tipologia e sociolinguística (WP 1.2)
 python build/importar_biografias_v2.py  # entidades e biografias v2 (WP 1.3)
-python build/construir_indice.py        # índice semântico, ~15-30 min em CPU (WP 1.4)
+python build/construir_indice.py        # índice semântico (WP 1.4); 97,6 min em CPU nos 7.051 docs
+python build/construir_app.py           # artefatos que o app lê (WP 1.5)
 ```
 
 Python 3.11 (declarado em `runtime.txt`); 3.12 funciona localmente.

@@ -81,12 +81,13 @@ ARQUIVOS = {
 NIVEIS_EXIBIVEIS = ("ALTA", "MEDIA")
 DECISOES = {"", "aceitar", "rejeitar"}
 
-# §6.3: nunca "Desconhecida", que sugere falta de pesquisa.
+# Rótulos da spec §6.3, decididos pelo autor em 2026-10-08. Nunca "Desconhecida", que sugere
+# falta de pesquisa.
 ROTULOS = {
     "ALTA": "Nascimento identificado (confiança alta)",
     "MEDIA": "Nascimento identificado (confiança média)",
-    "BAIXA": "Identificado, nascimento em revisão",
-    "REJEITADO": "Identificado, nascimento em revisão",
+    "BAIXA": "Nascimento não confirmado",
+    "REJEITADO": "Não identificado",
     "IDENTIFICADO_SEM_LOCAL": "Identificado, local não encontrado",
     "NAO_ENCONTRADO": "Não identificado",
 }
@@ -185,6 +186,24 @@ def verificar_contrato(dados: dict, esperado_documentos: int) -> None:
             )
     if len(em_pessoas) != len(pessoas) or len(em_biografias) != len(biografias):
         raise ErroImportacao("(3) pessoas.json ou biografias_validadas.json tem id repetido.")
+
+
+def verificar_colecao_unica(corpus: Path, colecao: str, doc_uids: list[str]) -> None:
+    """As pessoas são consolidadas por coleção; não dá para sobrepor duas camadas sem perder uma.
+
+    Consolidar pessoas entre coleções (a mesma pessoa em `ahu-sul` e em `ahu-nordeste`) é o WP 5.4.
+    Até lá, reimportar outra coleção por cima apagaria a primeira: paramos antes disso.
+    """
+    arq = corpus / "camadas" / CAMADA_ENTIDADES / "entidades.parquet"
+    if not arq.exists():
+        return
+    de_outras = set(pd.read_parquet(arq, columns=["doc_uid"])["doc_uid"]) - set(doc_uids)
+    if de_outras:
+        raise ErroImportacao(
+            f"A camada {CAMADA_ENTIDADES} já cobre {len(de_outras)} documentos de outra coleção. "
+            f"Importar '{colecao}' por cima apagaria as pessoas daquela coleção, e consolidar "
+            "pessoas entre coleções é o WP 5.4. Apague a camada à mão se for isso que você quer."
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -412,6 +431,7 @@ def importar(
 
     doc_uids = uids_da_entrada(dados["catalogo"], corpus / "colecoes" / colecao)
     verificar_contrato(dados, esperado_documentos or len(doc_uids))
+    verificar_colecao_unica(corpus, colecao, doc_uids)
 
     pasta_entidades = corpus / "camadas" / CAMADA_ENTIDADES
     arq_registro = pasta_entidades / "registro_pessoas.json"

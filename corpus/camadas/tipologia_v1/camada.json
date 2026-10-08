@@ -112,7 +112,7 @@
   "processo": {
     "script": "build/importar_camadas.py",
     "versao_script": "1.0.0",
-    "commit": "f27249f"
+    "commit": "58d6d34"
   },
   "entrada": {
     "arquivo": "ahu_sul_catalog_biografias.json",
@@ -127,5 +127,5 @@
     "typology_status": "bool",
     "tipologia_corrigida": "bool"
   },
-  "data": "2026-10-08T08:54:21+00:00"
+  "data": "2026-10-08T11:54:59+00:00"
 }

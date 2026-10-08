@@ -1,0 +1,582 @@
+[
+ {
+  "folder": "Costa Imaginária",
+  "description": "OFÍCIO da Câmara da Ilha Fictícia, sobre o assunto fictício número 1 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Costa Imaginária.",
+  "old_code": "TESTE-Costa.",
+  "new_code": "TESTE_MINI_001, Cx. 1, D. 101.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00001",
+  "extracted_typology": "OFÍCIO",
+  "typology_status": true,
+  "sender_name": "Câmara da Ilha Fictícia",
+  "sender_category": "Commoner",
+  "recipient_name": "Governador Fictício",
+  "vector": "Top-Down",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 4,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 1: documento de teste, sem valor histórico.",
+  "document_id_and_date": "901. 1711, Março, 2, Ilha Fictícia",
+  "ano_isolado": 1711,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Câmara da Ilha Fictícia",
+    "tipo": "instituicao",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Ilha Fictícia",
+  "description": "REQUERIMENTO da Oficiais da Costa Imaginária, sobre o assunto fictício número 2 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Ilha Fictícia.",
+  "old_code": "TESTE-Ilha.",
+  "new_code": "TESTE_MINI_001, Cx. 1, D. 102.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00002",
+  "extracted_typology": "REQUERIMENTO",
+  "typology_status": true,
+  "sender_name": "Oficiais da Costa Imaginária",
+  "sender_category": "Metropolitan Elite",
+  "recipient_name": "Governador Fictício",
+  "vector": "Horizontal",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 7,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 2: documento de teste, sem valor histórico.",
+  "document_id_and_date": "902. 1712, Março, 3, Ilha Fictícia",
+  "ano_isolado": 1712,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Oficiais da Costa Imaginária",
+    "tipo": "coletivo",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Costa Imaginária",
+  "description": "CONSULTA da Unknown, sobre o assunto fictício número 3 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Costa Imaginária.",
+  "old_code": "TESTE-Costa.",
+  "new_code": "TESTE_MINI_001, Cx. 1, D. 103.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00003",
+  "extracted_typology": "CONSULTA",
+  "typology_status": true,
+  "sender_name": "Unknown",
+  "sender_category": "Low Military",
+  "recipient_name": "Unknown",
+  "vector": "Bottom-Up",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 1,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 3: documento de teste, sem valor histórico.",
+  "document_id_and_date": "903. 1713, Março, 4, Ilha Fictícia",
+  "ano_isolado": 1713,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Unknown",
+    "tipo": "nao_identificado",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Ilha Fictícia",
+  "description": "BANDO da Junta Fictícia de Obras, sobre o assunto fictício número 4 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Ilha Fictícia.",
+  "old_code": "TESTE-Ilha.",
+  "new_code": "TESTE_MINI_001, Cx. 1, D. 104.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00004",
+  "extracted_typology": "BANDO",
+  "typology_status": true,
+  "sender_name": "Junta Fictícia de Obras",
+  "sender_category": "Local Elite",
+  "recipient_name": "Governador Fictício",
+  "vector": "Top-Down",
+  "typology_impact": "Narrative",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 4,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 4: documento de teste, sem valor histórico.",
+  "document_id_and_date": "904. 1714, Março, 5, Ilha Fictícia",
+  "ano_isolado": 1714,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Junta Fictícia de Obras",
+    "tipo": "instituicao",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Costa Imaginária",
+  "description": "CARTA da Câmara da Ilha Fictícia, sobre o assunto fictício número 5 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Costa Imaginária.",
+  "old_code": "TESTE-Costa.",
+  "new_code": "TESTE_MINI_001, Cx. 1, D. 105.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00005",
+  "extracted_typology": "CARTA",
+  "typology_status": true,
+  "sender_name": "Câmara da Ilha Fictícia",
+  "sender_category": "Commoner",
+  "recipient_name": "Governador Fictício",
+  "vector": "Horizontal",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": true,
+  "vernacular_score": 7,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 5: documento de teste, sem valor histórico.",
+  "document_id_and_date": "905. 1715, Março, 6, Ilha Fictícia",
+  "ano_isolado": 1715,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Câmara da Ilha Fictícia",
+    "tipo": "instituicao",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Ilha Fictícia",
+  "description": "OFÍCIO da Oficiais da Costa Imaginária, sobre o assunto fictício número 6 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Ilha Fictícia.",
+  "old_code": "TESTE-Ilha.",
+  "new_code": "TESTE_MINI_001, Cx. 1, D. 106.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00006",
+  "extracted_typology": "OFÍCIO",
+  "typology_status": true,
+  "sender_name": "Oficiais da Costa Imaginária",
+  "sender_category": "Metropolitan Elite",
+  "recipient_name": "Unknown",
+  "vector": "Bottom-Up",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 1,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 6: documento de teste, sem valor histórico.",
+  "document_id_and_date": "906. 1716, Março, 7, Ilha Fictícia",
+  "ano_isolado": 1716,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Oficiais da Costa Imaginária",
+    "tipo": "coletivo",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Costa Imaginária",
+  "description": "REQUERIMENTO da Unknown, sobre o assunto fictício número 7 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Costa Imaginária.",
+  "old_code": "TESTE-Costa.",
+  "new_code": "TESTE_MINI_001, Cx. 1, D. 107.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00007",
+  "extracted_typology": "REQUERIMENTO",
+  "typology_status": false,
+  "sender_name": "Unknown",
+  "sender_category": "Low Military",
+  "recipient_name": "Governador Fictício",
+  "vector": "Top-Down",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 4,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 7: documento de teste, sem valor histórico.",
+  "document_id_and_date": "907. 1717, Março, 8, Ilha Fictícia",
+  "ano_isolado": 1717,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Unknown",
+    "tipo": "nao_identificado",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Ilha Fictícia",
+  "description": "CONSULTA da Junta Fictícia de Obras, sobre o assunto fictício número 8 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Ilha Fictícia.",
+  "old_code": "TESTE-Ilha.",
+  "new_code": "TESTE_MINI_001, Cx. 1, D. 108.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00008",
+  "extracted_typology": "CONSULTA",
+  "typology_status": true,
+  "sender_name": "Junta Fictícia de Obras",
+  "sender_category": "Local Elite",
+  "recipient_name": "Governador Fictício",
+  "vector": "Horizontal",
+  "typology_impact": "Narrative",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 7,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 8: documento de teste, sem valor histórico.",
+  "document_id_and_date": "908. 1718, Março, 9, Ilha Fictícia",
+  "ano_isolado": 1718,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Junta Fictícia de Obras",
+    "tipo": "instituicao",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Costa Imaginária",
+  "description": "BANDO da Câmara da Ilha Fictícia, sobre o assunto fictício número 9 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Costa Imaginária.",
+  "old_code": "TESTE-Costa.",
+  "new_code": "TESTE_MINI_001, Cx. 1, D. 109.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00009",
+  "extracted_typology": "BANDO",
+  "typology_status": true,
+  "sender_name": "Câmara da Ilha Fictícia",
+  "sender_category": "Commoner",
+  "recipient_name": "Unknown",
+  "vector": "Bottom-Up",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 1,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 9: documento de teste, sem valor histórico.",
+  "document_id_and_date": "909. 1719, Março, 10, Ilha Fictícia",
+  "ano_isolado": 1719,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Câmara da Ilha Fictícia",
+    "tipo": "instituicao",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Ilha Fictícia",
+  "description": "CARTA da Oficiais da Costa Imaginária, sobre o assunto fictício número 10 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Ilha Fictícia.",
+  "old_code": "TESTE-Ilha.",
+  "new_code": "TESTE_MINI_001, Cx. 2, D. 110.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00010",
+  "extracted_typology": "CARTA",
+  "typology_status": true,
+  "sender_name": "Oficiais da Costa Imaginária",
+  "sender_category": "Metropolitan Elite",
+  "recipient_name": "Governador Fictício",
+  "vector": "Top-Down",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": true,
+  "vernacular_score": 4,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 10: documento de teste, sem valor histórico.",
+  "document_id_and_date": "910. 1720, Março, 11, Ilha Fictícia",
+  "ano_isolado": 1720,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Oficiais da Costa Imaginária",
+    "tipo": "coletivo",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Costa Imaginária",
+  "description": "OFÍCIO da Unknown, sobre o assunto fictício número 11 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Costa Imaginária.",
+  "old_code": "TESTE-Costa.",
+  "new_code": "TESTE_MINI_001, Cx. 2, D. 111.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00011",
+  "extracted_typology": "OFÍCIO",
+  "typology_status": true,
+  "sender_name": "Unknown",
+  "sender_category": "Low Military",
+  "recipient_name": "Governador Fictício",
+  "vector": "Horizontal",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 7,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 11: documento de teste, sem valor histórico.",
+  "document_id_and_date": "911. 1721, Março, 12, Ilha Fictícia",
+  "ano_isolado": 1721,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Unknown",
+    "tipo": "nao_identificado",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Ilha Fictícia",
+  "description": "REQUERIMENTO da Junta Fictícia de Obras, sobre o assunto fictício número 12 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Ilha Fictícia.",
+  "old_code": "TESTE-Ilha.",
+  "new_code": "TESTE_MINI_001, Cx. 2, D. 112.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00012",
+  "extracted_typology": "REQUERIMENTO",
+  "typology_status": true,
+  "sender_name": "Junta Fictícia de Obras",
+  "sender_category": "Local Elite",
+  "recipient_name": "Unknown",
+  "vector": "Bottom-Up",
+  "typology_impact": "Narrative",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 1,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 12: documento de teste, sem valor histórico.",
+  "document_id_and_date": "912. 1722, Março, 13, Ilha Fictícia",
+  "ano_isolado": 1722,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Junta Fictícia de Obras",
+    "tipo": "instituicao",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Costa Imaginária",
+  "description": "CONSULTA da Câmara da Ilha Fictícia, sobre o assunto fictício número 13 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Costa Imaginária.",
+  "old_code": "TESTE-Costa.",
+  "new_code": "TESTE_MINI_001, Cx. 2, D. 113.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00013",
+  "extracted_typology": "CONSULTA",
+  "typology_status": true,
+  "sender_name": "Câmara da Ilha Fictícia",
+  "sender_category": "Commoner",
+  "recipient_name": "Governador Fictício",
+  "vector": "Top-Down",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 4,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 13: documento de teste, sem valor histórico.",
+  "document_id_and_date": "913. 1723, Março, 14, Ilha Fictícia",
+  "ano_isolado": 1723,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Câmara da Ilha Fictícia",
+    "tipo": "instituicao",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Ilha Fictícia",
+  "description": "BANDO da Oficiais da Costa Imaginária, sobre o assunto fictício número 14 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Ilha Fictícia.",
+  "old_code": "TESTE-Ilha.",
+  "new_code": "TESTE_MINI_001, Cx. 2, D. 114.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00014",
+  "extracted_typology": "BANDO",
+  "typology_status": false,
+  "sender_name": "Oficiais da Costa Imaginária",
+  "sender_category": "Metropolitan Elite",
+  "recipient_name": "Governador Fictício",
+  "vector": "Horizontal",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 7,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 14: documento de teste, sem valor histórico.",
+  "document_id_and_date": "914. 1724, Março, 15, Ilha Fictícia",
+  "ano_isolado": 1724,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Oficiais da Costa Imaginária",
+    "tipo": "coletivo",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Costa Imaginária",
+  "description": "CARTA da Unknown, sobre o assunto fictício número 15 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Costa Imaginária.",
+  "old_code": "TESTE-Costa.",
+  "new_code": "TESTE_MINI_001, Cx. 2, D. 115.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00015",
+  "extracted_typology": "CARTA",
+  "typology_status": true,
+  "sender_name": "Unknown",
+  "sender_category": "Low Military",
+  "recipient_name": "Unknown",
+  "vector": "Bottom-Up",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": true,
+  "vernacular_score": 1,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 15: documento de teste, sem valor histórico.",
+  "document_id_and_date": "915. 1725, Março, 16, Ilha Fictícia",
+  "ano_isolado": 1725,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Unknown",
+    "tipo": "nao_identificado",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Ilha Fictícia",
+  "description": "OFÍCIO da Junta Fictícia de Obras, sobre o assunto fictício número 16 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Ilha Fictícia.",
+  "old_code": "TESTE-Ilha.",
+  "new_code": "TESTE_MINI_001, Cx. 2, D. 116.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00016",
+  "extracted_typology": "OFÍCIO",
+  "typology_status": true,
+  "sender_name": "Junta Fictícia de Obras",
+  "sender_category": "Local Elite",
+  "recipient_name": "Governador Fictício",
+  "vector": "Top-Down",
+  "typology_impact": "Narrative",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 4,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 16: documento de teste, sem valor histórico.",
+  "document_id_and_date": "916. 1726, Março, 17, Ilha Fictícia",
+  "ano_isolado": 1726,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Junta Fictícia de Obras",
+    "tipo": "instituicao",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Costa Imaginária",
+  "description": "REQUERIMENTO da Câmara da Ilha Fictícia, sobre o assunto fictício número 17 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Costa Imaginária.",
+  "old_code": "TESTE-Costa.",
+  "new_code": "TESTE_MINI_001, Cx. 2, D. 117.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00017",
+  "extracted_typology": "REQUERIMENTO",
+  "typology_status": true,
+  "sender_name": "Câmara da Ilha Fictícia",
+  "sender_category": "Commoner",
+  "recipient_name": "Governador Fictício",
+  "vector": "Horizontal",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 7,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 17: documento de teste, sem valor histórico.",
+  "document_id_and_date": "917. 1727, Março, 18, Ilha Fictícia",
+  "ano_isolado": 1727,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Câmara da Ilha Fictícia",
+    "tipo": "instituicao",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Ilha Fictícia",
+  "description": "CONSULTA da Oficiais da Costa Imaginária, sobre o assunto fictício número 18 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Ilha Fictícia.",
+  "old_code": "TESTE-Ilha.",
+  "new_code": "TESTE_MINI_001, Cx. 2, D. 118.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00018",
+  "extracted_typology": "CONSULTA",
+  "typology_status": true,
+  "sender_name": "Oficiais da Costa Imaginária",
+  "sender_category": "Metropolitan Elite",
+  "recipient_name": "Unknown",
+  "vector": "Bottom-Up",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 1,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 18: documento de teste, sem valor histórico.",
+  "document_id_and_date": "918. 1728, Março, 19, Ilha Fictícia",
+  "ano_isolado": 1728,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Oficiais da Costa Imaginária",
+    "tipo": "coletivo",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Costa Imaginária",
+  "description": "BANDO da Unknown, sobre o assunto fictício número 19 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Costa Imaginária.",
+  "old_code": "TESTE-Costa.",
+  "new_code": "TESTE_MINI_001, Cx. 2, D. 119.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00019",
+  "extracted_typology": "BANDO",
+  "typology_status": true,
+  "sender_name": "Unknown",
+  "sender_category": "Low Military",
+  "recipient_name": "Governador Fictício",
+  "vector": "Top-Down",
+  "typology_impact": "Highly Formulaic",
+  "scribe_mediation_likely": false,
+  "vernacular_score": 4,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 19: documento de teste, sem valor histórico.",
+  "document_id_and_date": "919. 1729, Março, 20, Ilha Fictícia",
+  "ano_isolado": 1729,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Unknown",
+    "tipo": "nao_identificado",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ },
+ {
+  "folder": "Ilha Fictícia",
+  "description": "CARTA da Junta Fictícia de Obras, sobre o assunto fictício número 20 da coleção de teste: provimento de mantimentos, obras do porto e lista de moradores da Ilha Fictícia.",
+  "old_code": "TESTE-Ilha.",
+  "new_code": "TESTE_MINI_001, Cx. 3, D. 120.",
+  "reference_code": "XX/TESTE/MINI/001/0001/00020",
+  "extracted_typology": "CARTA",
+  "typology_status": true,
+  "sender_name": "Junta Fictícia de Obras",
+  "sender_category": "Local Elite",
+  "recipient_name": "Governador Fictício",
+  "vector": "Horizontal",
+  "typology_impact": "Narrative",
+  "scribe_mediation_likely": true,
+  "vernacular_score": 7,
+  "sociolinguistic_reasoning_by_deepseek_v3": "Justificativa fictícia 20: documento de teste, sem valor histórico.",
+  "document_id_and_date": "920. 1730, Março, 21, Ilha Fictícia",
+  "ano_isolado": 1730,
+  "autoria_verificada": true,
+  "remetentes": [
+   {
+    "nome": "Junta Fictícia de Obras",
+    "tipo": "instituicao",
+    "pessoa_id": null
+   }
+  ],
+  "pais_nascimento_remetente": null,
+  "cidade_nascimento_remetente": null
+ }
+]

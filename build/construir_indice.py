@@ -203,8 +203,8 @@ def versoes_bibliotecas() -> dict:
 
 
 def gravar_camada(
-    pasta: Path, df: pd.DataFrame, emb: np.ndarray, hashes: list[str], modelo: str, colecao: str,
-    sanidade: list[dict], nome: str, amostra: bool,
+    pasta: Path, df: pd.DataFrame, emb: np.ndarray, hashes: list[str], modelo: str,
+    colecoes: list[str], sanidade: list[dict], nome: str, amostra: bool,
 ) -> dict:
     pasta.mkdir(parents=True, exist_ok=True)
     arq_emb = pasta / "embeddings.f16.npy"
@@ -217,7 +217,7 @@ def gravar_camada(
         "tipo": "embeddings",
         "versao": "1",
         "amostra": amostra,
-        "colecoes": [colecao],
+        "colecoes": list(colecoes),
         "modelo": modelo,
         "prefixo_documento": PREFIXO_DOCUMENTO,
         "prefixo_consulta": PREFIXO_CONSULTA,
@@ -291,17 +291,43 @@ def criar_encoder(modelo: str, lote: int, dispositivo: str | None) -> Encoder:
     return encoder
 
 
+def colecoes_do_manifesto(corpus: Path) -> list[str]:
+    """As coleções registradas, na ordem do manifesto. Saem dos dados, nunca do código (D6, A11)."""
+    arq = corpus / "manifest.json"
+    if not arq.exists():
+        raise FileNotFoundError(f"{arq} não existe. Rode build/importar_base.py antes.")
+    with open(arq, encoding="utf-8") as f:
+        colecoes = list((json.load(f).get("colecoes") or {}))
+    if not colecoes:
+        raise FileNotFoundError(f"{arq} não tem nenhuma coleção. Rode build/importar_base.py antes.")
+    return colecoes
+
+
 def construir_indice(
-    corpus: Path, colecao: str, modelo: str, encoder: Encoder, limite: int | None = None,
-    forcar: bool = False, manter_parciais: bool = False, tamanho_chunk: int = TAMANHO_CHUNK,
-    log: Callable[[str], None] = print,
+    corpus: Path, colecao: str | list[str] | None, modelo: str, encoder: Encoder,
+    limite: int | None = None, forcar: bool = False, manter_parciais: bool = False,
+    tamanho_chunk: int = TAMANHO_CHUNK, log: Callable[[str], None] = print,
 ) -> dict:
-    arq_base = corpus / "colecoes" / colecao / "documentos.parquet"
-    if not arq_base.exists():
-        raise FileNotFoundError(f"Base não encontrada: {arq_base}. Rode build/importar_base.py antes.")
-    df = pd.read_parquet(
-        arq_base, columns=["doc_uid", "extracted_typology", "sender_name", "folder", "description"]
-    )
+    """Indexa uma coleção, várias, ou (com `colecao=None`) todas as do manifesto, nessa ordem."""
+    if colecao is None:
+        colecoes = colecoes_do_manifesto(corpus)
+    elif isinstance(colecao, str):
+        colecoes = [colecao]
+    else:
+        colecoes = list(colecao)
+
+    partes = []
+    for nome_colecao in colecoes:
+        arq_base = corpus / "colecoes" / nome_colecao / "documentos.parquet"
+        if not arq_base.exists():
+            raise FileNotFoundError(
+                f"Base não encontrada: {arq_base}. Rode build/importar_base.py antes."
+            )
+        partes.append(pd.read_parquet(
+            arq_base,
+            columns=["doc_uid", "extracted_typology", "sender_name", "folder", "description"],
+        ))
+    df = pd.concat(partes, ignore_index=True) if len(partes) > 1 else partes[0]
     amostra = limite is not None
     if amostra:
         df = df.iloc[:limite].reset_index(drop=True)
@@ -319,7 +345,7 @@ def construir_indice(
     log(f"Codificando {len(textos)} documentos com {modelo} (camada {nome})...")
     emb = construir_embeddings(textos, uids, hashes, encoder, pasta / "parciais", tamanho_chunk, log)
     sanidade = verificar_sanidade(df, emb, encoder)
-    camada = gravar_camada(pasta, df, emb, hashes, modelo, colecao, sanidade, nome, amostra)
+    camada = gravar_camada(pasta, df, emb, hashes, modelo, colecoes, sanidade, nome, amostra)
     registrar_no_manifesto(corpus, pasta, camada)
     if not manter_parciais:
         shutil.rmtree(pasta / "parciais", ignore_errors=True)
@@ -340,7 +366,8 @@ def main() -> int:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--corpus", default=str(RAIZ / "corpus"))
-    ap.add_argument("--colecao", default="ahu-sul")
+    ap.add_argument("--colecao", action="append", default=None,
+                    help="coleção a indexar; pode repetir. Padrão: todas as do manifesto")
     ap.add_argument("--modelo", default=MODELO_PADRAO)
     ap.add_argument("--lote", type=int, default=16, help="documentos por lote do modelo (memória)")
     ap.add_argument("--dispositivo", default=None, help="cpu, cuda... (padrão: automático)")

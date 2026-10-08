@@ -1,0 +1,147 @@
+{
+  "versao_artefatos": "1",
+  "gerado_em": "2026-10-08T11:55:04+00:00",
+  "processo": {
+    "script": "build/construir_app.py",
+    "versao_script": "1.0.0",
+    "commit": "58d6d34"
+  },
+  "corpus": {
+    "versao_corpus": "0.1.0",
+    "gerado_em": "2026-10-08T11:54:59+00:00",
+    "colecoes": [
+      "ahu-sul"
+    ],
+    "camadas": {
+      "tipologia": "tipologia_v1",
+      "sociolinguistica": "sociolinguistica_deepseek_v3",
+      "entidades": "entidades_v2",
+      "biografias": "biografias_v2",
+      "embeddings": "embeddings_e5_v1"
+    },
+    "manifesto": {
+      "versao_corpus": "0.1.0",
+      "colecoes": {
+        "ahu-sul": {
+          "atualizado_em": "2026-10-07T22:26:41+00:00",
+          "arquivos": {
+            "colecoes/ahu-sul/documentos.parquet": "3cbf27c555bfef0861ead298ce63dca2f3d73c86f85c9e883a1445a578adcb10",
+            "colecoes/ahu-sul/registro_ids.json": "866a227f9b05ac7a9c31709d1b0b4df45aa64417aed342a5fce42d6b216f3d03",
+            "colecoes/ahu-sul/camada.json": "cea0602ef0e80924b133d7b585d93f9926596e1fbbeb823230b8205fb1ee06ae"
+          }
+        }
+      },
+      "camadas": {
+        "tipologia_v1": {
+          "tipo": "tipologia",
+          "versao": "1",
+          "documentos": 7051,
+          "arquivos": {
+            "camadas/tipologia_v1/tipologia.parquet": "13a401f84e073ee84ca5b6e1a78a010c638bab78a25e6e1daa58c1c4d312b13e",
+            "camadas/tipologia_v1/camada.json": "5b2f43d9af4835c5cee532ebb9384736719b9186922e6f3dc882cb927c954863"
+          },
+          "ativa": true
+        },
+        "sociolinguistica_deepseek_v3": {
+          "tipo": "sociolinguistica",
+          "versao": "3",
+          "documentos": 7051,
+          "arquivos": {
+            "camadas/sociolinguistica_deepseek_v3/sociolinguistica.parquet": "836164036eac56a8fae83d23918785796936360917ddce6e92b520ec48b64643",
+            "camadas/sociolinguistica_deepseek_v3/camada.json": "053c77aa0b3a8b194cec40c32aa8d81cb9cde8f540a5cd060b7760043c9f8a20"
+          },
+          "ativa": true
+        },
+        "entidades_v2": {
+          "tipo": "entidades",
+          "versao": "2",
+          "documentos": 7050,
+          "arquivos": {
+            "camadas/entidades_v2/entidades.parquet": "2e6dc27cf45d9a93e72676ef86582bde1bad3c67ffa8bcde89988518e8d003dd",
+            "camadas/entidades_v2/pessoas.parquet": "2d1dcd965c8fad9f6ba10ee762bb439afcc9e438bb243db4e93d9a31ee067ec9",
+            "camadas/entidades_v2/registro_pessoas.json": "f74284bfc8cd460515fcc5155cc59aa11ba622da2b9044f96516cdff57fa5394",
+            "camadas/entidades_v2/camada.json": "9d4346a32cb3e764ebebb31a1e31221022fb97eaf287cae314adc13eb1b16880"
+          },
+          "ativa": true
+        },
+        "biografias_v2": {
+          "tipo": "biografias",
+          "versao": "2",
+          "documentos": 7050,
+          "arquivos": {
+            "camadas/biografias_v2/biografias.parquet": "86d23564f5aedfa416a1e212a9c2254c3241faaa2dba33a108c939feded3db02",
+            "camadas/biografias_v2/camada.json": "2a86a567df46b83b654854e2424c6f25874fd9a0ba8cb5c4ababdfd9a74b3f58"
+          },
+          "ativa": true
+        },
+        "embeddings_e5_v1_amostra": {
+          "tipo": "embeddings",
+          "versao": "1",
+          "modelo": "intfloat/multilingual-e5-large",
+          "documentos": 200,
+          "arquivos": {
+            "camadas/embeddings_e5_v1_amostra/embeddings.f16.npy": "7105a2ef4957e6be25d812aa135d2741a43b06e7c7effbcef231c6b4032cf5a9",
+            "camadas/embeddings_e5_v1_amostra/indice.parquet": "d0b7847144f19660ec583a9f12c4d06434d2802b75a35910ec94794026114b36",
+            "camadas/embeddings_e5_v1_amostra/camada.json": "bf0bde9b94793188ab79373336843b4c4d12b847237ece4cfd65442ed93d0e9e"
+          },
+          "ativa": false
+        },
+        "embeddings_e5_v1": {
+          "tipo": "embeddings",
+          "versao": "1",
+          "modelo": "intfloat/multilingual-e5-large",
+          "documentos": 7051,
+          "arquivos": {
+            "camadas/embeddings_e5_v1/embeddings.f16.npy": "a8d3d6566b24656f3625dc5d5dfd353e064757247184440cfac12d15235f6035",
+            "camadas/embeddings_e5_v1/indice.parquet": "312ec342d6bd77b3e7090877903a1a6dd7e0662fe8c922aa50f03fd233480a57",
+            "camadas/embeddings_e5_v1/camada.json": "c004105daf39b81a2c3a05f519a505114e7619ce72c8be6c51cd55ac6614d7ed"
+          },
+          "ativa": true
+        }
+      },
+      "gerado_em": "2026-10-08T11:54:59+00:00"
+    }
+  },
+  "modelo_embeddings": {
+    "nome": "intfloat/multilingual-e5-large",
+    "dimensao": 1024,
+    "prefixo_consulta": "query: ",
+    "normalizado_l2": true
+  },
+  "lexico": {
+    "rank_bm25": "0.2.2",
+    "pesos": {
+      "pessoas": 2.0,
+      "destinatario": 1.5,
+      "tipologia": 1.5,
+      "descricao": 1.0,
+      "pasta": 0.5
+    },
+    "campos": [
+      "pessoas",
+      "destinatario",
+      "tipologia",
+      "descricao",
+      "pasta"
+    ]
+  },
+  "contagens": {
+    "documentos": 7051,
+    "pessoas": 1359,
+    "doc_pessoa": 7229,
+    "nascimento_exibivel": 253,
+    "colecoes": {
+      "ahu-sul": 7051
+    }
+  },
+  "doc_uids_sha256": "11ccf33c35eab9c8f8ceb1e28a9559fe02148b75025802808022702fd53a69b8",
+  "pessoa_uids_sha256": "2dd49951f9c52450ce669f21e83d50781dd6517ba345c0192950125e054fc752",
+  "artefatos": {
+    "documentos.parquet": "e48f423b0862ca2e981dd14e08c11d0402c227aa220c62050eb0b15768bffb06",
+    "pessoas.parquet": "2657543cf15c3968a676dc9c71bd2146af513070f885742fa4f730be92c0011e",
+    "doc_pessoa.parquet": "424a7387ddb0af7d3c1d91e36b9e43fbed9f77d177fe83bf305e230b783da22b",
+    "pdf_extra.parquet": "798bfc17be554ce8ca3812f44b27053e92aada4ea24d3054049d9b92619dd5eb",
+    "embeddings.f16.npy": "a8d3d6566b24656f3625dc5d5dfd353e064757247184440cfac12d15235f6035",
+    "lexico.pkl": "c7f97a0bbfc84000e1d985209d23080d9aeb37cb48a28b03c7881ec0418f3fc7"
+  }
+}

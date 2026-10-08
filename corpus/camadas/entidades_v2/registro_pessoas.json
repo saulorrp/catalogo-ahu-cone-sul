@@ -1,7 +1,7 @@
 {
  "regra": "assinatura = chave_nome(nome_principal) | chaves dos títulos em ordem | ano_min-ano_max; pessoa_uid = 'pes:' + sha1(assinatura)[:8]",
  "assinatura_versao": 1,
- "gerado_em": "2026-10-08T09:09:41+00:00",
+ "gerado_em": "2026-10-08T11:44:11+00:00",
  "pessoas": [
   {
    "pessoa_uid": "pes:e4123dc4",

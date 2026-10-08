@@ -354,7 +354,10 @@ def test_rotulos_nunca_dizem_desconhecida(pipeline):
     rotulos = set(b["rotulo"])
     assert "Não identificado" in rotulos
     assert not any("esconhecida" in r for r in ib.ROTULOS.values())
+    # Decisão do autor, registrada na spec §6.3.
     assert ib.ROTULOS["IDENTIFICADO_SEM_LOCAL"] == "Identificado, local não encontrado"
+    assert ib.ROTULOS["NAO_ENCONTRADO"] == ib.ROTULOS["REJEITADO"] == "Não identificado"
+    assert ib.ROTULOS["BAIXA"] == "Nascimento não confirmado"
 
 
 def test_biografia_traz_fonte_origem_e_wikidata(pipeline):

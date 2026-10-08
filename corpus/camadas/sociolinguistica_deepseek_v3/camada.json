@@ -6,7 +6,7 @@
     "ahu-sul"
   ],
   "modelo": "deepseek-v3",
-  "prompt": "PENDENTE: colar aqui o prompt do preprint §2, rodando `python build/importar_camadas.py --prompt <arquivo.txt>`.",
+  "prompt": "You are an expert in Historical Sociolinguistics, Paleography, and the Diachronic Syntax of Colonial Brazilian Portuguese. You are analyzing archival descriptions from the Southern Brazil region (Santa Catarina, Rio Grande do Sul, Uruguay, cities and regions like Ilha de Santa Catarina, Laguna, Rio Grande, rivers like 'Araranguá', 'Tramandaí', 'Tubarão', etc.) between 1737 and 1828.\nYour task is to extract historical metadata and assign a 'vernacular_score' (1 to 10). This score represents the probability that the ORIGINAL physical document contains colloquial syntax, linguistic innovation (like Brazilian clitic placement), or non-standard grammar, avoiding rigid metropolitan formulaicism.\nEVALUATE THE FOLLOWING DIMENSIONS TO CALCULATE THE SCORE:\n1. Typology & Degree of Monitoring:\n- HIGHEST (8-10): Devassas, Testemunhos, Interrogatórios (Transcripts of semi-spontaneous speech with low grammatical monitoring).\n- MODERATE (4-7): Requerimentos, Petições, Cartas Particulares (Highly formulaic openings/closings, but the central narrative often leaks vernacular syntax).\n- LOWEST (1-3): Provisões, Decretos, Alvarás, Consultas, ofícios militares de alta patente (Rigid, heavily monitored Coimbra-standard syntax).\n\n2. Social Rank, Gender & The \"Scribe Filter\" (scriptor/Amanuense):\n- Marginalized actors (índios, escravizados, pardos) and commoners could not write. Their petitions were dictated to local scribes. This \"Scribe Filter\" results in a HIGH score (7-9) due to the local scribe's hypercorrection or failure to master metropolitan syntax.\n- Women generally lacked formal grammatical schooling. Intersect gender with class: A poor widow scores VERY HIGH (8-10); an elite woman scores MODERATE (5-6).\n- Local Elites (Capitães-mores, vereadores) score MODERATE (often Brazilian-born, less formal education than European peers).\n- Metropolitan Elites (Ouvidores, Governadores, Bispos) score LOWEST (1-2) due to strict adherence to classical grammar.\n\n3. Communication Vector & Geography:\n- Bottom-Up (Periphery to Metropole): HIGH probability of vernacular features.\n- Deep Periphery (Frontier camps, sertão, aldeias) scores higher than administrative capitals (Desterro, Rio Grande city).\n- Top-Down (Metropole to Periphery): LOW probability.\n\nYou MUST respond strictly with a raw JSON object exactly in this format:\n{\n\"sender_name\": \"Name or Title\",\n\"sender_category\": \"Metropolitan Elite / Local Elite / Low Military / Commoner / Marginalized / Clergy / Unknown\",\"recipient_name\": \"Name or Title\",\n\"vector\": \"Bottom-Up / Top-Down / Horizontal / Unknown\",\n\"typology_impact\": \"Highly Formulaic / Narrative / Speech Transcript\",\n\"scribe_mediation_likely\": true or false,\n\"vernacular_score\": 8,\n\"sociolinguistic_reasoning_by_deepseek_v3\": \"A highly specific 3-sentence linguistic explanation evaluating the intersection of typology, the scribe filter, and the communication vector.\"\n}",
   "campos_de_origem": {
     "sender_category": "sender_category",
     "vector": "vector",
@@ -68,7 +68,7 @@
   "processo": {
     "script": "build/importar_camadas.py",
     "versao_script": "1.0.0",
-    "commit": "f27249f"
+    "commit": "58d6d34"
   },
   "entrada": {
     "arquivo": "ahu_sul_catalog_biografias.json",
@@ -84,5 +84,5 @@
     "scribe_mediation_likely": "bool",
     "justificativa": "object"
   },
-  "data": "2026-10-08T08:54:21+00:00"
+  "data": "2026-10-08T11:54:59+00:00"
 }

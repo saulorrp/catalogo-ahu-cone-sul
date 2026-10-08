@@ -290,6 +290,32 @@ def _contagens(df: pd.DataFrame, coluna: str) -> dict:
     return {str(k): int(v) for k, v in serie.value_counts().sort_index().items()}
 
 
+def mesclar_colecoes(pasta: Path, arquivo_dados: str, df: pd.DataFrame) -> pd.DataFrame:
+    """Guarda as linhas das outras coleções que já estavam na camada (D6, A11).
+
+    Cada execução cobre uma coleção. Sem isto, importar `teste-mini` apagaria `ahu-sul` da camada.
+    A ordem das linhas não importa: o `construir_app.py` junta tudo pela ordem da base.
+    """
+    arq = pasta / arquivo_dados
+    if not arq.exists():
+        return df
+    anterior = pd.read_parquet(arq)
+    de_outras = anterior[~anterior["doc_uid"].isin(set(df["doc_uid"]))]
+    if de_outras.empty:
+        return df
+    return pd.concat([df, de_outras], ignore_index=True)
+
+
+def colecoes_cobertas(pasta: Path, colecao: str) -> list[str]:
+    """As coleções que a camada passa a cobrir: as de antes mais a desta execução."""
+    anteriores = []
+    arq = pasta / "camada.json"
+    if arq.exists():
+        with open(arq, encoding="utf-8") as f:
+            anteriores = list(json.load(f).get("colecoes") or [])
+    return sorted({*anteriores, colecao})
+
+
 def gravar_camada(pasta: Path, arquivo_dados: str, df: pd.DataFrame, camada: dict) -> dict:
     pasta.mkdir(parents=True, exist_ok=True)
     df.to_parquet(pasta / arquivo_dados, index=False)
@@ -346,13 +372,13 @@ def importar_camadas(
     if so in (None, "tipologia"):
         arq_correcoes = corpus / "correcoes_tipologia.json"
         correcoes = carregar_correcoes(arq_correcoes)
-        df = montar_tipologia(docs, uids, correcoes)
         pasta = corpus / "camadas" / CAMADA_TIPOLOGIA
+        df = mesclar_colecoes(pasta, "tipologia.parquet", montar_tipologia(docs, uids, correcoes))
         camada = gravar_camada(pasta, "tipologia.parquet", df, {
             "nome": CAMADA_TIPOLOGIA,
             "tipo": "tipologia",
             "versao": "1",
-            "colecoes": [colecao],
+            "colecoes": colecoes_cobertas(pasta, colecao),
             "origem_do_campo": "extracted_typology e typology_status do catálogo (preprint §1, Bellotto)",
             "regra_normalizacao": REGRA_TIPOLOGIA,
             "regra_status": "typology_status do catálogo, ou a tipologia corrigida já ser canônica "
@@ -373,8 +399,9 @@ def importar_camadas(
         }
 
     if so in (None, "sociolinguistica"):
-        df = montar_sociolinguistica(docs, uids)
         pasta = corpus / "camadas" / CAMADA_SOCIO
+        cobertas = colecoes_cobertas(pasta, colecao)
+        df = mesclar_colecoes(pasta, "sociolinguistica.parquet", montar_sociolinguistica(docs, uids))
         anterior = pasta / "camada.json"
         if prompt is None and anterior.exists():  # não perde um prompt já gravado
             with open(anterior, encoding="utf-8") as f:
@@ -384,7 +411,7 @@ def importar_camadas(
             "nome": CAMADA_SOCIO,
             "tipo": "sociolinguistica",
             "versao": "3",
-            "colecoes": [colecao],
+            "colecoes": cobertas,
             "modelo": MODELO_SOCIO,
             "prompt": prompt or PROMPT_PENDENTE,
             "campos_de_origem": CAMPOS_SOCIO,
