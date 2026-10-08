@@ -94,6 +94,14 @@ def camada_ativa(manifesto: dict, tipo: str, obrigatoria: bool = True) -> str | 
     return ativas[0]
 
 
+def _ler_camada(pasta: Path) -> dict:
+    arq = pasta / "camada.json"
+    if not arq.exists():
+        raise ErroImportacao(f"{arq} não existe. Reconstrua a camada.")
+    with open(arq, encoding="utf-8") as f:
+        return json.load(f)
+
+
 def _ler_parquet(caminho: Path, o_que: str) -> pd.DataFrame:
     if not caminho.exists():
         raise ErroImportacao(f"{o_que} não encontrado: {caminho}. Reconstrua a camada.")
@@ -331,6 +339,20 @@ def construir(corpus: Path, saida: Path) -> dict:
     biografias = _ler_parquet(pasta / usadas["biografias"] / "biografias.parquet",
                               "camada de biografias")
 
+    # A escala do SRSP é um dado da camada (regra 9). O app só lê `app_dados/`, então ela viaja
+    # para o manifesto dos artefatos, onde o slider da §6.2 a encontra.
+    camada_socio = _ler_camada(pasta / usadas["sociolinguistica"])
+    srsp = {
+        "escala": camada_socio.get("escala_srsp") or [1, 9],
+        "camada": usadas["sociolinguistica"],
+        "auditoria": camada_socio.get("auditoria", {}),
+    }
+    if not (isinstance(srsp["escala"], list) and len(srsp["escala"]) == 2):
+        raise ErroImportacao(
+            f"A camada {usadas['sociolinguistica']} não declara 'escala_srsp': [min, max]. "
+            "Reconstrua-a com build/importar_camadas.py."
+        )
+
     docs, pdf_extra = montar_documentos(base, tipologia, socio)
     pessoas = montar_pessoas(pessoas_camada, biografias)
     doc_pessoa = montar_doc_pessoa(entidades, pessoas)
@@ -367,6 +389,7 @@ def construir(corpus: Path, saida: Path) -> dict:
         },
         "lexico": {"rank_bm25": lexico["rank_bm25"], "pesos": lexico["pesos"],
                    "campos": lexico["campos"]},
+        "srsp": srsp,
         "contagens": {
             "documentos": int(len(docs)), "pessoas": int(len(pessoas)),
             "doc_pessoa": int(len(doc_pessoa)),

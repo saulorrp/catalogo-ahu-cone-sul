@@ -73,19 +73,23 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F1 | 1.5 Artefatos do app | feito (A4 e A11 nos testes; carga em ~2 s) |
 | **F1** | **completa** | **o corpus modular está pronto** |
 | F2 | 2.1 Normalização e busca | feito (A3 passa; híbrida em ~330 ms) |
-| F2 | 2.2 Consulta e filtros | próximo |
+| F2 | 2.2 Consulta e filtros | feito (A6 na ida e volta; §6.1 inteira) |
+| F2 | 2.3 Interface de busca e ficha | próximo |
 | F2–F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.
 
 **Pendências para o autor:**
-- **decidir o rigor da §5.5.** A spec pede um limiar **absoluto** sobre o cosseno bruto. Medido no
-  corpus, isso não funciona: para "deserção de soldados" (máximo 0,843) há 7.051 documentos acima
-  de 0,76 e 1.225 acima de 0,80; para "Lavradio" (máximo 0,779) há 135 acima de 0,76 e **nenhum**
-  acima de 0,80. O mesmo corte dá o corpus inteiro numa consulta e nada na outra. Está implementada
-  uma **margem abaixo do máximo daquela consulta** (alto 0,010 · médio 0,020 · baixo 0,035), que dá
-  entre 2 e 540 documentos nas cinco consultas medidas e continua usando o cosseno bruto, sem
-  inventar relevância de 0 a 1 (C4). Se concordar, a §5.5 precisa ser reescrita nesses termos;
+- **o piso do aviso de consulta distante (§5.5) não separa o que deveria.** O aviso está
+  implementado como pedido (piso provisório 0,78, em `PISO_AVISO_DISTANTE`), e **nada é cortado**.
+  Mas, medido nos 7.051 documentos, o cosseno máximo absoluto não distingue consulta boa de
+  consulta sem sentido, porque depende mais do formato da consulta que da relevância:
+  "Lavradio" dá 0,7787 (5 acertos perfeitos no topo) e **recebe** o aviso, enquanto
+  "xkq zzv plorb" dá 0,7871 e **não recebe** — exatamente ao contrário do esperado.
+  O que separa é o quanto o melhor documento se destaca da distribuição
+  (`busca.destaque_do_topo`, já calculado e exposto em `Resposta.destaque`): consultas boas dão
+  4,61 a 7,48; sem sentido, 3,74 a 4,41. Um corte perto de 4,5 acertaria as nove consultas
+  medidas. Sugestão para o WP 4.2: trocar o piso pelo destaque, ou usar os dois;
 - revisar `corpus/correcoes_tipologia.json`: as 165 tipologias ainda marcadas como a revisar
   (ex.: `PRIMEIRA`, `SEGUNDA`, `QUARTA`, `FORTALEZA`) são erros de extração que a tabela conserta;
 - preencher a coluna `decisao_manual` do `revisao_biografias.csv` (hoje vazia nas 1.359 linhas) e

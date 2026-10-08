@@ -64,6 +64,18 @@ MARGENS_RIGOR = {"baixo": 0.035, "medio": 0.020, "alto": 0.010}
 # Abaixo disto o e5 não distingue nada: vale como piso absoluto para uma consulta sem sentido.
 COSSENO_MINIMO = 0.70
 
+# Aviso de consulta distante (§5.5): se nem o melhor documento chega a este cosseno, a interface
+# avisa — mas **nada é cortado**. Piso provisório (decisão de 08/10) até o WP 4.2.
+#
+# Medido depois de implementar, nos 7.051 documentos: o cosseno máximo absoluto **não** separa
+# consulta boa de consulta sem sentido, porque depende mais do formato da consulta que da
+# relevância. "Lavradio" (5 acertos perfeitos no topo) dá 0,7787 e cai abaixo do piso, enquanto
+# "xkq zzv plorb" dá 0,7871 e passa. O que separa bem é o quanto o melhor documento se destaca do
+# corpo da distribuição — veja `destaque_do_topo`. A decisão fica para o WP 4.2.
+PISO_AVISO_DISTANTE = 0.78
+AVISO_DISTANTE = ("Nenhum documento muito próximo desta consulta; "
+                  "os resultados podem ser pouco relevantes.")
+
 PREFIXO_CONSULTA_PADRAO = "query: "
 
 
@@ -183,6 +195,14 @@ class Resposta:
     pesos: dict[str, float] = field(default_factory=dict)
     termos_consulta: list[str] = field(default_factory=list)
     truncado_por_motor: bool = False
+    cosseno_maximo: float | None = None
+    destaque: float | None = None
+    avisos: list[str] = field(default_factory=list)
+
+    @property
+    def consulta_distante(self) -> bool:
+        """§5.5: nem o melhor documento está perto da consulta. É aviso, não corte."""
+        return AVISO_DISTANTE in self.avisos
 
     def pagina(self, numero: int = 1, tamanho: int = 25) -> list[Resultado]:
         """§5.5: 25 por página, com o total real em `total`."""
@@ -259,6 +279,32 @@ def criar_encoder_consulta(dados, dispositivo: str | None = None) -> Encoder:
     return encoder
 
 
+def destaque_do_topo(cos: np.ndarray) -> float:
+    """Quantos desvios-padrão o melhor documento está acima da mediana da distribuição.
+
+    Candidato a substituir o piso absoluto do aviso da §5.5 no WP 4.2. Medido em 08/10/2026:
+
+        consulta                      máximo   destaque
+        "mapa de habitantes"           0,857      7,48
+        "demarcação de limites"        0,843      5,73
+        "deserção de soldados"         0,843      5,60
+        "cavalos"                      0,809      4,82
+        "Lavradio"                     0,779      4,61
+        ----------------------------------------------- consultas sem sentido
+        "zzzz"                         0,758      4,41
+        "plorb"                        0,764      3,88
+        "qwerty asdf"                  0,776      3,82
+        "xkq zzv plorb"                0,787      3,74
+
+    O máximo das boas (0,779–0,857) e o das sem sentido (0,758–0,787) se sobrepõem; o destaque
+    (4,61–7,48 contra 3,74–4,41) quase não.
+    """
+    desvio = float(cos.std())
+    if desvio <= 0:
+        return 0.0
+    return (float(cos.max()) - float(np.median(cos))) / desvio
+
+
 def cossenos(dados, texto: str, encoder: Encoder) -> np.ndarray:
     """Cosseno bruto entre a consulta e cada documento (os vetores já são L2-normalizados)."""
     vetor = np.asarray(encoder([texto]), dtype=np.float32)
@@ -312,7 +358,8 @@ def _fundir(por_motor: dict[str, list[int]], pesos: dict[str, float]) -> dict[in
 def buscar(
     dados, texto: str, modo: str = "automatico", rigor: str = "medio",
     encoder: Encoder | None = None, limite_motor: int = LIMITE_MOTOR,
-    cosseno_minimo: float = COSSENO_MINIMO,
+    cosseno_minimo: float = COSSENO_MINIMO, piso_aviso: float = PISO_AVISO_DISTANTE,
+    filtro: np.ndarray | None = None,
 ) -> Resposta:
     """A busca da §5.2–§5.5. `encoder=None` desliga o motor semântico (busca só léxica).
 
@@ -327,6 +374,9 @@ def buscar(
     uids = dados.lexico["doc_uids"]
     chave, resto = _trecho_da_cota(texto)
     linhas_da_cota = tabela_de_cotas(dados).get(chave, []) if chave else []
+    if filtro is not None:
+        # Os filtros valem para a rota de cotas também: o que o filtro exclui não volta por cota.
+        linhas_da_cota = [i for i in linhas_da_cota if filtro[i]]
     frases = _frases_exigidas(texto)
     tokens = tokenizar(resto if chave else texto)
 
@@ -340,6 +390,8 @@ def buscar(
 
     por_motor: dict[str, list[int]] = {}
     mascara = _mascara_de_frases(dados, frases)
+    if filtro is not None:
+        mascara = filtro if mascara is None else (mascara & filtro)
     cos = None
 
     if tokens and modo in ("automatico", "exata"):
@@ -377,10 +429,15 @@ def buscar(
                 achados |= conjunto & set(textos[r.linha].split())
             r.termos = sorted(achados)
 
+    maximo = None if cos is None else round(float(cos.max()), 4)
+    avisos = [AVISO_DISTANTE] if maximo is not None and maximo < piso_aviso else []
     return Resposta(
         resultados=ordem, total=len(ordem), modo=modo, rigor=rigor, cota=chave, pesos=pesos,
         termos_consulta=tokens,
         truncado_por_motor=any(len(v) >= limite_motor for v in por_motor.values()),
+        cosseno_maximo=maximo,
+        destaque=None if cos is None else round(destaque_do_topo(cos), 2),
+        avisos=avisos,
     )
 
 

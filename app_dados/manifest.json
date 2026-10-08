@@ -1,10 +1,10 @@
 {
   "versao_artefatos": "1",
-  "gerado_em": "2026-10-08T12:18:04+00:00",
+  "gerado_em": "2026-10-08T12:33:05+00:00",
   "processo": {
     "script": "build/construir_app.py",
     "versao_script": "1.0.0",
-    "commit": "1ee2ba6"
+    "commit": "fed0056"
   },
   "corpus": {
     "versao_corpus": "0.1.0",
@@ -124,6 +124,22 @@
       "descricao",
       "pasta"
     ]
+  },
+  "srsp": {
+    "escala": [
+      1,
+      9
+    ],
+    "camada": "sociolinguistica_deepseek_v3",
+    "auditoria": {
+      "escala": "inteira 1-9 (SRSP)",
+      "mae": 1.13,
+      "r": 0.48,
+      "vies": 0.59,
+      "n": 705,
+      "avaliadores": 1,
+      "nota": "Diferenças de ±1 ponto não são distinguíveis."
+    }
   },
   "contagens": {
     "documentos": 7051,
