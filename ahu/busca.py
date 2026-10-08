@@ -64,17 +64,23 @@ MARGENS_RIGOR = {"baixo": 0.035, "medio": 0.020, "alto": 0.010}
 # Abaixo disto o e5 não distingue nada: vale como piso absoluto para uma consulta sem sentido.
 COSSENO_MINIMO = 0.70
 
-# Aviso de consulta distante (§5.5): se nem o melhor documento chega a este cosseno, a interface
-# avisa — mas **nada é cortado**. Piso provisório (decisão de 08/10) até o WP 4.2.
+# Aviso de consulta distante (§5.5). Regra decidida em 08/10, depois de medir: o aviso aparece só
+# quando **as duas** coisas valem:
+#   (a) nenhum termo da consulta existe no corpus (o motor léxico não tem onde casar), e
+#   (b) o melhor documento não se destaca da distribuição de cossenos (`destaque_do_topo`).
 #
-# Medido depois de implementar, nos 7.051 documentos: o cosseno máximo absoluto **não** separa
-# consulta boa de consulta sem sentido, porque depende mais do formato da consulta que da
-# relevância. "Lavradio" (5 acertos perfeitos no topo) dá 0,7787 e cai abaixo do piso, enquanto
-# "xkq zzv plorb" dá 0,7871 e passa. O que separa bem é o quanto o melhor documento se destaca do
-# corpo da distribuição — veja `destaque_do_topo`. A decisão fica para o WP 4.2.
-PISO_AVISO_DISTANTE = 0.78
+# O piso absoluto sobre o cosseno, tentado antes, errava nos dois sentidos: "Lavradio" (0,7787,
+# cinco acertos perfeitos no topo) levava o aviso e "xkq zzv plorb" (0,7871) não. A condição (a)
+# resolve o primeiro caso de graça — "lavradio" está no corpus — e a (b) separa o resto.
+# Continua sendo **só um aviso**: nada é cortado. O 4,5 é provisório, calibrado no WP 4.2.
+LIMITE_DESTAQUE = 4.5
 AVISO_DISTANTE = ("Nenhum documento muito próximo desta consulta; "
                   "os resultados podem ser pouco relevantes.")
+
+# A consulta inteira caiu na lista curta de stopwords da §5.1: não há o que buscar, e a lista
+# mostrada é o corpus que passou pelos filtros.
+AVISO_SO_STOPWORDS = ("A consulta só tem palavras muito comuns, que a busca ignora. "
+                      "A lista abaixo é o corpus com os filtros aplicados.")
 
 PREFIXO_CONSULTA_PADRAO = "query: "
 
@@ -197,11 +203,15 @@ class Resposta:
     truncado_por_motor: bool = False
     cosseno_maximo: float | None = None
     destaque: float | None = None
+    sem_correspondencia_lexica: bool = False
     avisos: list[str] = field(default_factory=list)
 
     @property
     def consulta_distante(self) -> bool:
-        """§5.5: nem o melhor documento está perto da consulta. É aviso, não corte."""
+        """§5.5: nenhum termo da consulta existe no corpus **e** o topo não se destaca.
+
+        É aviso, não corte: a lista de resultados é a mesma com ou sem ele.
+        """
         return AVISO_DISTANTE in self.avisos
 
     def pagina(self, numero: int = 1, tamanho: int = 25) -> list[Resultado]:
@@ -230,6 +240,17 @@ def _notas_lexico(dados, tokens: list[str]) -> np.ndarray:
             notas = notas / maximo
         total += peso * notas
     return total
+
+
+def termos_no_corpus(dados, tokens: Iterable[str]) -> list[str]:
+    """Quais termos da consulta existem em algum campo do léxico.
+
+    Lê o vocabulário dos índices BM25, e por isso vale em qualquer modo — inclusive no Conceitual,
+    em que o motor léxico não roda. É a condição (a) do aviso da §5.5.
+    """
+    lexico = dados.lexico
+    vocabularios = [lexico["indices"][campo].idf for campo in lexico["campos"]]
+    return [t for t in dict.fromkeys(tokens) if any(t in v for v in vocabularios)]
 
 
 def _frases_exigidas(texto: str) -> list[str]:
@@ -358,7 +379,7 @@ def _fundir(por_motor: dict[str, list[int]], pesos: dict[str, float]) -> dict[in
 def buscar(
     dados, texto: str, modo: str = "automatico", rigor: str = "medio",
     encoder: Encoder | None = None, limite_motor: int = LIMITE_MOTOR,
-    cosseno_minimo: float = COSSENO_MINIMO, piso_aviso: float = PISO_AVISO_DISTANTE,
+    cosseno_minimo: float = COSSENO_MINIMO, limite_destaque: float = LIMITE_DESTAQUE,
     filtro: np.ndarray | None = None,
 ) -> Resposta:
     """A busca da §5.2–§5.5. `encoder=None` desliga o motor semântico (busca só léxica).
@@ -393,6 +414,18 @@ def buscar(
     if filtro is not None:
         mascara = filtro if mascara is None else (mascara & filtro)
     cos = None
+
+    # Sem texto nenhum, a resposta é o corpus que passou pelos filtros: é assim que uma lente, ou
+    # um filtro sozinho, serve para navegar. O total continua sendo o real (§5.5).
+    if not tokens and not chave:
+        linhas = (np.flatnonzero(mascara) if mascara is not None
+                  else np.arange(len(uids))).tolist()
+        resultados = [Resultado(doc_uid=uids[i], linha=i, posicao=p, posicoes={"corpus": p})
+                      for p, i in enumerate(linhas, start=1)]
+        # Se o usuário digitou algo e sobrou nada, ele tem de saber por quê.
+        avisos = [AVISO_SO_STOPWORDS] if (texto or "").strip() else []
+        return Resposta(resultados=resultados, total=len(resultados), modo=modo, rigor=rigor,
+                        termos_consulta=[], avisos=avisos)
 
     if tokens and modo in ("automatico", "exata"):
         notas = _notas_lexico(dados, tokens)
@@ -430,13 +463,15 @@ def buscar(
             r.termos = sorted(achados)
 
     maximo = None if cos is None else round(float(cos.max()), 4)
-    avisos = [AVISO_DISTANTE] if maximo is not None and maximo < piso_aviso else []
+    destaque = None if cos is None else round(destaque_do_topo(cos), 2)
+    sem_lexico = bool(tokens) and not termos_no_corpus(dados, tokens)
+    avisos = ([AVISO_DISTANTE]
+              if sem_lexico and destaque is not None and destaque < limite_destaque else [])
     return Resposta(
         resultados=ordem, total=len(ordem), modo=modo, rigor=rigor, cota=chave, pesos=pesos,
         termos_consulta=tokens,
         truncado_por_motor=any(len(v) >= limite_motor for v in por_motor.values()),
-        cosseno_maximo=maximo,
-        destaque=None if cos is None else round(destaque_do_topo(cos), 2),
+        cosseno_maximo=maximo, destaque=destaque, sem_correspondencia_lexica=sem_lexico,
         avisos=avisos,
     )
 

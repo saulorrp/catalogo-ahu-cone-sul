@@ -68,8 +68,17 @@ def test_mello_encontra_melo(corpus_busca):
     assert any("Manoel de Mello" in d for d in descricoes(corpus_busca, por_mello))
 
 
-def test_stopword_sozinha_nao_devolve_o_corpus(corpus_busca):
-    assert busca.buscar(corpus_busca, "de", modo="exata").total == 0
+def test_stopword_sozinha_avisa_em_vez_de_calar(corpus_busca):
+    """'de' é stopword (§5.1): não há o que buscar, então a lista é o corpus — com aviso."""
+    r = busca.buscar(corpus_busca, "de", modo="exata")
+    assert r.termos_consulta == []
+    assert r.total == len(corpus_busca.documentos)
+    assert busca.AVISO_SO_STOPWORDS in r.avisos
+
+
+def test_busca_vazia_nao_avisa(corpus_busca):
+    r = busca.buscar(corpus_busca, "", modo="exata")
+    assert r.total == len(corpus_busca.documentos) and r.avisos == []
 
 
 def test_campo_de_pessoas_acha_pelo_titulo(corpus_busca):

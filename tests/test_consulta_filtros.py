@@ -352,20 +352,41 @@ def test_pagina_de_25_e_o_padrao():
 # ---------------------------------------------------------------------------
 
 def test_aviso_de_consulta_distante_e_so_aviso(corpus_busca, encoder):
-    """Abaixo do piso o aviso aparece, mas nada é cortado."""
-    alto = busca.buscar(corpus_busca, "xkq zzv plorb", encoder=encoder, cosseno_minimo=0.0,
-                        piso_aviso=1.0)
-    assert alto.consulta_distante and busca.AVISO_DISTANTE in alto.avisos
-    sem_aviso = busca.buscar(corpus_busca, "xkq zzv plorb", encoder=encoder, cosseno_minimo=0.0,
-                             piso_aviso=0.0)
-    assert not sem_aviso.consulta_distante
+    """Com as duas condições o aviso aparece, mas nada é cortado."""
+    com = busca.buscar(corpus_busca, "xkq zzv plorb", encoder=encoder, cosseno_minimo=0.0,
+                       limite_destaque=99.0)
+    assert com.consulta_distante and busca.AVISO_DISTANTE in com.avisos
+    sem = busca.buscar(corpus_busca, "xkq zzv plorb", encoder=encoder, cosseno_minimo=0.0,
+                       limite_destaque=0.0)
+    assert not sem.consulta_distante
     # O aviso não muda a lista: mesmos documentos, mesma ordem.
-    assert [r.doc_uid for r in alto.resultados] == [r.doc_uid for r in sem_aviso.resultados]
+    assert [r.doc_uid for r in com.resultados] == [r.doc_uid for r in sem.resultados]
+    assert [r.posicao for r in com.resultados] == [r.posicao for r in sem.resultados]
 
 
-def test_piso_do_aviso_e_provisorio_e_esta_nas_constantes():
-    assert busca.PISO_AVISO_DISTANTE == 0.78
+def test_aviso_exige_as_duas_condicoes(corpus_busca, encoder):
+    """(a) nenhum termo no corpus E (b) topo sem destaque. Uma só não basta."""
+    # 'soldados' está no corpus: condição (a) falha, nada de aviso nem com o limite altíssimo.
+    com_lexico = busca.buscar(corpus_busca, "soldados", encoder=encoder, cosseno_minimo=0.0,
+                              limite_destaque=99.0)
+    assert com_lexico.sem_correspondencia_lexica is False
+    assert not com_lexico.consulta_distante
+    # 'xkq' não está: (a) vale, e aí o destaque decide.
+    sem_lexico = busca.buscar(corpus_busca, "xkq", encoder=encoder, cosseno_minimo=0.0,
+                              limite_destaque=99.0)
+    assert sem_lexico.sem_correspondencia_lexica is True
+    assert sem_lexico.consulta_distante
+
+
+def test_termos_no_corpus_vale_em_qualquer_modo(corpus_busca):
+    assert busca.termos_no_corpus(corpus_busca, ["soldados", "xkq"]) == ["soldados"]
+    assert busca.termos_no_corpus(corpus_busca, ["xkq", "zzv"]) == []
+
+
+def test_limite_do_destaque_e_provisorio_e_esta_nas_constantes():
+    assert busca.LIMITE_DESTAQUE == 4.5
     assert "pouco relevantes" in busca.AVISO_DISTANTE
+    assert not hasattr(busca, "PISO_AVISO_DISTANTE")  # o piso absoluto saiu
 
 
 def test_busca_sem_semantico_nao_avisa(corpus_busca):

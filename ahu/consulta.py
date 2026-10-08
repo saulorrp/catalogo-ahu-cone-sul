@@ -22,6 +22,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field, fields
 from typing import Any
 
+import pandas as pd
+
 from ahu import busca
 from ahu.filtros import LENTES, Filtros, aplicar_lente
 
@@ -232,8 +234,8 @@ def executar(dados, consulta: Consulta, encoder=None, **extra) -> busca.Resposta
 
         def chave(r):
             ano = anos.iloc[r.linha]
-            # Documento sem data vai para o fim nas duas ordens.
-            ausente = ano is None or ano != ano  # noqa: PLR0124  (teste de NaN)
+            # Documento sem data (186 deles) vai para o fim nas duas ordens.
+            ausente = bool(pd.isna(ano))
             valor = 0 if ausente else int(ano)
             return (ausente, -valor if decrescente else valor, r.linha)
 
