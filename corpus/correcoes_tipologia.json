@@ -1,0 +1,7 @@
+{
+  "_LEIA-ME": "Correções de tipologia da camada tipologia_v1. Chave = tipologia como vem do catálogo, em maiúsculas e com os acentos tal como estão (é por isso que acento trocado pode ser corrigido aqui); valor = forma correta (string vazia = tipologia desconhecida). Acrescente aqui qualquer erro de extração e rode build/importar_camadas.py de novo. Nenhuma tipologia é definida no código: esta tabela e os dados mandam.",
+  "COSIJLTA": "CONSULTA",
+  "OFICÍO": "OFÍCIO",
+  "RELÁTORIO": "RELATÓRIO",
+  "UNKNOWN": ""
+}

@@ -1,0 +1,88 @@
+{
+  "nome": "sociolinguistica_deepseek_v3",
+  "tipo": "sociolinguistica",
+  "versao": "3",
+  "colecoes": [
+    "ahu-sul"
+  ],
+  "modelo": "deepseek-v3",
+  "prompt": "PENDENTE: colar aqui o prompt do preprint §2, rodando `python build/importar_camadas.py --prompt <arquivo.txt>`.",
+  "campos_de_origem": {
+    "sender_category": "sender_category",
+    "vector": "vector",
+    "typology_impact": "typology_impact",
+    "vernacular_score": "vernacular_score",
+    "scribe_mediation_likely": "scribe_mediation_likely",
+    "sociolinguistic_reasoning_by_deepseek_v3": "justificativa"
+  },
+  "escala_srsp": "inteira 1-9, como no dado; nunca dividida por 10",
+  "auditoria": {
+    "escala": "inteira 1-9 (SRSP)",
+    "mae": 1.13,
+    "r": 0.48,
+    "vies": 0.59,
+    "n": 705,
+    "avaliadores": 1,
+    "nota": "Diferenças de ±1 ponto não são distinguíveis."
+  },
+  "uso_restrito": {
+    "scribe_mediation_likely": "só o dossiê em PDF (D1); nunca interface, filtros, CSV ou JSON"
+  },
+  "contagem_por_srsp": {
+    "1": 624,
+    "2": 4842,
+    "3": 359,
+    "4": 94,
+    "5": 138,
+    "6": 853,
+    "7": 126,
+    "8": 6,
+    "9": 9
+  },
+  "contagem_por_categoria": {
+    "Clergy": 43,
+    "Commoner": 371,
+    "Local Elite": 831,
+    "Local Elite / Low Military": 1,
+    "Local Elite / Marginalized": 1,
+    "Low Military": 257,
+    "Low Military / Commoner": 2,
+    "Marginalized": 7,
+    "Metropolitan Elite": 5331,
+    "Metropolitan Elite / Commoner": 1,
+    "Metropolitan Elite / Local Elite": 3,
+    "Mixed (Local Elite, Low Military, Commoner, Clergy)": 1,
+    "Mixed (Metropolitan Elite, Local Elite, Low Military, Commoner)": 1,
+    "Unknown": 201
+  },
+  "contagem_por_vetor": {
+    "Bottom-Up": 2830,
+    "Horizontal": 178,
+    "Mixed (Bottom-Up, Top-Down, Horizontal)": 1,
+    "Top-Down": 3865,
+    "Top-Down / Bottom-Up": 1,
+    "Top-Down / Horizontal": 1,
+    "Unknown": 175
+  },
+  "mediacao_provavel": 1080,
+  "processo": {
+    "script": "build/importar_camadas.py",
+    "versao_script": "1.0.0",
+    "commit": "f27249f"
+  },
+  "entrada": {
+    "arquivo": "ahu_sul_catalog_biografias.json",
+    "sha256": "996feb761829f84863db528c44a9a8d85d33f1c9afd95b1d92ebed37576bf40d"
+  },
+  "documentos": 7051,
+  "esquema": {
+    "doc_uid": "object",
+    "sender_category": "object",
+    "vector": "object",
+    "typology_impact": "object",
+    "vernacular_score": "Int64",
+    "scribe_mediation_likely": "bool",
+    "justificativa": "object"
+  },
+  "data": "2026-10-08T08:54:21+00:00"
+}

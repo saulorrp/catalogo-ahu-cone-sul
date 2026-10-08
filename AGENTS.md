@@ -44,6 +44,8 @@ legado/       app antigo preservado (WP 2.3)
 python scripts/gate.py            # ruff check + pytest; imprime PASS. Rodar antes de cada commit.
 python -m pytest -q
 python build/importar_base.py     # WP 1.1
+python build/importar_camadas.py  # WP 1.2 (tipologia_v1 + sociolinguistica_deepseek_v3)
+python build/construir_indice.py  # WP 1.4 (CPU, ~15-30 min, com retomada)
 ```
 Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 também funciona).
 
@@ -54,10 +56,20 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F0 | 0.2 Licença e README | feito |
 | F0 | 0.3 Busca v2 de referência | pendente |
 | F1 | 1.1 Base e `doc_uid` | feito (7.051 docs, 7.051 uids únicos) |
-| F1 | 1.2–1.5 | pendente |
+| F1 | 1.2 Tipologia e sociolinguística | feito (86 tipologias, 165 a revisar; SRSP 1–9) |
+| F1 | 1.3 Entidades e biografias v2 | pendente |
+| F1 | 1.4 Índice semântico | script pronto; falta o autor rodar a indexação |
+| F1 | 1.5 Artefatos do app | pendente |
 | F2–F4 | — | pendente |
 
 Atualize esta tabela ao concluir cada pacote.
+
+**Pendências para o autor:**
+- rodar `python build/construir_indice.py` na sua máquina (WP 1.4);
+- gravar o prompt do preprint §2 na camada sociolinguística:
+  `python build/importar_camadas.py --prompt <arquivo.txt>` (hoje o `camada.json` diz `PENDENTE`);
+- revisar `corpus/correcoes_tipologia.json`: as 165 tipologias ainda marcadas como a revisar
+  (ex.: `PRIMEIRA`, `SEGUNDA`, `QUARTA`, `FORTALEZA`) são erros de extração que a tabela conserta.
 
 ## Convenção de trabalho
 - Um pacote de trabalho por vez; terminar com testes passando (`gate.py` = PASS) e um commit.

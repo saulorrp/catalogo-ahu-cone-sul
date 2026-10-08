@@ -10,6 +10,27 @@
       }
     }
   },
-  "camadas": {},
-  "gerado_em": "2026-10-07T22:26:41+00:00"
+  "camadas": {
+    "tipologia_v1": {
+      "tipo": "tipologia",
+      "versao": "1",
+      "documentos": 7051,
+      "arquivos": {
+        "camadas/tipologia_v1/tipologia.parquet": "13a401f84e073ee84ca5b6e1a78a010c638bab78a25e6e1daa58c1c4d312b13e",
+        "camadas/tipologia_v1/camada.json": "2f0780e793a9718364e22eb22228e6f3927d2126d52db140856e24ce01cb2761"
+      },
+      "ativa": true
+    },
+    "sociolinguistica_deepseek_v3": {
+      "tipo": "sociolinguistica",
+      "versao": "3",
+      "documentos": 7051,
+      "arquivos": {
+        "camadas/sociolinguistica_deepseek_v3/sociolinguistica.parquet": "836164036eac56a8fae83d23918785796936360917ddce6e92b520ec48b64643",
+        "camadas/sociolinguistica_deepseek_v3/camada.json": "0ab3a6a2622fad1f6a0175dfa2487a137e10bd3a810b345ec3f6622ed0eda66b"
+      },
+      "ativa": true
+    }
+  },
+  "gerado_em": "2026-10-08T08:54:21+00:00"
 }
