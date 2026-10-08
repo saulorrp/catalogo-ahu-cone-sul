@@ -75,8 +75,20 @@
         "camadas/embeddings_e5_v1/indice.parquet": "312ec342d6bd77b3e7090877903a1a6dd7e0662fe8c922aa50f03fd233480a57",
         "camadas/embeddings_e5_v1/camada.json": "c004105daf39b81a2c3a05f519a505114e7619ce72c8be6c51cd55ac6614d7ed"
       },
+      "ativa": false
+    },
+    "embeddings_e5small_v1": {
+      "tipo": "embeddings",
+      "versao": "1",
+      "modelo": "intfloat/multilingual-e5-small",
+      "documentos": 7051,
+      "arquivos": {
+        "camadas/embeddings_e5small_v1/embeddings.f16.npy": "53cb7087a097193e58efef1cd7a2775fe9c30d1d7f30ddbeb1bcf1ddd4038dc0",
+        "camadas/embeddings_e5small_v1/indice.parquet": "312ec342d6bd77b3e7090877903a1a6dd7e0662fe8c922aa50f03fd233480a57",
+        "camadas/embeddings_e5small_v1/camada.json": "ef60cc5285c3d6102cb201a96af38e1ad9678873b325589615d5135bc05a7c9b"
+      },
       "ativa": true
     }
   },
-  "gerado_em": "2026-10-08T12:05:35+00:00"
+  "gerado_em": "2026-10-08T23:10:35+00:00"
 }

@@ -1,14 +1,14 @@
 {
   "versao_artefatos": "1",
-  "gerado_em": "2026-10-08T12:33:05+00:00",
+  "gerado_em": "2026-10-08T23:12:43+00:00",
   "processo": {
     "script": "build/construir_app.py",
     "versao_script": "1.0.0",
-    "commit": "fed0056"
+    "commit": "2045d0c"
   },
   "corpus": {
     "versao_corpus": "0.1.0",
-    "gerado_em": "2026-10-08T12:05:35+00:00",
+    "gerado_em": "2026-10-08T23:10:35+00:00",
     "colecoes": [
       "ahu-sul"
     ],
@@ -17,7 +17,7 @@
       "sociolinguistica": "sociolinguistica_deepseek_v3",
       "entidades": "entidades_v2",
       "biografias": "biografias_v2",
-      "embeddings": "embeddings_e5_v1"
+      "embeddings": "embeddings_e5small_v1"
     },
     "manifesto": {
       "versao_corpus": "0.1.0",
@@ -96,15 +96,27 @@
             "camadas/embeddings_e5_v1/indice.parquet": "312ec342d6bd77b3e7090877903a1a6dd7e0662fe8c922aa50f03fd233480a57",
             "camadas/embeddings_e5_v1/camada.json": "c004105daf39b81a2c3a05f519a505114e7619ce72c8be6c51cd55ac6614d7ed"
           },
+          "ativa": false
+        },
+        "embeddings_e5small_v1": {
+          "tipo": "embeddings",
+          "versao": "1",
+          "modelo": "intfloat/multilingual-e5-small",
+          "documentos": 7051,
+          "arquivos": {
+            "camadas/embeddings_e5small_v1/embeddings.f16.npy": "53cb7087a097193e58efef1cd7a2775fe9c30d1d7f30ddbeb1bcf1ddd4038dc0",
+            "camadas/embeddings_e5small_v1/indice.parquet": "312ec342d6bd77b3e7090877903a1a6dd7e0662fe8c922aa50f03fd233480a57",
+            "camadas/embeddings_e5small_v1/camada.json": "ef60cc5285c3d6102cb201a96af38e1ad9678873b325589615d5135bc05a7c9b"
+          },
           "ativa": true
         }
       },
-      "gerado_em": "2026-10-08T12:05:35+00:00"
+      "gerado_em": "2026-10-08T23:10:35+00:00"
     }
   },
   "modelo_embeddings": {
-    "nome": "intfloat/multilingual-e5-large",
-    "dimensao": 1024,
+    "nome": "intfloat/multilingual-e5-small",
+    "dimensao": 384,
     "prefixo_consulta": "query: ",
     "normalizado_l2": true
   },
@@ -157,7 +169,7 @@
     "pessoas.parquet": "2657543cf15c3968a676dc9c71bd2146af513070f885742fa4f730be92c0011e",
     "doc_pessoa.parquet": "424a7387ddb0af7d3c1d91e36b9e43fbed9f77d177fe83bf305e230b783da22b",
     "pdf_extra.parquet": "798bfc17be554ce8ca3812f44b27053e92aada4ea24d3054049d9b92619dd5eb",
-    "embeddings.f16.npy": "a8d3d6566b24656f3625dc5d5dfd353e064757247184440cfac12d15235f6035",
+    "embeddings.f16.npy": "53cb7087a097193e58efef1cd7a2775fe9c30d1d7f30ddbeb1bcf1ddd4038dc0",
     "lexico.pkl": "e7cc8d6b31143aa74f054962e4abb003d4e90ef592f59fe174d6d1183d8d51c4"
   }
 }

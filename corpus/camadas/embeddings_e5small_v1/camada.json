@@ -1,0 +1,74 @@
+{
+  "nome": "embeddings_e5small_v1",
+  "tipo": "embeddings",
+  "versao": "1",
+  "amostra": false,
+  "colecoes": [
+    "ahu-sul"
+  ],
+  "modelo": "intfloat/multilingual-e5-small",
+  "prefixo_documento": "passage: ",
+  "prefixo_consulta": "query: ",
+  "normalizado_l2": true,
+  "dtype": "float16",
+  "dimensao": 384,
+  "documentos": 7051,
+  "max_tokens": 512,
+  "receita_texto": "passage: <extracted_typology>. <sender_name>. <folder>. <description> (partes vazias são omitidas; separador '. ')",
+  "texto_global_sha1": "c62e86aed5faf52773edf6b1f5836b024878f287",
+  "esquema": {
+    "embeddings.f16.npy": "float16[n, dimensao], linha i = indice.parquet linha i",
+    "indice.parquet": "doc_uid, texto_sha1"
+  },
+  "processo": {
+    "script": "build/construir_indice.py",
+    "versao_script": "1.0.0",
+    "commit": "2045d0c",
+    "dispositivo": "cpu (padrão; usa GPU se disponível)"
+  },
+  "bibliotecas": {
+    "numpy": "2.4.3",
+    "pandas": "2.3.3",
+    "sentence-transformers": "5.2.3",
+    "torch": "2.8.0"
+  },
+  "data": "2026-10-08T23:10:35+00:00",
+  "sanidade": [
+    {
+      "doc_uid": "ahu-sul:e7fd41bfb3",
+      "linha": 0,
+      "primeiro": true,
+      "aceito": true,
+      "cosseno_proprio": 0.9504
+    },
+    {
+      "doc_uid": "ahu-sul:6c8b91ad83",
+      "linha": 1762,
+      "primeiro": true,
+      "aceito": true,
+      "cosseno_proprio": 0.9312
+    },
+    {
+      "doc_uid": "ahu-sul:ecb88608af",
+      "linha": 3525,
+      "primeiro": true,
+      "aceito": true,
+      "cosseno_proprio": 0.9401
+    },
+    {
+      "doc_uid": "ahu-sul:2db15bd914",
+      "linha": 5287,
+      "primeiro": true,
+      "aceito": true,
+      "cosseno_proprio": 0.9336
+    },
+    {
+      "doc_uid": "ahu-sul:b3b0f0b1c2",
+      "linha": 7050,
+      "primeiro": true,
+      "aceito": true,
+      "cosseno_proprio": 0.9334
+    }
+  ],
+  "sanidade_aprovada": true
+}
