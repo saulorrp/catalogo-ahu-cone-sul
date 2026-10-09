@@ -58,6 +58,33 @@ Python 3.11 (declarado em `runtime.txt`); 3.12 funciona localmente. No Streamlit
 O `torch` é fixado na variante só-CPU — ver [`docs/publicacao.md`](docs/publicacao.md).
 Custo zero em funcionamento: nenhuma API paga é usada pelo app. As chamadas pagas (DeepSeek, Perplexity) ocorrem só na construção do corpus.
 
+## `autoria_verificada` (spec §7.2)
+
+A amostra diacrônica por pessoa só aceita documentos em que a autoria daquela pessoa é
+**verificável no próprio resumo do catálogo**. A regra, implementada em
+[`ahu/amostras.py`](ahu/amostras.py):
+
+> Um documento tem `autoria_verificada` para uma pessoa quando **um nome, uma variante gráfica ou
+> um título dela aparece na descrição do AHU**.
+
+Três detalhes que fazem a regra funcionar no corpus:
+
+1. a comparação usa a **`chave_nome`** de [`ahu/texto.py`](ahu/texto.py) nos dois lados — a mesma
+   canonicalização que produz o `pessoa_uid` (§3.3). É ela que sabe que *Manoel de Mello e Castro*
+   e *Manuel de Melo Castro* são o mesmo nome: tratamentos (`D.`, `frei`) e partículas (`de`, `e`)
+   saem, grafias antigas (`ph→f`, `ll→l`, `y→i`) são neutralizadas e variantes conhecidas são
+   unificadas (`manoel→manuel`, `souza→sousa`);
+2. o casamento é por **sequência de tokens**, inteira e seguida, de modo que *Melo* não casa
+   dentro de *Melosa*;
+3. uma forma de **um só token curto** (até três letras, como *Sá*) é descartada: ela casaria por
+   acidente em quase qualquer descrição.
+
+Isto é uma mudança em relação à v2 e ao que o pipeline grava hoje: lá `autoria_verificada` é um
+sinalizador **por documento**, copiado para todos os remetentes dele. A §7.2 pede que passe a ser
+**por entidade**, e é assim que o app calcula — sobre `app_dados/`, sem reconstruir camada
+nenhuma. Levar o cálculo para dentro da camada de entidades é possível depois, e aí será uma
+camada nova.
+
 ## Licença
 
 - Código: **MIT** ([`LICENSE`](LICENSE)).

@@ -45,7 +45,7 @@ corpus/       base + camadas (spec §3.1)
 app_dados/    artefatos que o app lê (spec §3.4)
 tests/        pytest
 scripts/      gate.py
-schemas/      JSON Schemas (ex.: eins-plano-coleta-1.json)
+schemas/      JSON Schemas (eins-plano-coleta-1.json, do §7.4)
 legado/       app antigo preservado (WP 2.3)
 ```
 
@@ -61,7 +61,7 @@ python build/construir_indice.py --modelo intfloat/multilingual-e5-small --desat
                                   # WP 2.5: troca o modelo e desativa a camada antiga no manifesto
 python build/construir_app.py     # WP 1.5 (artefatos de app_dados/; ~7 s)
 
-streamlit run app.py              # WP 2.3/2.4: o app novo, em http://localhost:8501
+streamlit run app.py              # o app novo, em http://localhost:8501
 python scripts/medir_memoria.py   # WP 2.5: RSS e tempo da carga fria (A10)
 ```
 A busca do WP 2.1 está em `ahu/busca.py`: `buscar(dados, texto, modo, rigor, encoder)`. Sem
@@ -94,7 +94,8 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F3 | 3.4 Link da busca | feito (A6 com cinco buscas variadas, de ponta a ponta) |
 | F3 | 3.3a Lista de consulta no AHU | feito (portada do pacote antigo; 7.050 de 7.051 cotas com código CRAV) |
 | F3 | 3.3 Dossiê em PDF | feito (A8: capa com proveniência, uma seção por documento, mediação com ressalva) |
-| F3 | 3.5 | pendente |
+| F3 | 3.5 Amostras e plano EINS | feito (A7 e A9; "Gerar amostra diacrônica" habilitado) |
+| **F3** | **completa** | **T4 inteira: selecionar, exportar, levar e citar** |
 | F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.

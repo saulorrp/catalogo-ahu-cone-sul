@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/saulorrp/catalogo-ahu-cone-sul/schemas/eins-plano-coleta-1.json",
+  "title": "Plano de coleta para o EINS Lite (eins-plano-coleta/1)",
+  "description": "Formato do arquivo plano_coleta.eins.json, definido na spec do classificador AHU-Sul v3, §7.4 (D4). O Acervo do EINS Lite importa o plano e cria um Processo por reference_code, aplicando a D42 da spec do EINS para cotas duplicadas e placeholders. O campo scribe_mediation_likely nunca entra aqui (D1).",
+  "type": "object",
+  "required": ["schema", "gerado_em", "origem", "lotes"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "eins-plano-coleta/1"
+    },
+    "gerado_em": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Data e hora da geração, em ISO 8601 com fuso."
+    },
+    "origem": {
+      "type": "object",
+      "required": ["app", "versao_app", "corpus"],
+      "properties": {
+        "app": { "const": "classificador-ahu-sul" },
+        "versao_app": { "type": "string" },
+        "commit": { "type": ["string", "null"] },
+        "corpus": {
+          "type": "string",
+          "description": "SHA-256 do manifesto de app_dados/, que identifica o corpus exato."
+        },
+        "camadas_ativas": {
+          "type": "object",
+          "description": "Papel -> camada e versão, lidas do manifesto.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "camada": { "type": "string" },
+              "versao": { "type": ["string", "number", "null"] },
+              "documentos": { "type": ["integer", "null"] },
+              "modelo": { "type": "string" }
+            },
+            "required": ["camada"]
+          }
+        },
+        "consulta": {
+          "type": ["object", "null"],
+          "description": "O objeto Consulta que produziu o conjunto (spec §4)."
+        },
+        "amostra": {
+          "type": ["object", "null"],
+          "description": "Como a amostra foi tirada: tipo, estratos, N por estrato, pessoa_uid.",
+          "properties": {
+            "tipo": { "enum": ["diacronica", "estratificada", "selecao", "resultado"] },
+            "pessoa_uid": { "type": ["string", "null"] },
+            "estratos": {
+              "type": "array",
+              "items": { "type": "string" },
+              "maxItems": 2
+            },
+            "por_estrato": { "type": ["integer", "null"], "minimum": 1 },
+            "maximo_por_ano": { "type": ["integer", "null"], "minimum": 1 }
+          }
+        },
+        "semente": {
+          "type": ["integer", "null"],
+          "description": "A semente do sorteio, visível e editável na interface (§7.3, A7)."
+        },
+        "doi": { "type": ["object", "null"] },
+        "citacao": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "lotes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["lote", "documentos"],
+        "additionalProperties": false,
+        "properties": {
+          "lote": { "type": "integer", "minimum": 1 },
+          "estrato": {
+            "type": ["string", "null"],
+            "description": "Quando a amostra é estratificada, o estrato deste lote."
+          },
+          "documentos": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["doc_uid", "reference_code"],
+              "additionalProperties": false,
+              "properties": {
+                "doc_uid": { "type": "string" },
+                "reference_code": {
+                  "type": ["string", "null"],
+                  "description": "Código CRAV. Null quando a cota não permite derivá-lo."
+                },
+                "new_code": { "type": ["string", "null"] },
+                "old_code": { "type": ["string", "null"] },
+                "ano": { "type": ["integer", "null"] },
+                "tipologia": { "type": ["string", "null"] },
+                "titulo_catalogo": { "type": ["string", "null"] },
+                "pasta": { "type": ["string", "null"] },
+                "autoria_verificada": { "type": "boolean" },
+                "pessoas": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["nome"],
+                    "additionalProperties": false,
+                    "properties": {
+                      "pessoa_uid": { "type": ["string", "null"] },
+                      "nome": { "type": "string" },
+                      "tipo": { "type": ["string", "null"] },
+                      "pais_nascimento": { "type": ["string", "null"] },
+                      "cidade_nascimento": { "type": ["string", "null"] },
+                      "nivel": { "enum": ["ALTA", "MEDIA", null] }
+                    }
+                  }
+                },
+                "links": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "digitarq": { "type": ["string", "null"] },
+                    "resgate": { "type": ["string", "null"] }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "relatorio": {
+      "type": ["object", "null"],
+      "description": "Documentos disponíveis × sorteados por estrato, e estratos sem documentos suficientes (§7.3)."
+    }
+  }
+}

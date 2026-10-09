@@ -17,6 +17,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
+from ahu import amostras as mod_amostras
 from ahu import busca
 from ahu import dossie as mod_dossie
 from ahu import exportar as mod_exportar
@@ -708,9 +709,12 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
     acoes = st.columns([2, 3, 2])
     acoes[0].link_button("Ver documentos", pagina.url_documentos, use_container_width=True,
                          help="Abre a aba Busca com o filtro desta pessoa aplicado.")
-    acoes[1].button("Gerar amostra diacrônica", disabled=True, use_container_width=True,
-                    help="Em breve: amostra cronológica em lotes, com espaçamento por ano "
-                         "(§7.2, WP 3.5).")
+    if acoes[1].button("Gerar amostra diacrônica", use_container_width=True,
+                       help="Ordem cronológica, em lotes de 10, com espaçamento por ano (§7.2)."):
+        st.session_state.amostra_pessoa = p.pessoa_uid
+        st.session_state.tipo_de_amostra = "Diacrônica por pessoa"
+        st.success(f"Amostra de **{p.nome}** preparada. Abra a aba **Amostras** para ver os "
+                   "lotes e baixar o plano de coleta.")
     acoes[2].link_button("Reportar erro", pagina.url_issue, use_container_width=True,
                          help="Abre uma issue no GitHub já preenchida com o pessoa_uid, o dado "
                               "e a fonte.")
@@ -739,6 +743,187 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
             use_container_width=True, hide_index=True)
         st.caption("A ficha completa de cada documento está na aba Busca, pelo botão "
                    "\"Ver documentos\".")
+
+
+# ---------------------------------------------------------------------------
+# Amostras (WP 3.5, §7.2–§7.4)
+# ---------------------------------------------------------------------------
+
+TIPOS_DE_AMOSTRA = ("Diacrônica por pessoa", "Estratificada sobre o resultado")
+
+
+def aba_amostras(dados, consulta: Consulta) -> None:
+    st.subheader("Amostras")
+    tipos = list(TIPOS_DE_AMOSTRA)
+    escolhido = st.session_state.get("tipo_de_amostra", tipos[0])
+    tipo = st.radio("Tipo de amostra", tipos,
+                    index=tipos.index(escolhido) if escolhido in tipos else 0,
+                    horizontal=True, label_visibility="collapsed")
+    st.session_state.tipo_de_amostra = tipo
+    if tipo == tipos[0]:
+        amostra_diacronica_na_tela(dados, consulta)
+    else:
+        amostra_estratificada_na_tela(dados, consulta)
+
+
+def amostra_diacronica_na_tela(dados, consulta: Consulta) -> None:
+    st.caption(
+        "Os documentos de uma pessoa em ordem cronológica, em lotes de 10 (§7.2). O espaçamento "
+        "limita quantos documentos entram por ano, para a amostra não se concentrar num só. "
+        "Documento sem data não entra: numa série diacrônica ele não tem onde se colocar.")
+
+    pessoas = mod_pessoas.ordenar(mod_pessoas.todas(dados), "documentos")
+    rotulo = {p.pessoa_uid: f"{p.nome} ({p.n_documentos})" for p in pessoas}
+    uids = [p.pessoa_uid for p in pessoas]
+    aberta = st.session_state.get("amostra_pessoa")
+    escolha = st.columns([5, 2, 2])
+    pessoa_uid = escolha[0].selectbox(
+        "Pessoa", uids, index=uids.index(aberta) if aberta in uids else 0,
+        format_func=lambda u: rotulo.get(u, u))
+    st.session_state.amostra_pessoa = pessoa_uid
+    espacar = escolha[1].checkbox("Espaçar por ano", value=False,
+                                  help="No máximo N documentos por ano (§7.2).")
+    maximo = escolha[2].number_input("Máximo por ano", 1, 50, 2, step=1,
+                                     disabled=not espacar) if espacar else None
+
+    so_verificada = st.checkbox(
+        "Só documentos com autoria verificada", value=True,
+        help="§7.2: um nome, uma variante ou um título da pessoa aparece na descrição do "
+             "documento. A comparação neutraliza acento e grafia antiga, de modo que 'Mello' "
+             "casa com 'Melo'.")
+
+    try:
+        amostra = mod_amostras.amostra_diacronica(
+            dados, pessoa_uid, maximo_por_ano=int(maximo) if espacar else None,
+            so_autoria_verificada=so_verificada)
+    except mod_amostras.ErroDeAmostra as e:
+        st.error(f"**Não foi possível montar a amostra.** {e}")
+        return
+
+    r = amostra.relatorio
+    colunas = st.columns(4)
+    colunas[0].metric("Na amostra", len(amostra))
+    colunas[1].metric("Lotes de 10", len(amostra.lotes))
+    colunas[2].metric("Anos cobertos", len(r["anos"]))
+    colunas[3].metric("Vínculos da pessoa", r["vinculados"])
+    descartes = []
+    if r["sem_data"]:
+        descartes.append(f"{r['sem_data']} sem data")
+    if r["sem_autoria_verificada"]:
+        descartes.append(f"{r['sem_autoria_verificada']} sem autoria verificada")
+    if r["cortados_pelo_maximo_por_ano"]:
+        descartes.append(f"{r['cortados_pelo_maximo_por_ano']} cortados pelo espaçamento")
+    if descartes:
+        st.caption("Fora da amostra: " + " · ".join(descartes) + ".")
+
+    if not len(amostra):
+        st.info("Nenhum documento nesta amostra. Tente sem o espaçamento, ou sem exigir "
+                "autoria verificada.")
+        return
+
+    st.dataframe(pd.DataFrame(list(r["por_ano"].items()), columns=["Ano", "Documentos"]),
+                 use_container_width=True, hide_index=True)
+    mostrar_lotes(dados, amostra)
+    baixar_amostra(dados, amostra, consulta, "amostra_diacronica")
+
+
+def amostra_estratificada_na_tela(dados, consulta: Consulta) -> None:
+    st.caption(
+        "Sorteio sobre o **resultado atual da busca** (busca + filtros da aba Busca), com 1 ou 2 "
+        "estratos e N documentos por estrato. A semente fica visível e editável: a mesma semente "
+        "dá a mesma amostra (§7.3, A7).")
+
+    resposta = executar(dados, consulta, encoder=None) if consulta.modo == "exata" else None
+    if resposta is None:
+        encoder = encoder_preguicoso(dados) if consulta.modo in ("automatico",
+                                                                 "conceitual") else None
+        resposta = executar(dados, consulta, encoder=encoder)
+    uids = [r.doc_uid for r in resposta.resultados]
+    st.markdown(f"Conjunto atual: **{len(uids)}** documento(s)"
+                + (f" · consulta: *{consulta.texto}*" if consulta.texto else
+                   " · o corpus com os filtros aplicados"))
+
+    controles = st.columns([5, 2, 2])
+    estratos = controles[0].multiselect(
+        "Estratos (1 ou 2)", list(mod_amostras.ESTRATOS),
+        default=["decada"], max_selections=2,
+        format_func=lambda e: mod_amostras.ESTRATOS[e])
+    por_estrato = controles[1].number_input("N por estrato", 1, 100, 3, step=1)
+    semente = controles[2].number_input("Semente", 0, 10**9,
+                                        consulta.semente if consulta.semente else 42, step=1)
+
+    if semente != (consulta.semente or 42):
+        from ahu.consulta import asdict_raso
+        guardar(Consulta(**{**asdict_raso(consulta), "semente": int(semente)}))
+
+    if not estratos:
+        st.info("Escolha ao menos um estrato.")
+        return
+    if not uids:
+        st.info("O resultado atual está vazio: não há o que sortear.")
+        return
+
+    try:
+        amostra = mod_amostras.amostra_estratificada(
+            dados, uids, estratos, int(por_estrato), int(semente))
+    except mod_amostras.ErroDeAmostra as e:
+        st.error(f"**Não foi possível sortear.** {e}")
+        return
+
+    r = amostra.relatorio
+    colunas = st.columns(4)
+    colunas[0].metric("Sorteados", len(amostra))
+    colunas[1].metric("Estratos", r["estratos"])
+    colunas[2].metric("Lotes de 10", len(amostra.lotes))
+    colunas[3].metric("Estratos insuficientes", len(r["insuficientes"]))
+    if r["insuficientes"]:
+        st.warning(
+            f"{len(r['insuficientes'])} estrato(s) tinham menos de {por_estrato} documento(s) e "
+            f"entraram com o que havia: " + "; ".join(r["insuficientes"][:8])
+            + ("…" if len(r["insuficientes"]) > 8 else ""))
+
+    st.markdown("#### Relatório por estrato")
+    st.dataframe(mod_amostras.tabela_do_relatorio(amostra), use_container_width=True,
+                 hide_index=True)
+    mostrar_lotes(dados, amostra)
+    baixar_amostra(dados, amostra, consulta, "amostra_estratificada")
+
+
+def mostrar_lotes(dados, amostra) -> None:
+    st.markdown("#### Lotes")
+    for numero, lote in enumerate(amostra.lotes, start=1):
+        estrato = (amostra.estrato_do_lote[numero - 1]
+                   if numero - 1 < len(amostra.estrato_do_lote) else None)
+        titulo = f"Lote {numero} — {len(lote)} documento(s)"
+        if estrato:
+            titulo += f" · estrato {estrato}"
+        with st.expander(titulo, expanded=numero == 1):
+            st.dataframe(mod_exportar.tabela(dados, lote)[
+                ["doc_uid", "ano", "tipologia", "reference_code", "new_code", "pasta"]],
+                use_container_width=True, hide_index=True)
+
+
+def baixar_amostra(dados, amostra, consulta: Consulta, nome: str) -> None:
+    st.markdown("#### Levar a amostra")
+    prov = mod_exportar.proveniencia(dados, consulta, len(amostra), origem=amostra.tipo)
+    colunas = st.columns(3)
+    colunas[0].download_button(
+        "Plano de coleta (EINS)", data=mod_amostras.plano_em_json(dados, amostra, consulta),
+        file_name="plano_coleta.eins.json", mime="application/json",
+        use_container_width=True,
+        help="Esquema eins-plano-coleta/1 (§7.4): o Acervo do EINS Lite importa e cria um "
+             "Processo por código de referência.")
+    colunas[1].download_button(
+        "CSV", data=mod_exportar.para_csv(dados, amostra.doc_uids, prov),
+        file_name=f"{nome}.csv", mime="text/csv", use_container_width=True)
+    colunas[2].download_button(
+        "JSON", data=mod_exportar.para_json(dados, amostra.doc_uids, prov),
+        file_name=f"{nome}.json", mime="application/json", use_container_width=True)
+    if st.button(f"Pôr os {len(amostra)} na seleção", use_container_width=True):
+        sobraram = selecao_atual().adicionar(amostra.doc_uids)
+        if sobraram:
+            st.warning(f"{sobraram} não couberam: o teto da seleção é {mod_selecao.LIMITE}.")
+        st.rerun()
 
 
 # ---------------------------------------------------------------------------
@@ -788,12 +973,8 @@ def aba_painel(dados) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Abas que ainda não existem (F3/F4)
+# Sobre e método (§9)
 # ---------------------------------------------------------------------------
-
-def em_breve(titulo: str, o_que: str, pacote: str) -> None:
-    st.subheader(titulo)
-    st.info(f"Em breve: {o_que} ({pacote}).")
 
 def aba_sobre(dados) -> None:
     st.subheader("Sobre e método")
@@ -862,8 +1043,7 @@ def main() -> None:
     with pessoas_:
         aba_pessoas(dados)
     with amostras_:
-        em_breve("Amostras", "amostra diacrônica por pessoa e amostra estratificada com semente",
-                 "WP 3.5")
+        aba_amostras(dados, consulta)
     with painel_:
         aba_painel(dados)
     with sobre_:
