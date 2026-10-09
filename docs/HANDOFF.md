@@ -13,8 +13,9 @@ que produziu este repositório — consiga continuar o trabalho só com o que es
 ## 1. Estado atual, em um parágrafo
 
 O app funciona de ponta a ponta no `localhost` e **não está publicado**: o repositório não tem
-`remote` configurado, e o que está no ar em `catalogo-ahu-sul.streamlit.app` ainda é o app **v2**,
-de outro repositório (`saulorrp/catalogo-ahu-cone-sul`). O corpus modular está pronto (7.051
+`remote` configurado, e o que está no ar em `catalogo-ahu-sul.streamlit.app` ainda é o app **v2**.
+O repositório **está pronto para substituí-lo** — veja [`publicacao.md`](publicacao.md), que tem os
+comandos exatos; o autor pode publicar a qualquer momento. O corpus modular está pronto (7.051
 documentos, 1.359 pessoas, índice semântico `multilingual-e5-small` de 384 dimensões), a busca
 híbrida funciona, a aba Pessoas e o painel diatópico funcionam, e o único arquivo que o app
 entrega é o PDF da **lista para consulta no AHU**, mais o plano de coleta do EINS na aba Amostras.
@@ -75,9 +76,10 @@ Ordem decidida pelo autor em 09/10. Cada etapa tem de deixar o `main` **publicá
 - [x] **R9, parte 2**: tabela dos lotes com layout fixo (Incluir · Nº · Ano · Código de
       referência clicável · Pasta · Tipologia · Resumo), escolher documentos, reordenar com
       ↑/↓, mover entre lotes, PDF por lote, e o "Download as CSV" das tabelas escondido.
-- [ ] **Preparar a substituição no GitHub**: auditoria de segredos em **toda a história**,
-      `main == v3`, README curto, `docs/publicacao.md` reescrito para o caminho do *force-push*.
-      **Aceite:** nenhum segredo na história; nenhum arquivo > 100 MB; `app_dados/*` versionado.
+- [x] **Preparar a substituição no GitHub.** Auditoria feita sobre toda a história: **nenhum
+      segredo** (nenhum `.env`, `*api_keys*`, `pplx-`, `sk-`, `hf_`, `ghp_`); maior objeto que já
+      existiu: 13,8 MB; `app_dados/*` versionado. `main == v3`. README e
+      [`publicacao.md`](publicacao.md) reescritos para o caminho do *force-push*.
 - [ ] **R7 — tirar o `torch` do caminho de consulta**. **Aceite:** o app não importa `torch` nem
       `sentence_transformers` em execução; cosseno ≥ 0,99 contra o `sentence-transformers` em ~30
       consultas; top-10 idêntico em ≥ 90 %; **pico de RSS < 600 MiB**.
