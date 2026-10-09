@@ -18,7 +18,10 @@ Quatro tarefas: **T1 Encontrar · T2 Recortar · T3 Amostrar · T4 Levar e citar
 1. Onde o código e o preprint divergirem, **vale o preprint**, salvo decisão registrada na spec §0 (D1).
 2. **Nada pago em funcionamento (R1).** Chamadas pagas (DeepSeek, Perplexity) só na construção do corpus, na máquina do autor.
 3. **O app só lê `app_dados/`** (spec §3.4). Nunca lê `corpus/` nem as camadas brutas.
-4. **`scribe_mediation_likely` só no PDF** (D1). Nunca na interface, nos filtros, no CSV nem no JSON.
+4. **`scribe_mediation_likely` só no PDF** (D1). Nunca na interface, nos filtros, no CSV nem no
+   JSON — nem o campo, nem o seu **nome**: a interface descreve a inferência em português, e há
+   teste que varre o `app.py` procurando o identificador. No dossiê ele sai como "Provável" /
+   "Pouco provável", sempre com a ressalva metodológica (`ahu/dossie.py`).
 5. **Biografias: só ALTA e MÉDIA** (ou `decisao_manual = aceitar`). Nunca REJEITADO nem BAIXA (D2).
 6. **IDs públicos são `doc_uid` e `pessoa_uid`.** Nunca `P0001`, nem posição de linha.
 7. **Pastas, coleções e tipologias vêm dos dados, nunca do código** (D6).
@@ -90,7 +93,8 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F3 | 3.2 Exportação CSV e JSON | feito (o CSV reabre igual; proveniência com Consulta, versões e DOI) |
 | F3 | 3.4 Link da busca | feito (A6 com cinco buscas variadas, de ponta a ponta) |
 | F3 | 3.3a Lista de consulta no AHU | feito (portada do pacote antigo; 7.050 de 7.051 cotas com código CRAV) |
-| F3 | 3.3 3.5 | pendente |
+| F3 | 3.3 Dossiê em PDF | feito (A8: capa com proveniência, uma seção por documento, mediação com ressalva) |
+| F3 | 3.5 | pendente |
 | F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.

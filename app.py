@@ -18,11 +18,13 @@ import pandas as pd
 import streamlit as st
 
 from ahu import busca
+from ahu import dossie as mod_dossie
 from ahu import exportar as mod_exportar
 from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
 from ahu import graficos as mod_graficos
 from ahu import lista_ahu as mod_lista
+from ahu import pdf as mod_pdf
 from ahu import pessoas as mod_pessoas
 from ahu import selecao as mod_selecao
 from ahu.consulta import TAMANHO_PAGINA, Consulta, ErroDeLink, executar, url_da_busca
@@ -432,8 +434,29 @@ def painel_de_selecao(dados, consulta: Consulta, resposta) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Exportação (WP 3.2, §8.2)
+# Exportação (WP 3.2, §8.2) e os PDFs (WP 3.3, 3.3a)
 # ---------------------------------------------------------------------------
+
+def pdf_pronto(rotulo: str, chave: str, montar, nome_do_arquivo: str) -> None:
+    """Gera um PDF **sob demanda** e só então oferece o download.
+
+    O `st.download_button` monta o arquivo a cada execução da página; para um PDF isso custaria
+    segundos em cada clique, e muito mais no oitavo de núcleo do Community Cloud. Daí os dois
+    passos: um botão que monta e guarda na sessão, e o download do que já está pronto.
+    """
+    if st.button(rotulo, use_container_width=True, key=f"btn_{chave}"):
+        with st.spinner("Montando o PDF..."):
+            try:
+                st.session_state[chave] = montar()
+            except (mod_dossie.ErroDeDossie, mod_pdf.ErroDeFonte) as e:
+                st.session_state.pop(chave, None)
+                st.error(f"**Não foi possível gerar o PDF.** {e}")
+    pronto = st.session_state.get(chave)
+    if pronto:
+        st.download_button(
+            f"Baixar {nome_do_arquivo} ({len(pronto) // 1024} KB)", data=pronto,
+            file_name=nome_do_arquivo, mime="application/pdf", use_container_width=True,
+            key=f"baixar_{chave}")
 
 def painel_de_exportacao(dados, consulta: Consulta, resposta) -> None:
     """CSV e JSON do resultado atual ou da seleção, sempre com proveniência (§8.2)."""
@@ -466,6 +489,29 @@ def painel_de_exportacao(dados, consulta: Consulta, resposta) -> None:
             use_container_width=True)
         st.caption("A inferência sobre mediação de escrivão não entra em nenhum dos dois: ela "
                    "sai só no dossiê em PDF, com a ressalva metodológica do preprint (D1).")
+
+        st.markdown("##### Dossiê em PDF")
+        st.caption(
+            f"Capa com a proveniência e a citação, e uma seção por documento: cotas e links, "
+            f"resumo do AHU, pessoas com origem e nível, inferências da IA com a justificativa e "
+            f"a mediação de escrivão com a ressalva. Cabem {mod_dossie.LIMITE} documentos por "
+            f"dossiê — acima disso ele levaria minutos e nasceria ilegível.")
+        if len(uids) > mod_dossie.LIMITE:
+            st.warning(
+                f"São {len(uids)} documentos e o dossiê cabe {mod_dossie.LIMITE}. "
+                f"O PDF sai com os {mod_dossie.LIMITE} primeiros; para os outros, reduza a "
+                f"seleção e gere um segundo dossiê.")
+        do_dossie = uids[:mod_dossie.LIMITE]
+        # Em dois passos de propósito: o `download_button` monta o arquivo a **cada** execução da
+        # página, e um dossiê de 200 fichas no oitavo de núcleo do Community Cloud deixaria a aba
+        # lenta a cada clique. Aqui ele só é montado quando se pede.
+        pdf_pronto(
+            f"Gerar o dossiê em PDF ({len(do_dossie)})", "dossie_pdf",
+            lambda: mod_dossie.gerar_pdf(
+                dados, do_dossie,
+                prov=mod_exportar.proveniencia(dados, consulta, len(do_dossie),
+                                               origem=f"dossie:{origem}")),
+            "dossie_ahu_sul.pdf")
 
 
 
@@ -537,11 +583,9 @@ def painel_da_lista_ahu(dados, resposta) -> None:
             "datas_consulta": campos[1].text_input("Datas agendadas no CRAV"),
             "observacao": campos[1].text_input("Observação (opcional)"),
         }
-        st.download_button(
-            "Baixar a lista em PDF",
-            data=mod_lista.gerar_pdf(grupos, dados, cabecalho),
-            file_name="lista_documentos_AHU.pdf", mime="application/pdf",
-            use_container_width=True)
+        pdf_pronto("Gerar a lista em PDF", "lista_pdf",
+                   lambda: mod_lista.gerar_pdf(grupos, dados, cabecalho),
+                   "lista_documentos_AHU.pdf")
 
 
 # ---------------------------------------------------------------------------
