@@ -114,12 +114,36 @@ def _valor(linha, campo):
     return None if v is None or pd.isna(v) else v
 
 
+def _vinculos_por_documento(dados) -> dict:
+    """`doc_uid` -> as linhas de `doc_pessoa`, já na ordem de posição.
+
+    Guardado no próprio `Dados` (é derivado, não artefato do §3.4). Antes, montar uma ficha fazia
+    uma varredura de `doc_pessoa` **e** reconstruía o índice de `pessoas` a cada chamada: 25
+    fichas numa página pagavam isso 25 vezes. Com o fragmento do R2 redesenhando a lista a cada
+    clique, esse desperdício ficou visível.
+    """
+    cache = getattr(dados, "_vinculos_por_doc", None)
+    if cache is not None:
+        return cache
+    agrupado = {uid: grupo.sort_values("posicao")
+                for uid, grupo in dados.doc_pessoa.groupby("doc_uid", sort=False)}
+    object.__setattr__(dados, "_vinculos_por_doc", agrupado)
+    return agrupado
+
+
+def _pessoas_indexadas(dados):
+    cache = getattr(dados, "_pessoas_indexadas", None)
+    if cache is None:
+        cache = dados.pessoas.set_index("pessoa_uid")
+        object.__setattr__(dados, "_pessoas_indexadas", cache)
+    return cache
+
+
 def _pessoas_do_documento(dados, doc_uid: str) -> list[Pessoa]:
-    vinculos = dados.doc_pessoa
-    recorte = vinculos[vinculos["doc_uid"] == doc_uid].sort_values("posicao")
-    if recorte.empty:
+    recorte = _vinculos_por_documento(dados).get(doc_uid)
+    if recorte is None or recorte.empty:
         return []
-    pessoas = dados.pessoas.set_index("pessoa_uid")
+    pessoas = _pessoas_indexadas(dados)
     saida = []
     for _, v in recorte.iterrows():
         uid = v["pessoa_uid"]

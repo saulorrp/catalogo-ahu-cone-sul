@@ -103,7 +103,8 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F3 | 3.5 Amostras e plano EINS | feito (A7 e A9; "Gerar amostra diacrônica" habilitado) |
 | **F3** | **remodelada** | ver o plano v3.1: o WP 3.2 e o WP 3.3 foram retirados (D7) |
 | v3.1 | R1 Remoções | feito (D7–D11: lentes, CSV/JSON/dossiê, identificadores) |
-| v3.1 | R2…R8 | pendente |
+| v3.1 | R2 Seleção rápida | feito (0 buscas por clique; corpo do fragmento em ~46 ms; espelho na URL) |
+| v3.1 | R3…R8 | pendente |
 | F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.

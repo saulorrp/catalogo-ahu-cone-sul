@@ -1,45 +1,40 @@
-"""selecao.py — WP 3.1: a seleção de documentos que atravessa buscas (spec §8.1).
+"""selecao.py — a seleção de documentos que atravessa buscas (spec §8.1, plano v3.1 R2).
 
 Sem Streamlit. A `Selecao` é uma lista ordenada de `doc_uid` — nada mais. O `app.py` a guarda em
-`st.session_state`, e é só isso: **nada é persistido no servidor** (R4). Quem quiser guardar a
-seleção para amanhã baixa um JSON e carrega de volta, e é por isso que `para_json` e `de_json`
-estão aqui, testáveis, em vez de no `app.py`.
+`st.session_state`, e é só isso: **nada é persistido no servidor** (R4).
 
 Três coisas que a §8.1 pede e que esta classe garante:
 
 1. **a seleção atravessa buscas.** Ela não guarda posição, nota nem página: só o `doc_uid`, que é
-   o identificador público e estável (AGENTS.md 6). Mudar a busca não mexe nela;
+   o identificador estável (AGENTS.md 6). Mudar a busca não mexe nela;
 2. **teto de 500 documentos.** `adicionar` nunca passa do teto e diz quantos ficaram de fora, para
    a interface poder avisar em vez de truncar em silêncio;
-3. **ordem significa algo.** A ordem padrão é a de chegada — a ordem em que o pesquisador marcou —
-   e `ordenar` reordena por ano, cota ou tipologia quando ele pede. Nunca é a ordem da busca.
+3. **ordem significa algo.** A ordem é a de chegada — a ordem em que o pesquisador marcou —, e é
+   nessa ordem que o PDF sai. Nunca é a ordem da busca.
 
-O JSON tem esquema versionado (`selecao-ahu-sul/1`). Um arquivo de versão desconhecida é recusado
-com mensagem clara, e `doc_uid` que não existe mais no corpus é descartado e **relatado**: um
-arquivo de seis meses atrás não pode virar uma seleção silenciosamente menor.
+**Como a seleção sobrevive a um recarregamento (R2).** Nada é guardado no servidor, e o JSON de
+baixar e carregar saiu com a D7. O que ficou é o espelho na **URL**: `para_url` escreve um prefixo
+curto do `doc_uid` de cada documento e `de_url` os resolve de volta. O prefixo é o mais curto que
+**não colide em nenhum documento do corpus ativo** — calculado nos dados, nunca escrito no código
+—, e se o resultado passar de `LIMITE_URL` caracteres o espelho é desligado e a interface diz por
+quê. Um recarregamento, um favorito ou um link copiado trazem a seleção de volta sem que nenhum
+identificador apareça na tela (D10).
 """
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 
 import pandas as pd
 
 LIMITE = 500            # §8.1
-ESQUEMA = "selecao-ahu-sul/1"
-ORDENS = ("chegada", "ano_asc", "ano_desc", "cota", "tipologia")
-ROTULOS_ORDEM = {
-    "chegada": "Ordem em que foram marcados",
-    "ano_asc": "Ano (mais antigo primeiro)",
-    "ano_desc": "Ano (mais recente primeiro)",
-    "cota": "Código de referência",
-    "tipologia": "Tipologia",
-}
 
-
-class ErroDeSelecao(ValueError):
-    """Arquivo de seleção inválido: esquema desconhecido ou conteúdo fora do formato."""
+# O espelho na URL (R2). 1.800 caracteres é um teto conservador: o limite prático dos navegadores
+# e dos servidores fica acima disso, mas uma URL mais longa que esta já não se copia nem se
+# compartilha com conforto. Acima do teto, a interface avisa e manda gerar o PDF.
+LIMITE_URL = 1800
+CHAVE_URL = "sel"
+SEPARADOR_URL = ","
+MINIMO_PREFIXO = 6
 
 
 @dataclass
@@ -85,92 +80,123 @@ class Selecao:
         return 0
 
     # -----------------------------------------------------------------
-    def ordenar(self, dados, ordem: str = "chegada") -> list[str]:
-        """Os `doc_uid` na ordem pedida. Não muda a seleção: a ordem de chegada é preservada."""
-        if ordem not in ORDENS:
-            raise ValueError(f"Ordem desconhecida: {ordem!r}. Use uma de {', '.join(ORDENS)}.")
-        if ordem == "chegada":
-            return list(self.uids)
-        docs = dados.documentos
-        def chave(uid: str):
-            linha = docs.iloc[dados.indice_de(uid)]
-            if ordem in ("ano_asc", "ano_desc"):
-                ano = linha.get("ano_isolado")
-                ausente = ano is None or pd.isna(ano)
-                valor = 0 if ausente else int(ano)
-                # Documento sem data vai para o fim nas duas ordens.
-                return (ausente, -valor if ordem == "ano_desc" else valor, uid)
-            campo = "reference_code" if ordem == "cota" else "tipologia"
-            valor = linha.get(campo)
-            return ("" if valor is None or pd.isna(valor) else str(valor), uid)
-        return sorted(self.uids, key=chave)
+    # Ver (R2): uma linha por documento, e nada mais
+    # -----------------------------------------------------------------
+    def linhas(self, dados) -> list[dict]:
+        """Uma linha por documento, na ordem em que foram marcados.
 
-    def tabela(self, dados, ordem: str = "chegada") -> pd.DataFrame:
-        """A seleção em forma de tabela, para o pesquisador conferir. **Sem `doc_uid`** (D10)."""
+        É o que o painel mostra e o que o PDF imprime: ano, cota, código de referência e resumo.
+        O `doc_uid` volta só em `uid`, para o ✕ saber que linha remover; ele não é para a tela
+        (D10).
+        """
+        from ahu.links import referencia_crav
+
         docs = dados.documentos
-        linhas = []
-        for posicao, uid in enumerate(self.ordenar(dados, ordem), start=1):
+        saida = []
+        for posicao, uid in enumerate(self.uids, start=1):
             linha = docs.iloc[dados.indice_de(uid)]
-            def valor(campo):
+
+            def valor(campo, linha=linha):
                 v = linha.get(campo)
                 return "" if v is None or pd.isna(v) else v
+
             ano = valor("ano_isolado")
-            linhas.append({
-                "Nº": posicao,
-                "Ano": "" if ano == "" else int(ano),
-                "Tipologia": valor("tipologia"),
-                "Código de referência": valor("reference_code"),
-                "Código atual": valor("new_code"),
-                "Pasta": valor("folder"),
+            cota = valor("new_code") or valor("reference_code") or ""
+            if str(cota).upper() == "UNFORMATTED_CODE":
+                cota = valor("reference_code") or ""
+            saida.append({
+                "n": posicao,
+                "uid": uid,
+                "ano": "" if ano == "" else int(ano),
+                "cota": str(cota).rstrip("."),
+                "referencia": (referencia_crav(valor("reference_code"))
+                               or referencia_crav(valor("new_code")) or ""),
+                "resumo": str(valor("description") or ""),
+                "tipologia": str(valor("tipologia") or ""),
             })
-        return pd.DataFrame(linhas, columns=["Nº", "Ano", "Tipologia", "Código de referência",
-                                             "Código atual", "Pasta"])
+        return saida
+
+    def tabela(self, dados) -> pd.DataFrame:
+        """As linhas em forma de tabela. Sem identificador (D10)."""
+        rotulos = {"n": "Nº", "ano": "Ano", "cota": "Cota",
+                   "referencia": "Código de referência"}
+        return pd.DataFrame(
+            [{rotulo: linha[campo] for campo, rotulo in rotulos.items()}
+             for linha in self.linhas(dados)],
+            columns=list(rotulos.values()))
 
     # -----------------------------------------------------------------
-    # Baixar e carregar (R4: nada fica no servidor)
+    # Espelho na URL (R2)
     # -----------------------------------------------------------------
-    def para_json(self, proveniencia: dict | None = None) -> bytes:
-        """O arquivo que o botão "Baixar seleção" entrega."""
-        conteudo = {
-            "schema": ESQUEMA,
-            "gerado_em": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
-            "documentos": len(self.uids),
-            "doc_uids": list(self.uids),
-        }
-        if proveniencia:
-            conteudo["proveniencia"] = proveniencia
-        return json.dumps(conteudo, ensure_ascii=False, indent=2).encode("utf-8")
+    def para_url(self, dados) -> str | None:
+        """Os prefixos curtos, separados por vírgula. `None` quando não cabe na URL."""
+        if not self.uids:
+            return ""
+        tamanho = tamanho_do_prefixo(dados)
+        texto = SEPARADOR_URL.join(_parte_variavel(u)[:tamanho] for u in self.uids)
+        return None if len(texto) > LIMITE_URL else texto
 
     @classmethod
-    def de_json(cls, bruto: bytes | str, dados=None) -> tuple["Selecao", dict]:
-        """Lê o arquivo de volta. Devolve a seleção e um relatório do que foi descartado.
-
-        O relatório é o que a interface mostra: `desconhecidos` são `doc_uid` que não existem
-        mais no corpus ativo (o corpus mudou, ou o arquivo é de outra coleção) e `excedentes` é
-        quanto passou do teto de 500.
-        """
-        try:
-            conteudo = json.loads(bruto.decode("utf-8") if isinstance(bruto, bytes) else bruto)
-        except (json.JSONDecodeError, UnicodeDecodeError) as e:
-            raise ErroDeSelecao(f"Este arquivo não é um JSON válido ({e}).") from e
-        if not isinstance(conteudo, dict):
-            raise ErroDeSelecao("O arquivo de seleção deveria ser um objeto JSON.")
-        esquema = conteudo.get("schema")
-        if esquema != ESQUEMA:
-            raise ErroDeSelecao(
-                f"Esquema de seleção desconhecido: {esquema!r}. Este app lê {ESQUEMA!r}."
-            )
-        uids = conteudo.get("doc_uids")
-        if not isinstance(uids, list) or any(not isinstance(u, str) for u in uids):
-            raise ErroDeSelecao("`doc_uids` deveria ser uma lista de identificadores.")
-
-        desconhecidos = []
-        if dados is not None:
-            conhecidos = []
-            for u in uids:
-                (conhecidos if u in dados.posicao else desconhecidos).append(u)
-            uids = conhecidos
+    def de_url(cls, texto: str | None, dados) -> tuple["Selecao", int]:
+        """Resolve os prefixos de volta. Devolve a seleção e quantos não foram reconhecidos."""
         selecao = cls()
-        excedentes = selecao.adicionar(uids)
-        return selecao, {"carregados": len(selecao), "desconhecidos": desconhecidos,
-                         "excedentes": excedentes, "gerado_em": conteudo.get("gerado_em")}
+        if not texto:
+            return selecao, 0
+        por_prefixo = _indice_de_prefixos(dados)
+        tamanho = tamanho_do_prefixo(dados)
+        achados, perdidos = [], 0
+        for pedaco in texto.split(SEPARADOR_URL):
+            pedaco = pedaco.strip()
+            if not pedaco:
+                continue
+            uid = por_prefixo.get(pedaco[:tamanho])
+            if uid is None:
+                perdidos += 1
+            else:
+                achados.append(uid)
+        selecao.adicionar(achados)
+        return selecao, perdidos
+
+
+# ---------------------------------------------------------------------------
+# Prefixos curtos (R2)
+# ---------------------------------------------------------------------------
+
+def _parte_variavel(doc_uid: str) -> str:
+    """A parte que distingue um documento do outro: o que vem depois da coleção."""
+    return str(doc_uid).split(":")[-1]
+
+
+def tamanho_do_prefixo(dados) -> int:
+    """O prefixo mais curto que **não colide** em nenhum documento do corpus ativo.
+
+    Começa em `MINIMO_PREFIXO` e cresce até não haver dois documentos com o mesmo prefixo. O
+    número sai dos dados, nunca do código: uma coleção nova, com mais documentos, pode exigir um
+    caractere a mais, e aí ele cresce sozinho (D6, A11).
+    """
+    cache = getattr(dados, "_tamanho_prefixo_selecao", None)
+    if cache is not None:
+        return cache
+    partes = [_parte_variavel(u) for u in dados.documentos["doc_uid"]]
+    maior = max((len(p) for p in partes), default=MINIMO_PREFIXO)
+    tamanho = MINIMO_PREFIXO
+    while tamanho < maior and len({p[:tamanho] for p in partes}) != len(partes):
+        tamanho += 1
+    object.__setattr__(dados, "_tamanho_prefixo_selecao", tamanho)
+    return tamanho
+
+
+def _indice_de_prefixos(dados) -> dict[str, str]:
+    cache = getattr(dados, "_indice_prefixos_selecao", None)
+    if cache is not None:
+        return cache
+    tamanho = tamanho_do_prefixo(dados)
+    indice = {_parte_variavel(u)[:tamanho]: str(u) for u in dados.documentos["doc_uid"]}
+    object.__setattr__(dados, "_indice_prefixos_selecao", indice)
+    return indice
+
+
+def maximo_na_url(dados) -> int:
+    """Quantos documentos cabem no espelho da URL, com o prefixo deste corpus."""
+    por_documento = tamanho_do_prefixo(dados) + len(SEPARADOR_URL)
+    return (LIMITE_URL + len(SEPARADOR_URL)) // por_documento

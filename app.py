@@ -60,19 +60,37 @@ def carregar_dados():
         st.error(f"**Os dados do app não estão prontos.**\n\n{e}")
         st.stop()
 
-def consulta_atual() -> Consulta:
-    """A consulta vem da URL na primeira carga e do estado da sessão depois (§8.3, A6)."""
+def consulta_atual(dados) -> Consulta:
+    """A consulta vem da URL na primeira carga e do estado da sessão depois (§8.3, A6).
+
+    Na primeira carga a URL também pode trazer a seleção (R2), na chave `sel`. Ela é retirada
+    antes de a `Consulta` ler o resto, que recusa parâmetro que não conhece.
+    """
     if "consulta" not in st.session_state:
+        parametros = dict(st.query_params)
+        espelho = parametros.pop(mod_selecao.CHAVE_URL, None)
         try:
-            st.session_state.consulta = Consulta.de_url(dict(st.query_params))
+            st.session_state.consulta = Consulta.de_url(parametros)
         except ErroDeLink as e:
             st.warning(f"Link de busca não reconhecido ({e}) — começando uma busca nova.")
             st.session_state.consulta = Consulta()
+        if espelho:
+            recuperada, perdidos = mod_selecao.Selecao.de_url(espelho, dados)
+            st.session_state.selecao = recuperada
+            if perdidos:
+                st.warning(f"{perdidos} documento(s) do link não existem mais neste corpus e "
+                           "ficaram de fora da seleção.")
     return st.session_state.consulta
 
+
 def guardar(consulta: Consulta) -> None:
+    """Grava a consulta na sessão e na URL, **preservando o espelho da seleção** (R2)."""
     st.session_state.consulta = consulta
-    st.query_params.from_dict(consulta.para_url())
+    parametros = consulta.para_url()
+    espelho = st.session_state.get("espelho_selecao")
+    if espelho:
+        parametros[mod_selecao.CHAVE_URL] = espelho
+    st.query_params.from_dict(parametros)
 
 
 def selecao_atual() -> mod_selecao.Selecao:
@@ -80,6 +98,62 @@ def selecao_atual() -> mod_selecao.Selecao:
     if "selecao" not in st.session_state:
         st.session_state.selecao = mod_selecao.Selecao()
     return st.session_state.selecao
+
+
+def espelhar_selecao(dados) -> None:
+    """Põe a seleção na URL, para ela sobreviver a um recarregamento (R2).
+
+    Chamada dos *callbacks* das caixas, não do corpo da página: é a mudança da seleção que
+    precisa ser gravada, e gravar a URL não provoca reexecução.
+    """
+    selecao = selecao_atual()
+    espelho = selecao.para_url(dados)
+    st.session_state.espelho_selecao = espelho
+    if espelho is None:
+        st.query_params.pop(mod_selecao.CHAVE_URL, None)
+    elif espelho:
+        st.query_params[mod_selecao.CHAVE_URL] = espelho
+    else:
+        st.query_params.pop(mod_selecao.CHAVE_URL, None)
+
+
+def ao_marcar(dados, doc_uid: str) -> None:
+    """*Callback* da caixa "Selecionar": mexe no estado e **não** reexecuta a página.
+
+    É esta função que faz um clique custar um fragmento em vez de duas buscas completas: ela não
+    chama `st.rerun()`, e o fragmento que desenha a lista se redesenha sozinho.
+    """
+    selecao = selecao_atual()
+    chave = f"sel_{doc_uid}"
+    marcado = bool(st.session_state.get(chave))
+    sobraram = selecao.alternar(doc_uid, marcado)
+    if sobraram:
+        st.session_state[chave] = False
+        st.session_state.aviso_selecao = (
+            f"A seleção já tem {mod_selecao.LIMITE} documentos, que é o máximo.")
+    else:
+        st.session_state.pop("aviso_selecao", None)
+    espelhar_selecao(dados)
+
+
+def resposta_da_consulta(dados, consulta: Consulta):
+    """A resposta da busca, **memoizada na sessão** pela consulta (R2).
+
+    Guarda uma entrada só, e a chave ignora a página: paginar não refaz a busca, e marcar uma
+    caixa não chega nem a passar por aqui, porque o fragmento não reexecuta o corpo da página.
+    Uma entrada basta e mantém a memória limitada — o Community Cloud tem 690 MiB garantidos.
+
+    Não é `st.cache_data` de propósito: ela devolve **cópias** (serializa e desserializa a cada
+    acesso), o que numa `Resposta` de 7.051 resultados custaria mais do que a busca que evita.
+    """
+    chave = tuple(sorted((k, v) for k, v in consulta.para_url().items() if k != "p"))
+    guardado = st.session_state.get("resposta_memoizada")
+    if guardado is not None and guardado[0] == chave:
+        return guardado[1]
+    encoder = encoder_preguicoso(dados) if consulta.modo in ("automatico", "conceitual") else None
+    resposta = executar(dados, consulta, encoder=encoder)
+    st.session_state.resposta_memoizada = (chave, resposta)
+    return resposta
 
 
 def endereco_da_pagina() -> str | None:
@@ -213,23 +287,31 @@ def barra_de_busca(consulta: Consulta) -> Consulta:
     return consulta
 
 # ---------------------------------------------------------------------------
-# Resultados e ficha
+# Resultados, seleção e lista (R2) — tudo dentro de um fragmento
 # ---------------------------------------------------------------------------
 
 def desenhar_ficha(dados, doc_uid: str, termos: list[str], resultado=None) -> None:
+    """Uma ficha, com a caixa de seleção fora do expansor (§8.1).
+
+    A caixa usa `on_change`: ela mexe na seleção pelo *callback* e **não** chama `st.rerun()`.
+    Como a ficha é desenhada dentro de `secao_de_resultados`, que é um fragmento, marcar uma
+    caixa redesenha só o fragmento — a busca não é refeita (R2).
+    """
     f = mod_ficha.montar(dados, doc_uid, termos)
     selecao = selecao_atual()
+    chave = f"sel_{doc_uid}"
+    # O estado da caixa segue a seleção: depois de "selecionar tudo" ou de "limpar", a caixa
+    # tem de contar a verdade. Escrever o estado antes de instanciar o widget é o jeito
+    # suportado de fazer isso.
+    desejado = doc_uid in selecao
+    if st.session_state.get(chave) != desejado:
+        st.session_state[chave] = desejado
 
-    # §8.1: a caixa fica **fora** do expansor, senão ela só existiria com a ficha aberta.
     caixa, titulo = st.columns([1, 20])
-    marcado = caixa.checkbox(
-        "Selecionar", value=doc_uid in selecao, key=f"sel_{doc_uid}", label_visibility="collapsed",
+    caixa.checkbox(
+        "Selecionar", key=chave, label_visibility="collapsed",
+        on_change=ao_marcar, args=(dados, doc_uid),
         help="Selecionar este documento. A seleção atravessa buscas.")
-    if marcado != (doc_uid in selecao):
-        sobraram = selecao.alternar(doc_uid, marcado)
-        if sobraram:
-            st.warning(f"A seleção já tem {mod_selecao.LIMITE} documentos, o máximo.")
-        st.rerun()
 
     with titulo.expander(f.titulo, expanded=False):
         st.markdown(f.resumo_marcado)
@@ -249,7 +331,7 @@ def desenhar_ficha(dados, doc_uid: str, termos: list[str], resultado=None) -> No
             st.markdown(f"**Destinatário:** {f.destinatario}")
 
         if f.pessoas:
-            st.markdown("**Pessoas (remetentes)**")
+            st.markdown("**Remetentes**")
             for p in f.pessoas:
                 linha = f"- {p.nome} — *{p.tipo}*"
                 if p.exibe_nascimento:
@@ -278,15 +360,42 @@ def desenhar_ficha(dados, doc_uid: str, termos: list[str], resultado=None) -> No
             with st.expander(mod_ficha.TITULO_IA, expanded=False):
                 for etiqueta, valor in f.inferencias.items():
                     st.markdown(f"**{etiqueta}:** {valor}")
-                st.caption(mod_filtros.NOTA_SRSP)
+
+
+@st.fragment
+def secao_de_resultados(dados, consulta: Consulta, resposta) -> None:
+    """A lista de resultados, a seleção e a lista do AHU, num fragmento só (R2).
+
+    Tudo que depende da seleção vive aqui dentro, e é por isso que um clique numa caixa não
+    reexecuta a página: nem a busca, nem a barra lateral, nem as outras abas.
+    """
+    aviso = st.session_state.pop("aviso_selecao", None)
+    if aviso:
+        st.warning(aviso)
+
+    painel_de_selecao(dados, resposta)
+    painel_da_lista_ahu(dados, resposta)
+
+    if not resposta.total:
+        st.info("Nenhum documento. Tente menos filtros, outro modo ou um rigor mais baixo.")
+        return
+
+    paginas = max(1, -(-resposta.total // TAMANHO_PAGINA))
+    pagina = min(consulta.pagina, paginas)
+    for resultado in resposta.pagina(pagina, TAMANHO_PAGINA):
+        desenhar_ficha(dados, resultado.doc_uid, resposta.termos_consulta, resultado)
+
+    st.divider()
+    st.caption("Resumos e cotas: Arquivo Histórico Ultramarino e Projeto Resgate "
+               "\"Barão do Rio Branco\".")
+
 
 def aba_busca(dados, consulta: Consulta) -> None:
     consulta = barra_de_busca(consulta)
     consulta = barra_lateral(dados, consulta)
     guardar(consulta)
 
-    encoder = encoder_preguicoso(dados) if consulta.modo in ("automatico", "conceitual") else None
-    resposta = executar(dados, consulta, encoder=encoder)
+    resposta = resposta_da_consulta(dados, consulta)
 
     ativos = consulta.filtros.ativos()
     cabecalho = f"**{resposta.total}** documento(s)"
@@ -303,13 +412,14 @@ def aba_busca(dados, consulta: Consulta) -> None:
         st.caption(f"Cada motor contribui com os {busca.LIMITE_MOTOR} primeiros documentos.")
 
     painel_do_link(consulta)
-    painel_de_selecao(dados, consulta, resposta)
-    painel_da_lista_ahu(dados, resposta)
 
+    # Ordenação e página ficam **fora** do fragmento: as duas mudam a `Consulta`, e a consulta
+    # tem de ir para a URL para o link copiado reproduzir a mesma lista (A6). A reexecução que
+    # elas provocam não refaz a busca, porque `resposta_da_consulta` ignora a página na chave.
     colunas = st.columns([3, 6, 3])
+    ordenacoes = ("relevancia", "ano_asc", "ano_desc")
     ordenacao = colunas[0].selectbox(
-        "Ordenar por", ("relevancia", "ano_asc", "ano_desc"),
-        index=("relevancia", "ano_asc", "ano_desc").index(consulta.ordenacao),
+        "Ordenar por", ordenacoes, index=ordenacoes.index(consulta.ordenacao),
         format_func=lambda o: {"relevancia": "Relevância", "ano_asc": "Ano (mais antigo)",
                                "ano_desc": "Ano (mais recente)"}[o])
     if ordenacao != consulta.ordenacao:
@@ -318,24 +428,15 @@ def aba_busca(dados, consulta: Consulta) -> None:
         st.rerun()
 
     paginas = max(1, -(-resposta.total // TAMANHO_PAGINA))
-    pagina = min(consulta.pagina, paginas)
     if paginas > 1:
-        pagina = colunas[2].number_input("Página", 1, paginas, pagina, step=1)
+        pagina = colunas[2].number_input("Página", 1, paginas,
+                                         min(consulta.pagina, paginas), step=1)
         if pagina != consulta.pagina:
             from ahu.consulta import asdict_raso
             guardar(Consulta(**{**asdict_raso(consulta), "pagina": int(pagina)}))
             st.rerun()
 
-    if not resposta.total:
-        st.info("Nenhum documento. Tente menos filtros, outro modo ou um rigor mais baixo.")
-        return
-
-    for resultado in resposta.pagina(pagina, TAMANHO_PAGINA):
-        desenhar_ficha(dados, resultado.doc_uid, resposta.termos_consulta, resultado)
-
-    st.divider()
-    st.caption("Resumos e cotas: Arquivo Histórico Ultramarino e Projeto Resgate "
-               "\"Barão do Rio Branco\".")
+    secao_de_resultados(dados, consulta, resposta)
 
 
 # ---------------------------------------------------------------------------
@@ -356,38 +457,57 @@ def painel_do_link(consulta: Consulta) -> None:
 # Seleção (WP 3.1, §8.1)
 # ---------------------------------------------------------------------------
 
-def painel_de_selecao(dados, consulta: Consulta, resposta) -> None:
-    """Ver, ordenar e esvaziar a seleção (§8.1)."""
-    del consulta
-    selecao = selecao_atual()
-    titulo = (f"Seleção — {len(selecao)} documento(s)" if len(selecao)
-              else "Seleção — vazia")
-    with st.expander(titulo, expanded=False):
-        st.caption(
-            f"A seleção atravessa buscas e cabe até {mod_selecao.LIMITE} documentos. Ela vive "
-            "só nesta sessão do navegador: nada é guardado no servidor.")
+def painel_de_selecao(dados, resposta) -> None:
+    """A seleção, mínima (R2): uma linha por documento, ✕ para tirar, limpar, e o PDF.
 
-        acoes = st.columns(2)
+    Sem ordenação e sem texto explicativo: o painel é para conferir o que vai ao arquivo, não
+    para estudar. Ele vive dentro do fragmento, de modo que o contador e as linhas acompanham
+    cada clique sem reexecutar a página.
+    """
+    selecao = selecao_atual()
+    quantos = len(selecao)
+    titulo = f"⸿ {quantos}" if quantos else "Seleção vazia"
+    with st.expander(titulo, expanded=bool(quantos)):
+        acoes = st.columns([3, 2, 2])
         if acoes[0].button(f"Selecionar os {resposta.total} do resultado",
-                           use_container_width=True, disabled=not resposta.total,
-                           help="Acrescenta todos os documentos desta busca, até o teto."):
+                           width="stretch", disabled=not resposta.total,
+                           key="selecionar_resultado"):
             sobraram = selecao.adicionar([r.doc_uid for r in resposta.resultados])
             if sobraram:
-                st.warning(f"{sobraram} documento(s) não couberam: o teto é "
-                           f"{mod_selecao.LIMITE}.")
-            st.rerun()
-        if acoes[1].button("Esvaziar a seleção", use_container_width=True,
-                           disabled=not len(selecao)):
+                st.session_state.aviso_selecao = (
+                    f"{sobraram} documento(s) não couberam: o teto é {mod_selecao.LIMITE}.")
+            espelhar_selecao(dados)
+            st.rerun(scope="fragment")
+        if acoes[1].button("Limpar seleção", width="stretch", disabled=not quantos,
+                           key="limpar_selecao"):
             selecao.limpar()
-            st.rerun()
+            espelhar_selecao(dados)
+            st.rerun(scope="fragment")
 
-        if not len(selecao):
+        if not quantos:
             return
-        ordem = st.selectbox("Ordenar a seleção por", mod_selecao.ORDENS,
-                             format_func=lambda o: mod_selecao.ROTULOS_ORDEM[o],
-                             key="ordem_selecao")
-        st.dataframe(selecao.tabela(dados, ordem), use_container_width=True, hide_index=True)
 
+        if st.session_state.get("espelho_selecao") is None:
+            st.caption("Seleção grande demais para o link; gere o PDF para guardá-la.")
+
+        for linha in selecao.linhas(dados):
+            numero, corpo, tirar = st.columns([1, 18, 1])
+            numero.markdown(f"<span class='numero'>{linha['n']}</span>", unsafe_allow_html=True)
+            corpo.markdown(
+                f"<span class='numero'>{linha['ano'] or '—'}</span> · "
+                f"<span class='cota'>{linha['cota'] or '—'}</span><br>"
+                f"<span class='rotulo'>{mod_pdf.encurtar(linha['resumo'], 140)}</span>",
+                unsafe_allow_html=True)
+            if tirar.button("✕", key=f"tirar_{linha['uid']}", help="Tirar da seleção"):
+                selecao.remover(linha["uid"])
+                st.session_state.pop(f"sel_{linha['uid']}", None)
+                espelhar_selecao(dados)
+                st.rerun(scope="fragment")
+
+        st.divider()
+        pdf_pronto(f"Gerar PDF da seleção ({quantos})", "pdf_selecao",
+                   lambda: mod_lista.pdf_da_selecao(dados, selecao),
+                   "lista_consulta_AHU.pdf")
 
 
 # ---------------------------------------------------------------------------
@@ -425,13 +545,10 @@ def painel_da_lista_ahu(dados, resposta) -> None:
     if "lista_ahu_texto" not in st.session_state:
         st.session_state.lista_ahu_texto = ""
 
-    with st.expander("Lista para consulta no AHU (PDF)", expanded=False):
+    with st.expander("❧ Colar cotas", expanded=False):
         st.caption(
-            "O PDF que se anexa ao pedido de consulta: A4 paisagem, uma linha por documento, com "
-            "cota, código de referência, link do DigitArq, data, tipologia, remetente, resumo do "
-            "catálogo e duas caixas para marcar à mão. Cotas de outras capitanias também "
-            "funcionam — o código e o link saem da própria cota; o que falta, nesse caso, é só o "
-            "que vem do catálogo.")
+            "Uma cota por linha, em qualquer formato. `#` abre um grupo, `|` acrescenta nota ou "
+            "link. Cotas de outras capitanias também funcionam.")
 
         enviar = st.columns([3, 3, 2])
         agrupar = enviar[1].selectbox(
@@ -935,7 +1052,7 @@ def main() -> None:
     st.caption(SUBTITULO)
 
     dados = carregar_dados()
-    consulta = consulta_atual()
+    consulta = consulta_atual(dados)
 
     busca_, pessoas_, amostras_, painel_, sobre_ = st.tabs(ABAS)
     with busca_:

@@ -188,6 +188,27 @@ def lista_de_documentos(dados, doc_uids, agrupar_por: str | None = None) -> str:
     return "\n".join(saida)
 
 
+def grupos_da_selecao(dados, selecao) -> list[Grupo]:
+    """A seleção como um grupo único, na ordem em que foi marcada (R2).
+
+    Não passa pelo `ler_lista`: os documentos já são do corpus, e reescrevê-los como texto para
+    reconhecê-los de volta seria dar a volta ao mundo para atravessar a rua.
+    """
+    itens = []
+    for linha in selecao.linhas(dados):
+        itens.append(Item(
+            cota_digitada=linha["cota"] or linha["referencia"],
+            referencia=linha["referencia"] or None,
+            linhas=[dados.indice_de(linha["uid"])],
+        ))
+    return [Grupo(None, itens)] if itens else []
+
+
+def pdf_da_selecao(dados, selecao, cabecalho: dict | None = None) -> bytes:
+    """O PDF da lista de consulta, a partir da seleção (R2/R3)."""
+    return gerar_pdf(grupos_da_selecao(dados, selecao), dados, cabecalho)
+
+
 def relatorio(grupos: list[Grupo]) -> dict:
     """O que o painel mostra antes de gerar o PDF: quantos, quantos no catálogo, quantos sem cota."""
     itens = [i for g in grupos for i in g.itens]
