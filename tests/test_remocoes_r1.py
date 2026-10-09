@@ -57,9 +57,16 @@ def test_a_selecao_nao_e_mais_baixada_nem_carregada(fonte_do_app):
 
 
 def test_os_unicos_downloads_de_pdf_sao_a_lista_do_ahu(textos_da_interface):
-    """A seleção e a caixa de colar cotas produzem o mesmo tipo de PDF, e só ele."""
-    arquivos = sorted({t for t in textos_da_interface if t.endswith((".pdf", ".csv"))})
-    assert arquivos == ["lista_consulta_AHU.pdf"], arquivos
+    """Seleção, cotas coladas e lotes produzem o mesmo tipo de PDF, e só ele.
+
+    Os nomes montados por f-string chegam aqui em pedaços (`"…_lote_"` e `".pdf"`), e por isso
+    o teste olha o prefixo em vez do nome inteiro.
+    """
+    arquivos = sorted({t for t in textos_da_interface
+                       if t.endswith((".pdf", ".csv")) or "lista_consulta_AHU" in t})
+    assert arquivos == [".pdf", "lista_consulta_AHU.pdf",
+                        "lista_consulta_AHU_lote_"], arquivos
+    assert not any(t.endswith(".csv") for t in textos_da_interface)
 
 
 def test_o_unico_json_oferecido_e_o_plano_do_eins(textos_da_interface):

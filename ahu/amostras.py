@@ -317,14 +317,27 @@ def amostra_estratificada(dados, doc_uids, estratos: list[str], por_estrato: int
     )
 
 
-def tabela_dos_documentos(dados, doc_uids) -> pd.DataFrame:
-    """Os documentos de um lote, para a interface mostrar. **Sem identificador interno** (D10).
+# As colunas da tabela do lote, na ordem que o autor pediu (R9): o ano estreito à frente, o
+# código de referência clicável, pasta e tipologia, e o resumo como a coluna larga.
+COLUNAS_DO_LOTE = ("Incluir", "Nº", "Ano", "Código de referência", "Pasta", "Tipologia", "Resumo")
 
-    O que o pesquisador vê é ano, cota, tipologia e pasta; o `doc_uid` é assunto do código.
+
+def tabela_dos_documentos(dados, doc_uids, excluidos=frozenset()) -> pd.DataFrame:
+    """Os documentos de um lote, para a interface mostrar e editar.
+
+    **Sem identificador interno** (D10): o que o pesquisador vê é ano, código de referência,
+    pasta, tipologia e resumo. A **cota** do Resgate não entra — o autor pediu o código de
+    referência, que é o que o DigitArq entende, e duas colunas de cota seriam repetição.
+
+    `Código de referência` sai como **URL** do DigitArq; é a interface que a transforma em texto
+    clicável (`LinkColumn` com `display_text`). `Incluir` começa marcada, menos para quem está
+    em `excluidos`.
     """
+    from ahu.links import digitarq, referencia_crav
+
     docs = dados.documentos
     linhas = []
-    for uid in doc_uids:
+    for posicao, uid in enumerate(doc_uids, start=1):
         linha = docs.iloc[dados.indice_de(uid)]
 
         def valor(campo, linha=linha):
@@ -332,15 +345,62 @@ def tabela_dos_documentos(dados, doc_uids) -> pd.DataFrame:
             return "" if v is None or pd.isna(v) else v
 
         ano = valor("ano_isolado")
+        referencia = (referencia_crav(valor("reference_code"))
+                      or referencia_crav(valor("new_code")) or "")
         linhas.append({
+            "Incluir": uid not in excluidos,
+            "Nº": posicao,
             "Ano": "" if ano == "" else int(ano),
-            "Cota": valor("new_code") or valor("reference_code"),
-            "Código de referência": valor("reference_code"),
-            "Tipologia": valor("tipologia"),
+            "Código de referência": digitarq(referencia) or "",
             "Pasta": valor("folder"),
+            "Tipologia": valor("tipologia"),
+            "Resumo": str(valor("description") or ""),
         })
-    return pd.DataFrame(linhas, columns=["Ano", "Cota", "Código de referência", "Tipologia",
-                                         "Pasta"])
+    return pd.DataFrame(linhas, columns=list(COLUNAS_DO_LOTE))
+
+
+@dataclass
+class LotesEditados:
+    """Os lotes depois do que o pesquisador mexeu: ordem, inclusão e troca de lote (R9).
+
+    Vive em `st.session_state`, não no `Amostra`: a amostra é o que o sorteio produziu, e isto é
+    o que a pessoa decidiu em cima dele. Refazer a amostra joga isto fora, e é o que se quer.
+    """
+
+    lotes: list[list[str]] = field(default_factory=list)
+    excluidos: set[str] = field(default_factory=set)
+
+    @classmethod
+    def de_amostra(cls, amostra: Amostra) -> "LotesEditados":
+        return cls(lotes=[list(lote) for lote in amostra.lotes], excluidos=set())
+
+    def incluidos(self, i: int) -> list[str]:
+        """Os documentos do lote `i` que vão ao PDF, na ordem atual."""
+        return [u for u in self.lotes[i] if u not in self.excluidos]
+
+    def alternar(self, uid: str, incluir: bool) -> None:
+        self.excluidos.discard(uid) if incluir else self.excluidos.add(uid)
+
+    def mover(self, i: int, posicao: int, passo: int) -> bool:
+        """Sobe (`passo=-1`) ou desce (`passo=+1`) uma linha dentro do lote."""
+        lote = self.lotes[i]
+        destino = posicao + passo
+        if not (0 <= posicao < len(lote) and 0 <= destino < len(lote)):
+            return False
+        lote[posicao], lote[destino] = lote[destino], lote[posicao]
+        return True
+
+    def trocar_de_lote(self, origem: int, posicao: int, destino: int) -> bool:
+        """Tira um documento de um lote e põe no fim de outro."""
+        if not (0 <= origem < len(self.lotes) and 0 <= destino < len(self.lotes)):
+            return False
+        if origem == destino or not (0 <= posicao < len(self.lotes[origem])):
+            return False
+        self.lotes[destino].append(self.lotes[origem].pop(posicao))
+        return True
+
+    def total_incluido(self) -> int:
+        return sum(len(self.incluidos(i)) for i in range(len(self.lotes)))
 
 
 def tabela_do_relatorio(amostra: Amostra) -> pd.DataFrame:

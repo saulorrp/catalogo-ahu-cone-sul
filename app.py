@@ -37,6 +37,11 @@ SUBTITULO = "Triagem documental sobre o catálogo do Arquivo Histórico Ultramar
 ABAS = ("Busca", "Pessoas", "Amostras", "Painel", "Sobre e método")
 
 # O que a caixa da lista de consulta mostra vazia (WP 3.3a).
+# O `display_text` do `LinkColumn` aceita uma expressão regular: o que estiver no grupo de
+# captura vira o texto do link. Assim a coluna mostra `PT/AHU/CU/021/0006/00390` e **leva** à
+# busca do DigitArq, sem a URL crua aparecer.
+RE_REFERENCIA = r"query=(.*?)&"
+
 EXEMPLO_DE_LISTA = """# Dia 1
 AHU_ACL_CU_017, Cx. 5, D. 487 | ver anexo
 PT/AHU/CU/019/0003/00230"""
@@ -919,17 +924,113 @@ def amostra_estratificada_na_tela(dados, consulta: Consulta) -> None:
     baixar_amostra(dados, amostra, consulta, "amostra_estratificada")
 
 
+def lotes_editados(amostra) -> mod_amostras.LotesEditados:
+    """O que o pesquisador mexeu nos lotes, guardado na sessão.
+
+    A chave inclui a identidade da amostra: refazer o sorteio — outra semente, outro estrato —
+    joga fora as edições, que é o que se quer. Elas descreviam outra amostra.
+    """
+    assinatura = (amostra.tipo, amostra.pessoa_uid, tuple(amostra.estratos),
+                  amostra.por_estrato, amostra.maximo_por_ano, amostra.semente,
+                  tuple(len(lote) for lote in amostra.lotes))
+    guardado = st.session_state.get("lotes_editados")
+    if guardado is None or guardado[0] != assinatura:
+        guardado = (assinatura, mod_amostras.LotesEditados.de_amostra(amostra))
+        st.session_state.lotes_editados = guardado
+    return guardado[1]
+
+
 def mostrar_lotes(dados, amostra) -> None:
+    """Os lotes: escolher documentos, reordenar, trocar de lote e baixar o PDF de cada um (R9)."""
+    editados = lotes_editados(amostra)
     st.markdown("#### Lotes")
-    for numero, lote in enumerate(amostra.lotes, start=1):
-        estrato = (amostra.estrato_do_lote[numero - 1]
-                   if numero - 1 < len(amostra.estrato_do_lote) else None)
-        titulo = f"Lote {numero} — {len(lote)} documento(s)"
+    st.caption(
+        "Desmarque o que não vai ao arquivo, use ↑ e ↓ para mudar a ordem e **Mover** para "
+        "passar um documento a outro lote. O botão de cada lote gera o PDF daquele lote, na "
+        "ordem e com os documentos que estiverem marcados.")
+
+    for i, lote in enumerate(editados.lotes):
+        estrato = (amostra.estrato_do_lote[i]
+                   if i < len(amostra.estrato_do_lote) else None)
+        incluidos = editados.incluidos(i)
+        titulo = f"Lote {i + 1} — {len(incluidos)} de {len(lote)} documento(s)"
         if estrato:
             titulo += f" · estrato {estrato}"
-        with st.expander(titulo, expanded=numero == 1):
-            st.dataframe(mod_amostras.tabela_dos_documentos(dados, lote),
-                         use_container_width=True, hide_index=True)
+
+        with gaveta(titulo, f"lote_{i}", expandida=i == 0):
+            if not lote:
+                st.caption("Lote vazio.")
+                continue
+
+            cabecalho = st.columns([5, 2])
+            with cabecalho[1]:
+                pdf_pronto(f"PDF do lote {i + 1}", f"pdf_lote_{i}",
+                           lambda i=i: mod_lista.pdf_da_selecao(
+                               dados, mod_selecao.Selecao(uids=editados.incluidos(i))),
+                           f"lista_consulta_AHU_lote_{i + 1}.pdf")
+
+            tabela = mod_amostras.tabela_dos_documentos(dados, lote, editados.excluidos)
+            editada = st.data_editor(
+                tabela, key=f"editor_lote_{i}", hide_index=True, use_container_width=True,
+                disabled=[c for c in mod_amostras.COLUNAS_DO_LOTE if c != "Incluir"],
+                column_config={
+                    "Incluir": st.column_config.CheckboxColumn("✓", width="small",
+                                                               help="Vai ao PDF deste lote."),
+                    "Nº": st.column_config.NumberColumn("Nº", width="small"),
+                    # Ano: estreito, que é o que o autor pediu — quatro algarismos e nada mais.
+                    "Ano": st.column_config.NumberColumn("Ano", width="small", format="%d"),
+                    "Código de referência": st.column_config.LinkColumn(
+                        "Código de referência", display_text=RE_REFERENCIA, width="medium",
+                        help="Abre a ficha no DigitArq."),
+                    "Pasta": st.column_config.TextColumn("Pasta", width="small"),
+                    "Tipologia": st.column_config.TextColumn("Tipologia", width="small"),
+                    "Resumo": st.column_config.TextColumn("Resumo", width="large"),
+                })
+            marcados = {linha["Nº"]: bool(linha["Incluir"])
+                        for linha in editada.to_dict("records")}
+            mudou = False
+            for posicao, uid in enumerate(lote):
+                desejado = marcados.get(posicao + 1, True)
+                if desejado != (uid not in editados.excluidos):
+                    editados.alternar(uid, desejado)
+                    mudou = True
+            if mudou:
+                st.rerun(scope="fragment")
+
+            ordem_linhas(dados, editados, i, lote)
+
+
+def ordem_linhas(dados, editados, i: int, lote: list[str]) -> None:
+    """↑ / ↓ e "mover para outro lote", para uma linha escolhida pelo número.
+
+    **Não é arrastar com o rato.** Arrastar linhas exigiria um componente de terceiros com
+    pacote JavaScript próprio; o motivo de não o usar está no `docs/HANDOFF.md`.
+    """
+    del dados
+    controles = st.columns([3, 1, 1, 2, 2])
+    numeros = list(range(1, len(lote) + 1))
+    escolhido = controles[0].selectbox(
+        "Linha", numeros, key=f"linha_lote_{i}",
+        format_func=lambda n: f"Nº {n}")
+    posicao = escolhido - 1
+
+    if controles[1].button("↑", key=f"sobe_{i}", disabled=posicao == 0,
+                           help="Subir esta linha"):
+        editados.mover(i, posicao, -1)
+        st.rerun(scope="fragment")
+    if controles[2].button("↓", key=f"desce_{i}", disabled=posicao >= len(lote) - 1,
+                           help="Descer esta linha"):
+        editados.mover(i, posicao, +1)
+        st.rerun(scope="fragment")
+
+    outros = [j for j in range(len(editados.lotes)) if j != i]
+    if outros:
+        destino = controles[3].selectbox(
+            "Para o lote", outros, key=f"destino_{i}",
+            format_func=lambda j: f"Lote {j + 1}")
+        if controles[4].button("Mover", key=f"move_{i}", use_container_width=True):
+            editados.trocar_de_lote(i, posicao, destino)
+            st.rerun(scope="fragment")
 
 
 def baixar_amostra(dados, amostra, consulta: Consulta, nome: str) -> None:

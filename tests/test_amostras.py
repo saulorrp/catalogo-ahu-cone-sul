@@ -403,3 +403,93 @@ def test_app_tem_a_aba_amostras_funcionando():
     assert not at.exception, [e.value for e in at.exception]
     sementes = [n for n in at.number_input if n.label == "Semente"]
     assert sementes and sementes[0].value == 42
+
+
+# ---------------------------------------------------------------------------
+# R9: os lotes que o pesquisador edita
+# ---------------------------------------------------------------------------
+
+def test_a_tabela_do_lote_tem_as_colunas_que_o_autor_pediu(corpus_busca):
+    uids = corpus_busca.documentos["doc_uid"].tolist()[:3]
+    tabela = am.tabela_dos_documentos(corpus_busca, uids)
+    assert list(tabela.columns) == list(am.COLUNAS_DO_LOTE)
+    # Ano antes do código de referência, e o resumo por último — a ordem é o pedido.
+    assert list(tabela.columns).index("Ano") < list(tabela.columns).index("Código de referência")
+    assert list(tabela.columns)[-1] == "Resumo"
+    # A cota do Resgate não entra: o autor pediu só o código de referência.
+    assert "Cota" not in tabela.columns
+    # D10: nenhum identificador interno.
+    texto = "\n".join(tabela.astype(str).to_numpy().ravel().tolist())
+    assert not any(u in texto for u in uids)
+
+
+def test_o_codigo_de_referencia_sai_como_url_do_digitarq(corpus_busca):
+    uids = corpus_busca.documentos["doc_uid"].tolist()[:5]
+    tabela = am.tabela_dos_documentos(corpus_busca, uids)
+    links = [v for v in tabela["Código de referência"] if v]
+    assert links
+    assert all(v.startswith("https://digitarq.arquivos.pt/") for v in links)
+
+
+def test_incluir_comeca_marcada_menos_para_os_excluidos(corpus_busca):
+    uids = corpus_busca.documentos["doc_uid"].tolist()[:4]
+    tabela = am.tabela_dos_documentos(corpus_busca, uids, excluidos={uids[1]})
+    assert tabela["Incluir"].tolist() == [True, False, True, True]
+    assert tabela["Nº"].tolist() == [1, 2, 3, 4]
+
+
+@pytest.fixture
+def editados(corpus_busca):
+    uids = corpus_busca.documentos["doc_uid"].tolist()
+    amostra = am.Amostra(doc_uids=uids, lotes=[uids[:4], uids[4:8]], tipo="estratificada")
+    return am.LotesEditados.de_amostra(amostra), uids
+
+
+def test_excluir_tira_do_pdf_mas_nao_da_tabela(editados):
+    lotes, uids = editados
+    assert lotes.incluidos(0) == uids[:4]
+    lotes.alternar(uids[1], False)
+    assert lotes.incluidos(0) == [uids[0], uids[2], uids[3]]
+    assert lotes.lotes[0] == uids[:4]          # a linha continua visível, só desmarcada
+    lotes.alternar(uids[1], True)
+    assert lotes.incluidos(0) == uids[:4]
+
+
+def test_subir_e_descer_trocam_as_linhas(editados):
+    lotes, uids = editados
+    assert lotes.mover(0, 1, -1)               # sobe a segunda
+    assert lotes.lotes[0][:2] == [uids[1], uids[0]]
+    assert lotes.mover(0, 0, +1)               # desce de volta
+    assert lotes.lotes[0][:2] == [uids[0], uids[1]]
+    assert not lotes.mover(0, 0, -1)           # a primeira não sobe
+    assert not lotes.mover(0, 3, +1)           # a última não desce
+
+
+def test_mover_entre_lotes(editados):
+    lotes, uids = editados
+    assert lotes.trocar_de_lote(0, 0, 1)
+    assert uids[0] not in lotes.lotes[0]
+    assert lotes.lotes[1][-1] == uids[0]       # entra no fim do lote de destino
+    assert not lotes.trocar_de_lote(0, 0, 0)   # para o mesmo lote, não
+    assert not lotes.trocar_de_lote(0, 99, 1)  # posição que não existe, não
+
+
+def test_o_total_conta_so_o_que_vai(editados):
+    lotes, uids = editados
+    assert lotes.total_incluido() == 8
+    lotes.alternar(uids[0], False)
+    lotes.alternar(uids[5], False)
+    assert lotes.total_incluido() == 6
+
+
+def test_o_pdf_do_lote_sai_na_ordem_editada(corpus_busca, editados):
+    """O PDF de um lote leva o que está marcado, na ordem em que está."""
+    from ahu import lista_ahu as la
+    from ahu.selecao import Selecao
+
+    lotes, uids = editados
+    lotes.alternar(uids[1], False)
+    lotes.mover(0, 2, -1)
+    bruto = la.pdf_da_selecao(corpus_busca, Selecao(uids=lotes.incluidos(0)))
+    assert bruto.startswith(b"%PDF")
+    assert len(lotes.incluidos(0)) == 3

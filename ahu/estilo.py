@@ -130,6 +130,19 @@ CSS = f"""
 }}
 
 /* ---------------------------------------------------------------------------
+   Fora o "Download as CSV" da barrinha das tabelas (D7, R9).
+   A D7 diz que a exportação é uma coisa só: o PDF da lista do AHU. Uma tabela que oferece CSV
+   no canto contradiz isso em silêncio. A busca e a tela cheia ficam — elas ajudam a ler.
+   O botão não tem testid próprio; o que há de estável é o rótulo que o Streamlit lhe dá.
+   --------------------------------------------------------------------------- */
+[data-testid="stElementToolbarButton"][title="Download as CSV"],
+[data-testid="stElementToolbarButton"][aria-label="Download as CSV"],
+[data-testid="stElementToolbar"] button[title="Download as CSV"],
+[data-testid="stElementToolbar"] button[aria-label="Download as CSV"] {{
+  display: none !important;
+}}
+
+/* ---------------------------------------------------------------------------
    A gaveta: sem moldura, cabeçalho chapado em negrito, conteúdo recuado.
    Só dentro do `st.container` cuja chave começa por `{PREFIXO_GAVETA}`.
    --------------------------------------------------------------------------- */

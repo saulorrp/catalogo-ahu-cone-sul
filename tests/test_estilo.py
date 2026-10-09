@@ -142,8 +142,10 @@ def test_as_gavetas_comecam_fechadas(fonte_do_app):
     """§4 da identidade: "estado inicial: sempre fechada"."""
     aberturas = re.findall(r"gaveta\((.*?)\)\s*:", fonte_do_app, re.S)
     assert aberturas
+    # Duas exceções conscientes, e só estas: a seleção abre quando já há documentos marcados,
+    # e o primeiro lote abre para a aba de amostras não começar como uma lista de títulos.
+    excecoes = ("bool(quantos)", "expandida=i == 0")
     for argumentos in aberturas:
         if "expandida=" not in argumentos:
             continue
-        # A única exceção é a seleção, que abre quando já há documentos marcados.
-        assert "bool(quantos)" in argumentos, argumentos[:80]
+        assert any(e in argumentos for e in excecoes), argumentos[:80]

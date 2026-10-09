@@ -53,7 +53,7 @@ Datas em 2026. "Verificado por" nomeia o teste ou a medição, não a impressão
 | 09/10 | `aa3f822`, `99aaf93` | **R3**: PDF da lista do AHU, refeito | `tests/test_lista_ahu.py` |
 | 09/10 | `0b0513e` | Fleurão como interruptor (item 2 do R6) | `tests/test_estilo.py` (12 testes) |
 | 09/10 | `e5cb70f` | `docs/HANDOFF.md` | — |
-| 09/10 | *(este)* | **R9, parte 1**: Sobre sem "Como citar"; tabelas pequenas centradas; busca de nome tolerante; link da fonte | `tests/test_pessoas.py`: "domingo de britto" acha "Domingos de Brito Peixoto" |
+| 09/10 | `c135d5c` | **R9, parte 1**: Sobre sem "Como citar"; tabelas pequenas centradas; busca de nome tolerante; link da fonte | `tests/test_pessoas.py`: "domingo de britto" acha "Domingos de Brito Peixoto" |
 
 **Medidas que valem hoje** (máquina do autor, Windows 11, 8 núcleos, cache do HF quente):
 
@@ -72,8 +72,9 @@ Ordem decidida pelo autor em 09/10. Cada etapa tem de deixar o `main` **publicá
 - [x] **R9, parte 1**: aba Sobre sem "Como citar" e com o preprint marcado como provisório;
       tabelas pequenas com `width="content"` e centradas; busca de nome tolerante a grafia e a
       prefixo; coluna "Fonte" como `LinkColumn`.
-- [ ] **R9, parte 2**: tabela dos lotes com layout fixo; escolher documentos; reordenar; PDF por
-      lote. **Aceite:** gate PASS.
+- [x] **R9, parte 2**: tabela dos lotes com layout fixo (Incluir · Nº · Ano · Código de
+      referência clicável · Pasta · Tipologia · Resumo), escolher documentos, reordenar com
+      ↑/↓, mover entre lotes, PDF por lote, e o "Download as CSV" das tabelas escondido.
 - [ ] **Preparar a substituição no GitHub**: auditoria de segredos em **toda a história**,
       `main == v3`, README curto, `docs/publicacao.md` reescrito para o caminho do *force-push*.
       **Aceite:** nenhum segredo na história; nenhum arquivo > 100 MB; `app_dados/*` versionado.
@@ -126,6 +127,7 @@ Uma linha cada. As D1–D6 estão na spec §0; as D7–D11 foram acrescentadas l
 
 | | Decisão | Por quê |
 |---|---|---|
+| **D13** | **Reordenar linhas é com ↑ / ↓, não arrastando com o rato.** | Arrastar exigiria um componente de terceiros com pacote JavaScript próprio (`streamlit-sortables` e afins): mais uma dependência a construir no Streamlit Cloud, justo quando o R7 corta dependências para caber na memória; e esses componentes reordenam **listas de texto**, não linhas de tabela — não dariam a tabela que o autor pediu. Os ↑/↓ agem sobre a linha escolhida por número. Reavaliar se o Streamlit trouxer reordenação nativa de `st.data_editor`. |
 | **D12** | **Não haverá repositório novo.** O `v3` vai por `push --force` sobre o `main` de `saulorrp/catalogo-ahu-cone-sul`, reaproveitando o app `catalogo-ahu-sul.streamlit.app`. | Menos passos para o autor e a URL conhecida se mantém. O app antigo é preservado numa branch `v2-arquivo` **antes** do *force-push*. |
 
 ---
