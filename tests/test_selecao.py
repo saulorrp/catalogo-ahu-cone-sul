@@ -125,18 +125,19 @@ def test_ordenar_por_ano_poe_sem_data_no_fim(corpus_busca):
         corpus_busca.documentos["ano_isolado"] = anos
 
 
-def test_tabela_mostra_cotas_e_o_id_publico(corpus_busca):
+def test_tabela_mostra_cotas_e_nenhum_identificador(corpus_busca):
+    """D10: a tabela da seleção traz cota, ano e tipologia — nunca o `doc_uid`."""
     uids = corpus_busca.documentos["doc_uid"].tolist()[:3]
     s = Selecao()
     s.adicionar(uids)
     tabela = s.tabela(corpus_busca)
     assert len(tabela) == 3
     assert tabela["Nº"].tolist() == [1, 2, 3]
-    assert tabela["doc_uid"].tolist() == uids
     assert "Código de referência" in tabela.columns
-    # A1/D1: nada proibido na tabela da seleção.
+    assert not any("uid" in str(c).lower() for c in tabela.columns)
     texto = "\n".join(tabela.astype(str).to_numpy().ravel().tolist())
     assert "scribe_mediation_likely" not in texto
+    assert not any(u in texto for u in uids)
 
 
 # ---------------------------------------------------------------------------
@@ -222,7 +223,7 @@ def test_app_tem_a_caixa_de_selecionar_em_cada_resultado():
     from streamlit.testing.v1 import AppTest
 
     at = AppTest.from_file(str(APP_DADOS.parent / "app.py"), default_timeout=180)
-    at.query_params["v"] = "1"
+    at.query_params["v"] = "2"
     at.query_params["q"] = "AHU_ACL_CU_017, Cx. 5, D. 487"
     at.query_params["m"] = "exata"
     at.run()

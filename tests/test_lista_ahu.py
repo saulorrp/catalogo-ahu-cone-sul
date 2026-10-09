@@ -307,7 +307,7 @@ def test_app_tem_o_painel_da_lista():
     from streamlit.testing.v1 import AppTest
 
     at = AppTest.from_file(str(APP_DADOS.parent / "app.py"), default_timeout=180)
-    at.query_params["v"] = "1"
+    at.query_params["v"] = "2"
     at.query_params["q"] = "AHU_ACL_CU_017, Cx. 5, D. 487"
     at.query_params["m"] = "exata"
     at.run()

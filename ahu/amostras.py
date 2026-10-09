@@ -31,8 +31,8 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from ahu import exportar as mod_exportar
 from ahu import links as mod_links
+from ahu import proveniencia as mod_prov
 from ahu.texto import chave_nome
 
 TAMANHO_LOTE = 10           # §7.2: "em lotes de 10, como hoje"
@@ -317,6 +317,32 @@ def amostra_estratificada(dados, doc_uids, estratos: list[str], por_estrato: int
     )
 
 
+def tabela_dos_documentos(dados, doc_uids) -> pd.DataFrame:
+    """Os documentos de um lote, para a interface mostrar. **Sem identificador interno** (D10).
+
+    O que o pesquisador vê é ano, cota, tipologia e pasta; o `doc_uid` é assunto do código.
+    """
+    docs = dados.documentos
+    linhas = []
+    for uid in doc_uids:
+        linha = docs.iloc[dados.indice_de(uid)]
+
+        def valor(campo, linha=linha):
+            v = linha.get(campo)
+            return "" if v is None or pd.isna(v) else v
+
+        ano = valor("ano_isolado")
+        linhas.append({
+            "Ano": "" if ano == "" else int(ano),
+            "Cota": valor("new_code") or valor("reference_code"),
+            "Código de referência": valor("reference_code"),
+            "Tipologia": valor("tipologia"),
+            "Pasta": valor("folder"),
+        })
+    return pd.DataFrame(linhas, columns=["Ano", "Cota", "Código de referência", "Tipologia",
+                                         "Pasta"])
+
+
 def tabela_do_relatorio(amostra: Amostra) -> pd.DataFrame:
     """O relatório da §7.3 em forma de tabela: disponíveis × sorteados por estrato."""
     por_estrato = amostra.relatorio.get("por_estrato") or {}
@@ -387,7 +413,7 @@ def _documento_do_plano(dados, doc_uid: str, pessoa_uid: str | None) -> dict:
 
 def plano_de_coleta(dados, amostra: Amostra, consulta=None) -> dict:
     """O `plano_coleta.eins.json` do §7.4, no esquema `eins-plano-coleta/1` (A9)."""
-    prov = mod_exportar.proveniencia(dados, consulta, len(amostra), origem="plano_eins")
+    prov = mod_prov.proveniencia(dados, consulta, len(amostra), origem="plano_eins")
     app = prov["app_versao"]
     lotes = []
     for numero, uids in enumerate(amostra.lotes, start=1):

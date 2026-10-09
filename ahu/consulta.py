@@ -1,6 +1,6 @@
 """consulta.py — WP 2.2: o objeto `Consulta`, com ida e volta para dicionário e para a URL.
 
-`Consulta` é o objeto central do app (spec §4): texto, modo, rigor, filtros, lente, ordenação,
+`Consulta` é o objeto central do app (spec §4): texto, modo, rigor, filtros, ordenação,
 página e semente. A **mesma** estrutura vai para três lugares:
 
 * a **URL**, compacta e versionada, para o "Copiar link desta busca" (§8.3, A6);
@@ -26,16 +26,19 @@ from urllib.parse import urlencode, urlsplit, urlunsplit
 import pandas as pd
 
 from ahu import busca
-from ahu.filtros import LENTES, Filtros, aplicar_lente
+from ahu.filtros import Filtros
 
-VERSAO_URL = 1
+# Versão 2 (D9): a `lente` saiu da consulta. Um link antigo que a traga continua abrindo — o
+# `de_url` descarta só esse parâmetro e respeita todo o resto.
+VERSAO_URL = 2
+CHAVES_RETIRADAS = {"l": "lente"}
 ORDENACOES = ("relevancia", "ano_asc", "ano_desc")
 TAMANHO_PAGINA = 25     # §5.5
 
 # Chaves curtas da URL. Trocar qualquer uma delas exige subir VERSAO_URL.
 CHAVES = {
     "texto": "q", "modo": "m", "rigor": "r", "pagina": "p", "ordenacao": "o",
-    "semente": "s", "lente": "l",
+    "semente": "s",
 }
 CHAVES_FILTROS = {
     "colecoes": "fc", "ano_de": "a1", "ano_ate": "a2", "sem_data": "sd", "pastas": "fp",
@@ -56,7 +59,6 @@ class Consulta:
     modo: str = "automatico"
     rigor: str = "medio"
     filtros: Filtros = field(default_factory=Filtros)
-    lente: str | None = None
     ordenacao: str = "relevancia"
     pagina: int = 1
     semente: int | None = None      # §7.3: a semente da amostra viaja com a busca
@@ -78,8 +80,6 @@ class Consulta:
             raise ErroDeLink(
                 f"Ordenação desconhecida: {self.ordenacao!r}. Use uma de {', '.join(ORDENACOES)}."
             )
-        if self.lente is not None and self.lente not in LENTES:
-            raise ErroDeLink(f"Lente desconhecida: {self.lente!r}. Use uma de {', '.join(LENTES)}.")
         if self.pagina < 1:
             raise ErroDeLink(f"Página deve ser 1 ou mais, veio {self.pagina}.")
 
@@ -93,7 +93,6 @@ class Consulta:
             "texto": self.texto,
             "modo": self.modo,
             "rigor": self.rigor,
-            "lente": self.lente,
             "ordenacao": self.ordenacao,
             "pagina": self.pagina,
             "semente": self.semente,
@@ -104,7 +103,8 @@ class Consulta:
     @classmethod
     def de_dicionario(cls, dados: dict) -> "Consulta":
         versao = dados.get("versao", VERSAO_URL)
-        if int(versao) != VERSAO_URL:
+        # Uma proveniência mais antiga ainda se lê: os campos que saíram são descartados abaixo.
+        if int(versao) > VERSAO_URL:
             raise ErroDeLink(
                 f"Esta consulta foi gravada na versão {versao} e o app usa a {VERSAO_URL}."
             )
@@ -148,11 +148,15 @@ class Consulta:
             versao = int(versao)
         except (TypeError, ValueError) as e:
             raise ErroDeLink(f"Versão do link inválida: {versao!r}.") from e
-        if versao != VERSAO_URL:
+        if versao > VERSAO_URL:
             raise ErroDeLink(
                 f"Este link foi feito na versão {versao} e o app usa a {VERSAO_URL}. "
                 "Refaça a busca."
             )
+        # D9: um link da versão 1 traz `l=` (a lente, que não existe mais). Ele continua
+        # abrindo: o parâmetro é descartado e os outros valem.
+        if versao < VERSAO_URL:
+            bruto = {k: v for k, v in bruto.items() if k not in CHAVES_RETIRADAS}
 
         padrao, padrao_filtros = cls(), Filtros()
         argumentos = {
@@ -169,22 +173,13 @@ class Consulta:
             raise ErroDeLink(f"Link com parâmetros desconhecidos: {', '.join(sobrando)}.")
         return cls(filtros=Filtros(**filtros), **argumentos)
 
-    # -----------------------------------------------------------------
-    def com_lente(self, dados, nome: str | None) -> "Consulta":
-        """Aplica uma lente: ela **só preenche** os filtros, que seguem editáveis (§6.1)."""
-        if nome is None:
-            return Consulta(**{**asdict_raso(self), "lente": None, "filtros": Filtros(),
-                               "pagina": 1})
-        filtros = aplicar_lente(dados, nome)
-        return Consulta(**{**asdict_raso(self), "lente": nome, "filtros": filtros, "pagina": 1})
-
 
 # ---------------------------------------------------------------------------
 # O link da busca (§8.3, A6)
 # ---------------------------------------------------------------------------
 
 def para_query(consulta: Consulta) -> str:
-    """A consulta como *query string*, com o `?` na frente: `?v=1&q=gado&m=exata`.
+    """A consulta como *query string*, com o `?` na frente: `?v=2&q=gado&m=exata`.
 
     É um link **relativo**, que vale em qualquer endereço onde o app esteja servido — localhost
     ou o domínio do Streamlit. É o que o "Ver documentos" da aba Pessoas usa.

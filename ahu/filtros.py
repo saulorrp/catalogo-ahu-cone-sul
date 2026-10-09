@@ -9,8 +9,8 @@ Sem Streamlit. Dois lados:
   no código, e por isso uma coleção nova aparece nos filtros sem mexer no app (A11).
 
 Padrões (§6.1, preprint §4): **todo filtro que depende do DeepSeek começa desligado** — categoria
-social, vetor, impacto e SRSP. As lentes metodológicas só **preenchem** filtros, que seguem
-visíveis e editáveis.
+social, vetor, impacto e SRSP. (As lentes metodológicas da §6.1 foram retiradas pela **D9**: o
+autor não as usava, e um filtro preenchido por uma lente escondia de onde ele tinha vindo.)
 
 D2 em dois lugares: o filtro de origem do remetente só alcança quem tem nascimento exibível, e a
 caixa "só confiança ALTA" aperta ainda mais (desmarcada = ALTA + MÉDIA).
@@ -235,48 +235,3 @@ def _lista(valor) -> list[str]:
     if valor is None or isinstance(valor, float):
         return []
     return [str(v) for v in valor if v is not None]
-
-
-# ---------------------------------------------------------------------------
-# Lentes metodológicas (§6.1, preprint §3) — só preenchem filtros
-# ---------------------------------------------------------------------------
-
-# Cada lente pede valores por nome; `aplicar_lente` guarda só os que existem nos dados (D6).
-LENTES = {
-    "livre": {
-        "rotulo": "Busca Livre",
-        "descricao": "Nenhum filtro: o corpus inteiro.",
-        "filtros": {},
-    },
-    "vozes_marginalizadas": {
-        "rotulo": "Vozes Marginalizadas & História Social",
-        "descricao": "Remetentes fora da elite, escrevendo da periferia para o centro.",
-        "filtros": {"categorias": ["Commoner", "Marginalized", "Low Military", "Clergy"],
-                    "vetores": ["Bottom-Up"]},
-    },
-    "sintaxe_diacronica": {
-        "rotulo": "Sintaxe Diacrônica (Alto SRSP)",
-        "descricao": "Documentos com maior probabilidade de sintaxe vernacular.",
-        "filtros": {"srsp_de": FAIXAS_SRSP["alto"][0]},
-    },
-    "maquina_administrativa": {
-        "rotulo": "Máquina Administrativa (Top-Down)",
-        "descricao": "A correspondência oficial do centro para a periferia.",
-        "filtros": {"vetores": ["Top-Down"], "categorias": ["Metropolitan Elite"]},
-    },
-}
-
-
-def aplicar_lente(dados, nome: str) -> Filtros:
-    """Devolve os filtros que a lente preenche. Erra alto se a lente não existir."""
-    if nome not in LENTES:
-        raise ValueError(f"Lente desconhecida: {nome!r}. Use uma de {', '.join(LENTES)}.")
-    disponiveis = opcoes(dados)
-    filtros = Filtros()
-    for campo, valor in LENTES[nome]["filtros"].items():
-        if isinstance(valor, list):
-            existentes = {v for v, _ in disponiveis.get(campo, [])}
-            setattr(filtros, campo, [v for v in valor if v in existentes])
-        else:
-            setattr(filtros, campo, valor)
-    return filtros

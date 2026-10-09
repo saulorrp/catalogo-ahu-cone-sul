@@ -19,13 +19,13 @@ def corpus_real():
     return carregar_sem_cache(APP_DADOS)
 
 
-# As cinco buscas variadas do A6: texto simples, frase entre aspas, cota, lente com filtros do
-# DeepSeek, e uma consulta vazia só com filtros — cada uma exercitando um pedaço diferente da URL.
+# As cinco buscas variadas do A6: texto simples, frase entre aspas, cota, filtros do DeepSeek com
+# semente, e uma consulta vazia só com filtros — cada uma exercita um pedaço diferente da URL.
 CINCO_BUSCAS = (
     Consulta(texto="deserção de soldados", modo="automatico"),
     Consulta(texto='"obras do porto"', modo="exata", rigor="alto", ordenacao="ano_asc"),
     Consulta(texto="AHU_ACL_CU_017, Cx. 5, D. 487", modo="exata"),
-    Consulta(texto="gado", modo="conceitual", rigor="baixo", lente="sintaxe_diacronica",
+    Consulta(texto="gado", modo="conceitual", rigor="baixo",
              filtros=Filtros(srsp_de=7, categorias=["Commoner"]), semente=42, pagina=2),
     Consulta(filtros=Filtros(tipologias=["CARTA"], ano_de=1770, ano_ate=1780, sem_data=False),
              ordenacao="ano_desc"),
@@ -43,24 +43,24 @@ def _de_url(url: str) -> Consulta:
 
 def test_link_relativo_quando_nao_se_sabe_o_endereco():
     c = Consulta(texto="gado")
-    assert url_da_busca(c) == para_query(c) == "?v=1&q=gado"
+    assert url_da_busca(c) == para_query(c) == "?v=2&q=gado"
 
 
 def test_link_absoluto_substitui_a_query_antiga():
     c = Consulta(texto="gado")
-    url = url_da_busca(c, "https://catalogo-ahu-sul.streamlit.app/?v=1&q=outra&p=9")
-    assert url == "https://catalogo-ahu-sul.streamlit.app/?v=1&q=gado"
+    url = url_da_busca(c, "https://catalogo-ahu-sul.streamlit.app/?v=2&q=outra&p=9")
+    assert url == "https://catalogo-ahu-sul.streamlit.app/?v=2&q=gado"
     assert "outra" not in url and "p=9" not in url
 
 
 def test_link_absoluto_em_localhost_preserva_o_caminho():
     url = url_da_busca(Consulta(texto="gado"), "http://localhost:8501/")
-    assert url.startswith("http://localhost:8501/?v=1")
+    assert url.startswith("http://localhost:8501/?v=2")
 
 
 def test_consulta_padrao_leva_so_a_versao():
     """§8.3: um link de busca não carrega estado morto."""
-    assert url_da_busca(Consulta()) == "?v=1"
+    assert url_da_busca(Consulta()) == "?v=2"
 
 
 @pytest.mark.parametrize("consulta", CINCO_BUSCAS, ids=lambda c: (c.texto or "só filtros")[:24])
@@ -94,7 +94,7 @@ def test_link_com_parametro_estranho_e_recusado():
     from ahu.consulta import ErroDeLink
 
     with pytest.raises(ErroDeLink, match="parâmetros desconhecidos"):
-        _de_url("https://exemplo.app/?v=1&q=gado&bisbilhoteiro=1")
+        _de_url("https://exemplo.app/?v=2&q=gado&bisbilhoteiro=1")
 
 
 # ---------------------------------------------------------------------------
@@ -119,14 +119,14 @@ def test_app_mostra_o_link_e_ele_reproduz_a_busca():
     from streamlit.testing.v1 import AppTest
 
     at = AppTest.from_file(str(APP_DADOS.parent / "app.py"), default_timeout=180)
-    at.query_params["v"] = "1"
+    at.query_params["v"] = "2"
     at.query_params["q"] = "AHU_ACL_CU_017, Cx. 5, D. 487"
     at.query_params["m"] = "exata"
     at.run()
     assert not at.exception, [e.value for e in at.exception]
 
     # O link aparece numa caixa de código (que é onde o Streamlit dá o botão de copiar).
-    links = [c.value for c in at.code if c.value.startswith("?") or "?v=1" in c.value]
+    links = [c.value for c in at.code if c.value.startswith("?") or "?v=2" in c.value]
     assert links, [c.value for c in at.code]
     volta = _de_url(links[0])
     assert volta.texto == "AHU_ACL_CU_017, Cx. 5, D. 487" and volta.modo == "exata"

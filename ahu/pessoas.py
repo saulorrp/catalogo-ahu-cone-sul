@@ -223,7 +223,11 @@ def encontrar(dados, texto: str) -> list[PessoaNaLista]:
 
 
 def tabela(pessoas: list[PessoaNaLista]) -> pd.DataFrame:
-    """A lista em forma de tabela, para a interface mostrar e ordenar. Sem campo proibido."""
+    """A lista em forma de tabela, para a interface mostrar e ordenar.
+
+    **Sem `pessoa_uid`** (D10): identificador é assunto do código, não do pesquisador. A ordem
+    das linhas é a da lista que entrou, e é por ela que a interface sabe qual pessoa foi clicada.
+    """
     return pd.DataFrame([{
         "Nome": p.nome,
         "Nº de documentos": p.n_documentos,
@@ -234,7 +238,6 @@ def tabela(pessoas: list[PessoaNaLista]) -> pd.DataFrame:
         "Nascimento": p.nascimento or "—",
         "Confiança": p.nivel or "—",
         "Origem do dado": p.origem_do_dado or "—",
-        "pessoa_uid": p.pessoa_uid,
     } for p in pessoas])
 
 

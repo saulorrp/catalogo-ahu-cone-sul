@@ -106,7 +106,7 @@ class Selecao:
         return sorted(self.uids, key=chave)
 
     def tabela(self, dados, ordem: str = "chegada") -> pd.DataFrame:
-        """A seleção em forma de tabela, para a interface mostrar e o pesquisador conferir."""
+        """A seleção em forma de tabela, para o pesquisador conferir. **Sem `doc_uid`** (D10)."""
         docs = dados.documentos
         linhas = []
         for posicao, uid in enumerate(self.ordenar(dados, ordem), start=1):
@@ -122,10 +122,9 @@ class Selecao:
                 "Código de referência": valor("reference_code"),
                 "Código atual": valor("new_code"),
                 "Pasta": valor("folder"),
-                "doc_uid": uid,
             })
         return pd.DataFrame(linhas, columns=["Nº", "Ano", "Tipologia", "Código de referência",
-                                             "Código atual", "Pasta", "doc_uid"])
+                                             "Código atual", "Pasta"])
 
     # -----------------------------------------------------------------
     # Baixar e carregar (R4: nada fica no servidor)

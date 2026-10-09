@@ -263,11 +263,13 @@ def test_sem_texto_a_resposta_e_o_corpus_filtrado(corpus_busca):
         assert corpus_busca.documentos.iloc[r.linha]["tipologia"] == "CARTA"
 
 
-def test_sem_texto_a_lente_sozinha_filtra(corpus_busca):
+def test_sem_texto_um_filtro_do_deepseek_sozinho_filtra(corpus_busca):
+    """D9: as lentes saíram; o filtro que elas preenchiam continua valendo sozinho."""
     from ahu.consulta import Consulta, executar
+    from ahu.filtros import FAIXAS_SRSP, Filtros
 
-    com_lente = executar(corpus_busca, Consulta().com_lente(corpus_busca, "sintaxe_diacronica"))
-    assert com_lente.total < len(corpus_busca.documentos)
+    so_srsp = executar(corpus_busca, Consulta(filtros=Filtros(srsp_de=FAIXAS_SRSP["alto"][0])))
+    assert so_srsp.total < len(corpus_busca.documentos)
 
 
 def test_ordenacao_por_ano_poe_sem_data_no_fim(corpus_busca):
@@ -312,7 +314,7 @@ def test_app_busca_por_cota_sem_carregar_o_modelo():
     from streamlit.testing.v1 import AppTest
 
     at = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=180)
-    at.query_params["v"] = "1"
+    at.query_params["v"] = "2"
     at.query_params["q"] = "AHU_ACL_CU_017, Cx. 5, D. 487"
     at.query_params["m"] = "exata"
     at.run()

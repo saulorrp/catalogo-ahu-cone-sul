@@ -388,7 +388,7 @@ def test_app_tem_a_aba_amostras_funcionando():
     from streamlit.testing.v1 import AppTest
 
     at = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=240)
-    at.query_params["v"] = "1"
+    at.query_params["v"] = "2"
     at.query_params["q"] = "AHU_ACL_CU_017, Cx. 5, D. 487"
     at.query_params["m"] = "exata"
     at.run()

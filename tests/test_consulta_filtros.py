@@ -12,7 +12,7 @@ from ahu.consulta import (
     executar,
 )
 from ahu.dados import carregar_sem_cache
-from ahu.filtros import FAIXAS_SRSP, LENTES, Filtros, aplicar_lente, opcoes
+from ahu.filtros import FAIXAS_SRSP, Filtros, opcoes
 from tests.conftest import APP_DADOS, tem_artefatos
 
 CONSULTAS_VARIADAS = [
@@ -28,7 +28,7 @@ CONSULTAS_VARIADAS = [
                         pessoas=["pes:12345678"], paises_origem=["Portugal"],
                         cidades_origem=["Lisboa"], so_confianca_alta=True,
                         colecoes=["ahu-sul"], impactos=["Narrative"]),
-        lente="sintaxe_diacronica", ordenacao="ano_asc", pagina=2, semente=7,
+        ordenacao="ano_asc", pagina=2, semente=7,
     ),
 ]
 
@@ -50,13 +50,13 @@ def test_consulta_volta_igual_do_dicionario(consulta):
 def test_url_so_leva_o_que_nao_e_padrao():
     assert Consulta().para_url() == {"v": str(VERSAO_URL)}
     url = Consulta(texto="soldados").para_url()
-    assert url == {"v": "1", "q": "soldados"}
+    assert url == {"v": "2", "q": "soldados"}
 
 
 def test_url_e_compacta_e_versionada():
     c = CONSULTAS_VARIADAS[-1]
     url = c.para_url()
-    assert url["v"] == "1"
+    assert url["v"] == "2"
     assert all(len(k) <= 2 for k in url)          # chaves curtas
     assert url["ft"] == "CARTA|OFÍCIO"
     assert url["sd"] == "0" and url["fa"] == "1"  # booleanos como 0/1
@@ -79,34 +79,32 @@ def test_link_de_outra_versao_e_recusado():
 
 def test_link_com_parametro_desconhecido_e_recusado():
     with pytest.raises(ErroDeLink, match="desconhecidos"):
-        Consulta.de_url({"v": "1", "q": "x", "xyz": "1"})
+        Consulta.de_url({"v": "2", "q": "x", "xyz": "1"})
 
 
 def test_link_com_valor_invalido_e_recusado():
     with pytest.raises(ErroDeLink, match="Modo desconhecido"):
-        Consulta.de_url({"v": "1", "m": "fuzzy"})
+        Consulta.de_url({"v": "2", "m": "fuzzy"})
     with pytest.raises(ErroDeLink, match="número"):
-        Consulta.de_url({"v": "1", "a1": "mil e setecentos"})
+        Consulta.de_url({"v": "2", "a1": "mil e setecentos"})
     with pytest.raises(ErroDeLink, match="0 ou 1"):
-        Consulta.de_url({"v": "1", "sd": "talvez"})
+        Consulta.de_url({"v": "2", "sd": "talvez"})
 
 
 def test_query_params_com_lista_funciona():
     """`st.query_params` devolve lista quando a chave repete."""
-    assert Consulta.de_url({"v": ["1"], "q": ["soldados"]}) == Consulta(texto="soldados")
+    assert Consulta.de_url({"v": ["2"], "q": ["soldados"]}) == Consulta(texto="soldados")
 
 
 def test_consulta_invalida_avisa_na_criacao():
     with pytest.raises(ErroDeLink, match="Página"):
         Consulta(pagina=0)
-    with pytest.raises(ErroDeLink, match="Lente desconhecida"):
-        Consulta(lente="inexistente")
 
 
 def test_dicionario_tem_proveniencia_legivel():
     c = CONSULTAS_VARIADAS[-1]
     d = c.para_dicionario()
-    assert d["versao"] == VERSAO_URL and d["lente"] == "sintaxe_diacronica"
+    assert d["versao"] == VERSAO_URL
     assert d["filtros_ativos"]["srsp_de"] == 7
     assert "sem_data" in d["filtros"]                      # completo, para a capa do PDF
     assert d["filtros_ativos"]["sem_data"] is False         # só o que difere do padrão
@@ -258,54 +256,38 @@ def test_opcoes_de_pessoas_tem_nome_variantes_e_titulos(corpus_busca):
 
 
 # ---------------------------------------------------------------------------
-# Lentes: só preenchem filtros (§6.1)
+# D9: as lentes saíram, e um link antigo que as traga ainda abre
 # ---------------------------------------------------------------------------
 
-def test_as_quatro_lentes_do_preprint_existem():
-    assert set(LENTES) == {"livre", "vozes_marginalizadas", "sintaxe_diacronica",
-                           "maquina_administrativa"}
-    assert all("rotulo" in v and "descricao" in v for v in LENTES.values())
+def test_a_consulta_nao_tem_mais_campo_de_lente():
+    from dataclasses import fields
+    assert "lente" not in {f.name for f in fields(Consulta)}
+    assert VERSAO_URL == 2
 
 
-def test_lente_livre_nao_filtra_nada(corpus_busca):
-    assert aplicar_lente(corpus_busca, "livre").vazio()
+def test_link_da_versao_1_com_lente_ainda_abre(corpus_busca):
+    """D9: o parâmetro da lente é descartado em silêncio; todo o resto vale."""
+    del corpus_busca
+    antigo = {"v": "1", "q": "deserção", "m": "exata", "r": "alto", "l": "sintaxe_diacronica",
+              "p": "3", "ft": "CARTA|OFÍCIO", "s1": "7"}
+    volta = Consulta.de_url(antigo)
+    assert volta.texto == "deserção" and volta.modo == "exata" and volta.rigor == "alto"
+    assert volta.pagina == 3
+    assert volta.filtros.tipologias == ["CARTA", "OFÍCIO"] and volta.filtros.srsp_de == 7
 
 
-def test_lente_de_sintaxe_diacronica_preenche_o_srsp(corpus_busca):
-    f = aplicar_lente(corpus_busca, "sintaxe_diacronica")
-    assert f.srsp_de == FAIXAS_SRSP["alto"][0]
-    assert f.categorias == []
+def test_link_da_versao_1_sem_lente_tambem_abre():
+    volta = Consulta.de_url({"v": "2", "q": "gado"})
+    assert volta.texto == "gado"
 
 
-def test_lente_so_usa_valores_que_existem_nos_dados(corpus_busca):
-    """D6: a lente pede categorias por nome; só entram as que a coleção tem."""
-    f = aplicar_lente(corpus_busca, "vozes_marginalizadas")
-    presentes = set(corpus_busca.documentos["sender_category"].dropna())
-    assert set(f.categorias) <= presentes
-    assert "Marginalized" not in f.categorias  # não existe neste corpus de teste
+def test_link_de_versao_futura_e_recusado():
+    with pytest.raises(ErroDeLink, match="versão 9"):
+        Consulta.de_url({"v": "9", "q": "gado"})
 
 
-def test_lente_desconhecida_avisa(corpus_busca):
-    with pytest.raises(ValueError, match="Lente desconhecida"):
-        aplicar_lente(corpus_busca, "inexistente")
-
-
-def test_com_lente_preenche_filtros_e_volta_para_a_pagina_1(corpus_busca):
-    c = Consulta(texto="soldados", pagina=4)
-    com = c.com_lente(corpus_busca, "sintaxe_diacronica")
-    assert com.lente == "sintaxe_diacronica"
-    assert com.pagina == 1 and com.texto == "soldados"
-    assert com.filtros.srsp_de == FAIXAS_SRSP["alto"][0]
-    # Os filtros ficam editáveis: mudar um não desfaz a lente.
-    com.filtros.tipologias = ["CARTA"]
-    assert com.lente == "sintaxe_diacronica"
-    # E tirar a lente limpa os filtros que ela pôs.
-    assert c.com_lente(corpus_busca, None).filtros.vazio()
-
-
-def test_lente_viaja_na_url(corpus_busca):
-    c = Consulta(texto="x").com_lente(corpus_busca, "sintaxe_diacronica")
-    assert Consulta.de_url(c.para_url()) == c
+def test_a_lente_nao_viaja_mais_na_url():
+    assert "l" not in Consulta(texto="x").para_url()
 
 
 # ---------------------------------------------------------------------------
@@ -406,7 +388,7 @@ def test_destaque_do_topo_mede_o_quanto_o_melhor_se_separa():
 # ---------------------------------------------------------------------------
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
-def test_lentes_e_filtros_nos_dados_reais():
+def test_filtros_nos_dados_reais():
     d = carregar_sem_cache(APP_DADOS)
     o = opcoes(d)
     assert o["mostrar_colecao"] is False and o["colecoes"] == ["ahu-sul"]
@@ -415,20 +397,14 @@ def test_lentes_e_filtros_nos_dados_reais():
     assert dict(o["tipologias"])["OFÍCIO"] == 3349
     assert mod_filtros.escala_srsp(d) == [1, 9]
 
-    # A lente administrativa encontra o que pede, porque o dado tem Top-Down.
-    administrativa = aplicar_lente(d, "maquina_administrativa")
-    assert administrativa.vetores == ["Top-Down"]
-    assert administrativa.categorias == ["Metropolitan Elite"]
+    # Os filtros que as lentes preenchiam continuam existindo sozinhos (D9).
+    administrativa = Filtros(vetores=["Top-Down"], categorias=["Metropolitan Elite"])
     assert int(administrativa.mascara(d).sum()) > 0
-
-    marginalizadas = aplicar_lente(d, "vozes_marginalizadas")
-    assert set(marginalizadas.categorias) == {"Commoner", "Marginalized", "Low Military", "Clergy"}
-    assert marginalizadas.vetores == ["Bottom-Up"]
-    quantos_marginalizadas = int(marginalizadas.mascara(d).sum())
-    assert 0 < quantos_marginalizadas < len(d.documentos)
-
-    # As duas lentes não podem descrever o mesmo recorte.
-    assert quantos_marginalizadas != int(administrativa.mascara(d).sum())
+    marginalizadas = Filtros(categorias=["Commoner", "Marginalized", "Low Military", "Clergy"],
+                             vetores=["Bottom-Up"])
+    quantos = int(marginalizadas.mascara(d).sum())
+    assert 0 < quantos < len(d.documentos)
+    assert quantos != int(administrativa.mascara(d).sum())
 
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")

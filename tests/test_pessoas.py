@@ -198,7 +198,7 @@ def test_ver_documentos_e_um_link_de_busca_que_volta_igual(corpus_busca):
 
     pessoa = mp.encontrar(corpus_busca, "Lavradio")[0]
     url = mp.url_dos_documentos(pessoa.pessoa_uid)
-    assert url.startswith("?v=1")
+    assert url.startswith("?v=2")
     parametros = {k: v[0] for k, v in parse_qs(urlparse(url).query).items()}
     volta = Consulta.de_url(parametros)
     assert volta.filtros.pessoas == [pessoa.pessoa_uid]

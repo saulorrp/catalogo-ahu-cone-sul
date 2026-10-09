@@ -8,6 +8,9 @@ Leva o pesquisador de uma pergunta a um conjunto de cotas que ele possa justific
 Quatro tarefas: **T1 Encontrar · T2 Recortar · T3 Amostrar · T4 Levar e citar**.
 
 ## Documentos de referência
+- **Remodelação em curso (v3.1):** [`docs/plano_remodelacao_v3_1.md`](docs/plano_remodelacao_v3_1.md)
+  — aprovada em 09/10/2026, substitui as partes abertas da F3 e vem antes da F4 e do deploy.
+  Identidade visual: [`docs/relatorio_identidade_visual_eins.md`](docs/relatorio_identidade_visual_eins.md).
 - Spec: [`../spec_catalogo_ahu_v3.md`](../spec_catalogo_ahu_v3.md) (v2.0)
 - Plano: [`../plano_implementacao_v3.md`](../plano_implementacao_v3.md)
 - Publicação, memória medida e troca de modelo (WP 2.5): [`docs/publicacao.md`](docs/publicacao.md)
@@ -18,12 +21,15 @@ Quatro tarefas: **T1 Encontrar · T2 Recortar · T3 Amostrar · T4 Levar e citar
 1. Onde o código e o preprint divergirem, **vale o preprint**, salvo decisão registrada na spec §0 (D1).
 2. **Nada pago em funcionamento (R1).** Chamadas pagas (DeepSeek, Perplexity) só na construção do corpus, na máquina do autor.
 3. **O app só lê `app_dados/`** (spec §3.4). Nunca lê `corpus/` nem as camadas brutas.
-4. **`scribe_mediation_likely` só no PDF** (D1). Nunca na interface, nos filtros, no CSV nem no
-   JSON — nem o campo, nem o seu **nome**: a interface descreve a inferência em português, e há
-   teste que varre o `app.py` procurando o identificador. No dossiê ele sai como "Provável" /
-   "Pouco provável", sempre com a ressalva metodológica (`ahu/dossie.py`).
+4. **`scribe_mediation_likely` não aparece em lugar nenhum** (D8, que revê a D1). Não na
+   interface, não nos filtros, não em PDF. Ele fica no dado (`pdf_extra.parquet`) e é explicado,
+   com a ressalva do preprint §2 citada na íntegra, só no "saiba mais" das inferências. Em `ahu/`
+   o nome dele só existe como **proibição** (`dados.CAMPOS_SO_PDF`, `ficha.CAMPOS_PROIBIDOS`), e
+   há teste que falha se outro módulo o mencionar.
 5. **Biografias: só ALTA e MÉDIA** (ou `decisao_manual = aceitar`). Nunca REJEITADO nem BAIXA (D2).
-6. **IDs públicos são `doc_uid` e `pessoa_uid`.** Nunca `P0001`, nem posição de linha.
+6. **IDs são `doc_uid` e `pessoa_uid`.** Nunca `P0001`, nem posição de linha. Eles são
+   **internos** (D10): não entram em rótulo, tabela nem PDF — o pesquisador vê cota, ano, resumo
+   e nomes. A única exceção é a *issue* de "Reportar erro", que vai ao mantenedor.
 7. **Pastas, coleções e tipologias vêm dos dados, nunca do código** (D6).
 8. Nenhum segredo no código. Chaves ficam no `.env` local (via `ApiKeyManager`) e nunca são versionadas.
 9. Nomes: **SRSP**, valor **inteiro**, nunca dividido por 10. A escala é um **dado da camada**, não
@@ -95,7 +101,9 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F3 | 3.3a Lista de consulta no AHU | feito (portada do pacote antigo; 7.050 de 7.051 cotas com código CRAV) |
 | F3 | 3.3 Dossiê em PDF | feito (A8: capa com proveniência, uma seção por documento, mediação com ressalva) |
 | F3 | 3.5 Amostras e plano EINS | feito (A7 e A9; "Gerar amostra diacrônica" habilitado) |
-| **F3** | **completa** | **T4 inteira: selecionar, exportar, levar e citar** |
+| **F3** | **remodelada** | ver o plano v3.1: o WP 3.2 e o WP 3.3 foram retirados (D7) |
+| v3.1 | R1 Remoções | feito (D7–D11: lentes, CSV/JSON/dossiê, identificadores) |
+| v3.1 | R2…R8 | pendente |
 | F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.

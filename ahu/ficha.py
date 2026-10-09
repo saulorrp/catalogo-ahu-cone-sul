@@ -11,7 +11,9 @@ O que a ficha tem (§9):
   * um bloco "Inferências (IA) — DeepSeek v3", recolhido por padrão (§6.2).
 
 O que a ficha **nunca** tem:
-  * `scribe_mediation_likely` — só o dossiê em PDF (D1);
+  * `scribe_mediation_likely` — **nunca**, em lugar nenhum (D8). A D1 o mandava para o dossiê em
+    PDF; a D8 retirou o dossiê e o campo do documento. Ele segue no dado, em
+    `pdf_extra.parquet`, e é explicado — com a ressalva do preprint — só no "saiba mais";
   * biografia REJEITADA ou BAIXA, nem o nível delas (D2/A1). Isso já foi retirado em
     `app_dados/` pelo `construir_app.py`; aqui a regra é conferida de novo, de graça.
 """

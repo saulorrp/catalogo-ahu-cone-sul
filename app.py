@@ -19,8 +19,6 @@ import streamlit as st
 
 from ahu import amostras as mod_amostras
 from ahu import busca
-from ahu import dossie as mod_dossie
-from ahu import exportar as mod_exportar
 from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
 from ahu import graficos as mod_graficos
@@ -127,26 +125,11 @@ def encoder_preguicoso(dados):
 # ---------------------------------------------------------------------------
 
 def barra_lateral(dados, consulta: Consulta) -> Consulta:
-    """Lentes e a tabela de filtros da §6.1. Devolve a consulta com o que o usuário mexeu."""
+    """A tabela de filtros da §6.1. Devolve a consulta com o que o usuário mexeu."""
     opcoes = mod_filtros.opcoes(dados)
     f = consulta.filtros
 
     with st.sidebar:
-        st.markdown("### Lente metodológica")
-        nomes = list(mod_filtros.LENTES)
-        rotulos = [mod_filtros.LENTES[n]["rotulo"] for n in nomes]
-        atual = consulta.lente or "livre"
-        escolhida = nomes[st.radio(
-            "Lente", range(len(nomes)), index=nomes.index(atual) if atual in nomes else 0,
-            format_func=lambda i: rotulos[i], label_visibility="collapsed",
-            help="A lente só preenche os filtros abaixo, que ficam editáveis.",
-        )]
-        st.caption(mod_filtros.LENTES[escolhida]["descricao"])
-        if escolhida != atual:
-            nova = consulta.com_lente(dados, None if escolhida == "livre" else escolhida)
-            guardar(nova)
-            st.rerun()
-
         st.markdown("### Filtros")
         if opcoes["mostrar_colecao"]:
             f.colecoes = st.multiselect("Coleção", opcoes["colecoes"], default=f.colecoes)
@@ -321,7 +304,6 @@ def aba_busca(dados, consulta: Consulta) -> None:
 
     painel_do_link(consulta)
     painel_de_selecao(dados, consulta, resposta)
-    painel_de_exportacao(dados, consulta, resposta)
     painel_da_lista_ahu(dados, resposta)
 
     colunas = st.columns([3, 6, 3])
@@ -364,7 +346,7 @@ def painel_do_link(consulta: Consulta) -> None:
     """"Copiar link desta busca": abrir o link reproduz a busca, a página e a semente (A6)."""
     with st.expander("Copiar link desta busca", expanded=False):
         st.caption(
-            "O link carrega a consulta inteira — texto, modo, rigor, lente, filtros, ordenação, "
+            "O link carrega a consulta inteira — texto, modo, rigor, filtros, ordenação, "
             "página e semente. Abrir de novo reproduz a mesma lista, na mesma ordem. Use o ícone "
             "de copiar no canto da caixa.")
         st.code(url_da_busca(consulta, endereco_da_pagina()), language=None)
@@ -375,17 +357,17 @@ def painel_do_link(consulta: Consulta) -> None:
 # ---------------------------------------------------------------------------
 
 def painel_de_selecao(dados, consulta: Consulta, resposta) -> None:
-    """Ver, ordenar, esvaziar, baixar e carregar a seleção (§8.1)."""
+    """Ver, ordenar e esvaziar a seleção (§8.1)."""
+    del consulta
     selecao = selecao_atual()
     titulo = (f"Seleção — {len(selecao)} documento(s)" if len(selecao)
               else "Seleção — vazia")
     with st.expander(titulo, expanded=False):
         st.caption(
             f"A seleção atravessa buscas e cabe até {mod_selecao.LIMITE} documentos. Ela vive "
-            "só nesta sessão do navegador: nada é guardado no servidor. Para levá-la para outro "
-            "dia, baixe o JSON e carregue-o de volta.")
+            "só nesta sessão do navegador: nada é guardado no servidor.")
 
-        acoes = st.columns(3)
+        acoes = st.columns(2)
         if acoes[0].button(f"Selecionar os {resposta.total} do resultado",
                            use_container_width=True, disabled=not resposta.total,
                            help="Acrescenta todos os documentos desta busca, até o teto."):
@@ -398,32 +380,6 @@ def painel_de_selecao(dados, consulta: Consulta, resposta) -> None:
                            disabled=not len(selecao)):
             selecao.limpar()
             st.rerun()
-        acoes[2].download_button(
-            "Baixar a seleção (JSON)",
-            data=selecao.para_json(
-                mod_exportar.proveniencia(dados, consulta, len(selecao), origem="selecao")),
-            file_name="selecao_ahu_sul.json", mime="application/json",
-            use_container_width=True, disabled=not len(selecao))
-
-        arquivo = st.file_uploader("Carregar uma seleção salva (JSON)", type=["json"],
-                                   key="carregar_selecao")
-        if arquivo is not None and st.session_state.get("selecao_carregada") != arquivo.file_id:
-            try:
-                nova, relatorio = mod_selecao.Selecao.de_json(arquivo.getvalue(), dados)
-            except mod_selecao.ErroDeSelecao as e:
-                st.error(f"**Não foi possível carregar.** {e}")
-            else:
-                st.session_state.selecao = nova
-                st.session_state.selecao_carregada = arquivo.file_id
-                aviso = f"{relatorio['carregados']} documento(s) carregado(s)."
-                if relatorio["desconhecidos"]:
-                    aviso += (f" {len(relatorio['desconhecidos'])} não existe(m) no corpus ativo "
-                              f"e foi(ram) descartado(s): "
-                              f"{', '.join(relatorio['desconhecidos'][:3])}…")
-                if relatorio["excedentes"]:
-                    aviso += f" {relatorio['excedentes']} passaram do teto e ficaram de fora."
-                st.success(aviso)
-                st.rerun()
 
         if not len(selecao):
             return
@@ -435,7 +391,7 @@ def painel_de_selecao(dados, consulta: Consulta, resposta) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Exportação (WP 3.2, §8.2) e os PDFs (WP 3.3, 3.3a)
+# Lista para consulta no AHU (WP 3.3a)
 # ---------------------------------------------------------------------------
 
 def pdf_pronto(rotulo: str, chave: str, montar, nome_do_arquivo: str) -> None:
@@ -449,7 +405,7 @@ def pdf_pronto(rotulo: str, chave: str, montar, nome_do_arquivo: str) -> None:
         with st.spinner("Montando o PDF..."):
             try:
                 st.session_state[chave] = montar()
-            except (mod_dossie.ErroDeDossie, mod_pdf.ErroDeFonte) as e:
+            except mod_pdf.ErroDeFonte as e:
                 st.session_state.pop(chave, None)
                 st.error(f"**Não foi possível gerar o PDF.** {e}")
     pronto = st.session_state.get(chave)
@@ -459,66 +415,6 @@ def pdf_pronto(rotulo: str, chave: str, montar, nome_do_arquivo: str) -> None:
             file_name=nome_do_arquivo, mime="application/pdf", use_container_width=True,
             key=f"baixar_{chave}")
 
-def painel_de_exportacao(dados, consulta: Consulta, resposta) -> None:
-    """CSV e JSON do resultado atual ou da seleção, sempre com proveniência (§8.2)."""
-    selecao = selecao_atual()
-    with st.expander("Exportar (CSV · JSON)", expanded=False):
-        opcoes = [("resultado", f"O resultado desta busca ({resposta.total})")]
-        if len(selecao):
-            opcoes.append(("selecao", f"A seleção ({len(selecao)})"))
-        origem = st.radio("O que exportar", [o for o, _ in opcoes],
-                          format_func=lambda o: dict(opcoes)[o], horizontal=True,
-                          key="origem_exportacao")
-        uids = (selecao.ordenar(dados, st.session_state.get("ordem_selecao", "chegada"))
-                if origem == "selecao" else [r.doc_uid for r in resposta.resultados])
-        st.caption(
-            f"{len(uids)} documento(s). O CSV sai em UTF-8 com BOM e `;` por separador, para "
-            "abrir no Excel em português. Os dois arquivos levam o bloco de proveniência: a "
-            "consulta inteira, as camadas ativas com as versões, o SHA-256 do manifesto e o DOI."
-        )
-        if not uids:
-            st.info("Nada a exportar.")
-            return
-        prov = mod_exportar.proveniencia(dados, consulta, len(uids), origem=origem)
-        colunas = st.columns(2)
-        colunas[0].download_button(
-            "Baixar CSV", data=mod_exportar.para_csv(dados, uids, prov),
-            file_name="ahu_sul_resultado.csv", mime="text/csv", use_container_width=True)
-        colunas[1].download_button(
-            "Baixar JSON", data=mod_exportar.para_json(dados, uids, prov),
-            file_name="ahu_sul_resultado.json", mime="application/json",
-            use_container_width=True)
-        st.caption("A inferência sobre mediação de escrivão não entra em nenhum dos dois: ela "
-                   "sai só no dossiê em PDF, com a ressalva metodológica do preprint (D1).")
-
-        st.markdown("##### Dossiê em PDF")
-        st.caption(
-            f"Capa com a proveniência e a citação, e uma seção por documento: cotas e links, "
-            f"resumo do AHU, pessoas com origem e nível, inferências da IA com a justificativa e "
-            f"a mediação de escrivão com a ressalva. Cabem {mod_dossie.LIMITE} documentos por "
-            f"dossiê — acima disso ele levaria minutos e nasceria ilegível.")
-        if len(uids) > mod_dossie.LIMITE:
-            st.warning(
-                f"São {len(uids)} documentos e o dossiê cabe {mod_dossie.LIMITE}. "
-                f"O PDF sai com os {mod_dossie.LIMITE} primeiros; para os outros, reduza a "
-                f"seleção e gere um segundo dossiê.")
-        do_dossie = uids[:mod_dossie.LIMITE]
-        # Em dois passos de propósito: o `download_button` monta o arquivo a **cada** execução da
-        # página, e um dossiê de 200 fichas no oitavo de núcleo do Community Cloud deixaria a aba
-        # lenta a cada clique. Aqui ele só é montado quando se pede.
-        pdf_pronto(
-            f"Gerar o dossiê em PDF ({len(do_dossie)})", "dossie_pdf",
-            lambda: mod_dossie.gerar_pdf(
-                dados, do_dossie,
-                prov=mod_exportar.proveniencia(dados, consulta, len(do_dossie),
-                                               origem=f"dossie:{origem}")),
-            "dossie_ahu_sul.pdf")
-
-
-
-# ---------------------------------------------------------------------------
-# Lista para consulta no AHU (WP 3.3a)
-# ---------------------------------------------------------------------------
 
 def painel_da_lista_ahu(dados, resposta) -> None:
     """A lista de consulta presencial, do pacote antigo, agora sobre `app_dados/`.
@@ -640,7 +536,6 @@ def lista_de_pessoas(dados) -> None:
     escolha = st.dataframe(
         tabela, use_container_width=True, hide_index=True, on_select="rerun",
         selection_mode="single-row",
-        column_config={"pessoa_uid": st.column_config.TextColumn("ID público", width="small")},
     )
     st.caption("Clique numa linha para abrir a página da pessoa.")
     linhas = escolha.selection.rows if hasattr(escolha, "selection") else []
@@ -685,8 +580,7 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
 
     st.subheader(p.nome)
     st.markdown(f"<span class='rotulo'>{p.n_documentos} documento(s) · atividade "
-                f"<span class='numero'>{p.periodo}</span> · "
-                f"<span class='cota'>{p.pessoa_uid}</span></span>", unsafe_allow_html=True)
+                f"<span class='numero'>{p.periodo}</span></span>", unsafe_allow_html=True)
 
     for etiqueta, valores in (("Títulos", p.titulos), ("Cargos", p.cargos),
                               ("Variantes do nome", p.variantes)):
@@ -716,8 +610,8 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
         st.success(f"Amostra de **{p.nome}** preparada. Abra a aba **Amostras** para ver os "
                    "lotes e baixar o plano de coleta.")
     acoes[2].link_button("Reportar erro", pagina.url_issue, use_container_width=True,
-                         help="Abre uma issue no GitHub já preenchida com o pessoa_uid, o dado "
-                              "e a fonte.")
+                         help="Abre uma issue no GitHub já preenchida com o dado que o app "
+                              "mostra hoje e a sua fonte.")
 
     st.markdown("#### Linha do tempo")
     if pagina.linha_do_tempo.empty:
@@ -737,9 +631,10 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
                       use_container_width=True, hide_index=True)
 
     with st.expander(f"Documentos em ordem cronológica ({len(pagina.documentos)})"):
-        st.dataframe(pagina.documentos.rename(columns={
-            "doc_uid": "ID público", "ano": "Ano", "tipologia": "Tipologia",
-            "destinatario": "Destinatário", "autoria_verificada": "Autoria verificada"}),
+        st.dataframe(
+            pagina.documentos.drop(columns=["doc_uid"]).rename(columns={
+                "ano": "Ano", "tipologia": "Tipologia", "destinatario": "Destinatário",
+                "autoria_verificada": "Autoria verificada"}),
             use_container_width=True, hide_index=True)
         st.caption("A ficha completa de cada documento está na aba Busca, pelo botão "
                    "\"Ver documentos\".")
@@ -898,28 +793,26 @@ def mostrar_lotes(dados, amostra) -> None:
         if estrato:
             titulo += f" · estrato {estrato}"
         with st.expander(titulo, expanded=numero == 1):
-            st.dataframe(mod_exportar.tabela(dados, lote)[
-                ["doc_uid", "ano", "tipologia", "reference_code", "new_code", "pasta"]],
-                use_container_width=True, hide_index=True)
+            st.dataframe(mod_amostras.tabela_dos_documentos(dados, lote),
+                         use_container_width=True, hide_index=True)
 
 
 def baixar_amostra(dados, amostra, consulta: Consulta, nome: str) -> None:
+    """A amostra sai como plano de coleta do EINS (§7.4, D11) — e só.
+
+    As exportações em CSV e JSON foram retiradas pela D7. O plano do EINS fica porque a D4 o
+    exige: é por ele que o Acervo do EINS Lite cria um Processo por código de referência.
+    """
+    del nome
     st.markdown("#### Levar a amostra")
-    prov = mod_exportar.proveniencia(dados, consulta, len(amostra), origem=amostra.tipo)
-    colunas = st.columns(3)
+    colunas = st.columns(2)
     colunas[0].download_button(
         "Plano de coleta (EINS)", data=mod_amostras.plano_em_json(dados, amostra, consulta),
         file_name="plano_coleta.eins.json", mime="application/json",
         use_container_width=True,
         help="Esquema eins-plano-coleta/1 (§7.4): o Acervo do EINS Lite importa e cria um "
              "Processo por código de referência.")
-    colunas[1].download_button(
-        "CSV", data=mod_exportar.para_csv(dados, amostra.doc_uids, prov),
-        file_name=f"{nome}.csv", mime="text/csv", use_container_width=True)
-    colunas[2].download_button(
-        "JSON", data=mod_exportar.para_json(dados, amostra.doc_uids, prov),
-        file_name=f"{nome}.json", mime="application/json", use_container_width=True)
-    if st.button(f"Pôr os {len(amostra)} na seleção", use_container_width=True):
+    if colunas[1].button(f"Pôr os {len(amostra)} na seleção", use_container_width=True):
         sobraram = selecao_atual().adicionar(amostra.doc_uids)
         if sobraram:
             st.warning(f"{sobraram} não couberam: o teto da seleção é {mod_selecao.LIMITE}.")
@@ -1011,6 +904,13 @@ def aba_sobre(dados) -> None:
             f"viés +{auditoria.get('vies')} · N = {auditoria.get('n')} · "
             f"{auditoria.get('avaliadores')} avaliador. {auditoria.get('nota', '')}"
         )
+
+    st.markdown("#### O que sai daqui")
+    st.markdown(
+        "Uma coisa só: a **lista para consulta no AHU**, em PDF, montada da seleção ou de uma "
+        "lista de cotas colada. A aba Amostras entrega também o plano de coleta do EINS Lite. "
+        "As exportações em CSV e JSON e o dossiê em PDF foram retirados em 09/10/2026, por não "
+        "serem usados.")
 
     st.markdown("#### Avaliação da busca")
     st.info("Em breve: a tabela v2 × v3 com nDCG@10, Recall@20 e MRR (WP 4.1).")
