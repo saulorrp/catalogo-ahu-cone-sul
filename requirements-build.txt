@@ -1,0 +1,10 @@
+# Construção do corpus — só na máquina do autor, nunca no Streamlit Community Cloud.
+#
+# O `build/construir_indice.py` codifica os 7.051 documentos com o `sentence-transformers`, e é
+# por isso que o `torch` continua existindo aqui. Em execução o app não o importa (R7).
+
+-r requirements.txt
+
+--extra-index-url https://download.pytorch.org/whl/cpu
+sentence-transformers==5.2.3
+torch==2.8.0+cpu

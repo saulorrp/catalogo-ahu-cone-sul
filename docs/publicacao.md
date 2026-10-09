@@ -142,10 +142,25 @@ Medido em 09/10/2026, na máquina do autor, nos 7.051 documentos:
 | 5. modelo carregado | 862 MiB | 880 MiB | 881 MiB |
 | 6. **primeira consulta codificada (pico)** | **948 MiB** | **1.211 MiB** | **2.013 MiB** |
 
-Só o e5-small fica numa faixa possível, e ainda assim **sem folga**: 948 MiB é 1,4× o mínimo
-garantido. O custo maior não é o modelo — é o `torch`, que pesa ~312 MiB antes de qualquer peso. É
-isso que o **R7** ataca, trocando o `torch` por `onnxruntime` no caminho de consulta, com alvo de
-**menos de 600 MiB**.
+O custo maior não era o modelo — era o `torch`, que pesa ~312 MiB antes de qualquer peso.
+
+### Depois do R7: 630 MiB
+
+Desde o R7 a consulta é codificada por `onnxruntime` + `tokenizers`, e o `torch` não é importado
+em execução. As três configurações medidas, com o cache quente:
+
+| caminho | pico de RSS | equivalência com o `sentence-transformers` |
+|---|---:|---|
+| `torch` + `sentence-transformers` (antes) | 948 MiB | é a referência |
+| ONNX fp32 | 960 MiB | cosseno ≥ 0,99; top-10 idêntico |
+| **ONNX int8 (o que vai ao ar)** | **630 MiB** | cosseno ≥ 0,9940; 90 % dos mesmos documentos no top-10; mesmo primeiro colocado em 26 de 30 |
+
+**630 MiB cabe nos 690 MiB garantidos** — é a primeira configuração que cabe. O fp32 piora o que
+veio consertar, e por isso não é o padrão; `AHU_ONNX_ARQUIVO=onnx/model.onnx` volta a ele.
+
+O modelo **não vem no repositório** (120 MB, contra os 100 MB que o GitHub aceita): é baixado do
+Hugging Face na primeira consulta conceitual e fica em cache. No Streamlit Cloud isso acontece uma
+vez por ambiente, e é por isso que **a primeira busca conceitual depois de um deploy demora**.
 
 Abrir o app e buscar por cota custa 229 MiB e ~4 s, porque o modelo semântico só carrega na
 primeira consulta que precisa dele.

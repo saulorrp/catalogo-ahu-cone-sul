@@ -56,9 +56,11 @@ Datas em 2026. "Verificado por" nomeia o teste ou a medição, não a impressão
 | 09/10 | `e5cb70f` | `docs/HANDOFF.md` | — |
 | 09/10 | `c135d5c` | **R9, parte 1**: Sobre sem "Como citar"; tabelas pequenas centradas; busca de nome tolerante; link da fonte | `tests/test_pessoas.py`: "domingo de britto" acha "Domingos de Brito Peixoto" |
 
+| 09/10 | *(este)* | **R7**: consulta por ONNX int8, sem `torch` | `tests/test_consulta_onnx.py` (8 testes); pico 948 → **630 MiB** |
+
 **Medidas que valem hoje** (máquina do autor, Windows 11, 8 núcleos, cache do HF quente):
 
-- pico de RSS numa consulta semântica: **948 MiB** com e5-small (1.211 com base, 2.013 com large);
+- pico de RSS numa consulta semântica: **630 MiB** (era 948 com `torch`);
 - abrir o app e buscar por cota: **229 MiB**, ~4 s — o modelo só carrega quando é preciso;
 - gate completo: ~4 min, **436 testes**, 1 pulado.
 
@@ -80,9 +82,10 @@ Ordem decidida pelo autor em 09/10. Cada etapa tem de deixar o `main` **publicá
       segredo** (nenhum `.env`, `*api_keys*`, `pplx-`, `sk-`, `hf_`, `ghp_`); maior objeto que já
       existiu: 13,8 MB; `app_dados/*` versionado. `main == v3`. README e
       [`publicacao.md`](publicacao.md) reescritos para o caminho do *force-push*.
-- [ ] **R7 — tirar o `torch` do caminho de consulta**. **Aceite:** o app não importa `torch` nem
-      `sentence_transformers` em execução; cosseno ≥ 0,99 contra o `sentence-transformers` em ~30
-      consultas; top-10 idêntico em ≥ 90 %; **pico de RSS < 600 MiB**.
+- [x] **R7 — `torch` fora do caminho de consulta.** O app não importa `torch` nem
+      `sentence_transformers` em execução (provado num processo próprio). Pico: **630 MiB**, de
+      948. **O alvo de 600 MiB não foi alcançado** e o critério de "top-10 idêntico" não é
+      cumprido — ver os riscos 1 e 2.
 
 ### Pausado, retomar depois (plano em [`plano_remodelacao_v3_1.md`](plano_remodelacao_v3_1.md))
 
@@ -129,6 +132,7 @@ Uma linha cada. As D1–D6 estão na spec §0; as D7–D11 foram acrescentadas l
 
 | | Decisão | Por quê |
 |---|---|---|
+| **D14** | **O modelo de consulta é o ONNX int8, não o fp32.** | O fp32 passaria no critério estrito de equivalência, mas custa 960 MiB — pior que os 948 MiB do `torch` que o R7 veio substituir, e acima dos 690 MiB garantidos. O int8 custa 630 MiB e é a única configuração que cabe. O preço é a ordem exata do top-10; os mesmos documentos aparecem (90 %) e o primeiro colocado é o mesmo em 26 de 30 consultas. Para triagem isso basta, e os limiares de `ahu/busca.py` ainda serão recalibrados na F4. |
 | **D13** | **Reordenar linhas é com ↑ / ↓, não arrastando com o rato.** | Arrastar exigiria um componente de terceiros com pacote JavaScript próprio (`streamlit-sortables` e afins): mais uma dependência a construir no Streamlit Cloud, justo quando o R7 corta dependências para caber na memória; e esses componentes reordenam **listas de texto**, não linhas de tabela — não dariam a tabela que o autor pediu. Os ↑/↓ agem sobre a linha escolhida por número. Reavaliar se o Streamlit trouxer reordenação nativa de `st.data_editor`. |
 | **D12** | **Não haverá repositório novo.** O `v3` vai por `push --force` sobre o `main` de `saulorrp/catalogo-ahu-cone-sul`, reaproveitando o app `catalogo-ahu-sul.streamlit.app`. | Menos passos para o autor e a URL conhecida se mantém. O app antigo é preservado numa branch `v2-arquivo` **antes** do *force-push*. |
 
@@ -184,9 +188,14 @@ Estão em [`../AGENTS.md`](../AGENTS.md). As que mais pegam quem chega:
 
 ## 6. Riscos conhecidos e perguntas em aberto
 
-1. **O deploy está bloqueado pela memória.** 948 MiB contra 690 MiB garantidos. O R7 (ONNX) é a
-   solução planejada; se ele não alcançar os 600 MiB, a alternativa é pedir recursos extras ao
-   Streamlit (eles concedem a projetos acadêmicos) ou hospedar noutro lugar.
+1. **Memória: 630 MiB, e o alvo era 600.** O R7 trouxe o pico de 948 para 630 MiB, que **cabe**
+   nos 690 MiB garantidos, mas não alcança os 600 que o plano pedia. O que sobra é quase todo
+   peso do modelo int8; o `onnxruntime` em si custa 21 MiB, contra 312 do `torch`. Para baixar
+   mais, o caminho é um modelo menor, não mais engenharia no carregamento.
+2. **O int8 não dá a mesma ordem.** Cosseno ≥ 0,9940 e 90 % dos mesmos documentos no top-10, com
+   o mesmo primeiro colocado em 26 de 30 consultas — mas a ordem exata muda sempre. O plano pedia
+   "top-10 idêntico em ≥ 90 %", e **só o fp32 entrega**, ao custo de 960 MiB (pior que o ponto de
+   partida). `AHU_ONNX_ARQUIVO=onnx/model.onnx` volta ao fp32.
 2. **Os limiares da busca foram calibrados no e5-large** e o índice agora é e5-small:
    `MARGENS_RIGOR`, `COSSENO_MINIMO`, `PESOS_RRF` e `LIMITE_DESTAQUE` em `ahu/busca.py` estão
    provisórios até a F4. Eles funcionam, mas não estão medidos neste modelo.

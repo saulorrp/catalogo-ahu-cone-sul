@@ -21,6 +21,7 @@ import streamlit as st
 
 from ahu import amostras as mod_amostras
 from ahu import busca
+from ahu import consulta_onnx as mod_onnx
 from ahu import estilo as mod_estilo
 from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
@@ -208,17 +209,27 @@ def tema() -> str:
 
 @st.cache_resource(show_spinner="Carregando o modelo semântico (uma vez por sessão)...")
 def encoder_de_consulta(_dados):
-    return busca.criar_encoder_consulta(_dados)
+    """O codificador da consulta, por **ONNX** (R7): nada de `torch` em execução.
+
+    O modelo é baixado na primeira consulta conceitual e fica em cache. O
+    `st.cache_resource` garante um por processo.
+    """
+    return mod_onnx.criar_encoder_de_dados(_dados)
 
 
 def encoder_preguicoso(dados):
-    """Embrulho que só carrega o modelo quando o motor semântico é de fato chamado.
+    """Embrulho que só prepara o modelo quando o motor semântico é de fato chamado.
 
-    Sem isto, abrir o app — ou buscar uma cota, que nem usa o semântico — pagaria o carregamento
-    do e5 à toa, e a carga fria da A10 estouraria.
+    Sem isto, abrir o app — ou buscar uma cota, que nem usa o semântico — pagaria o
+    carregamento à toa, e a carga fria da A10 estouraria. Se o download falhar, a busca
+    conceitual avisa e as outras continuam funcionando.
     """
     def encoder(textos):
-        return encoder_de_consulta(dados)(textos)
+        try:
+            return encoder_de_consulta(dados)(textos)
+        except mod_onnx.ErroDeModelo as e:
+            st.error(f"**A busca conceitual não está disponível.** {e}")
+            st.stop()
 
     return encoder
 

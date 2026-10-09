@@ -97,7 +97,7 @@ class Medidor:
 
 
 def medir(modelo: str | None, so_modelo: bool, consulta: str,
-          com_app: bool = False) -> dict:
+          com_app: bool = False, onnx: bool = False) -> dict:
     m = Medidor()
     t = time.perf_counter()
     import numpy  # noqa: F401
@@ -125,20 +125,36 @@ def medir(modelo: str | None, so_modelo: bool, consulta: str,
         m.marcar("3. primeira busca lexica (sem modelo)", t)
         modelo = modelo or dados.modelo_embeddings.get("nome")
 
-    t = time.perf_counter()
-    import sentence_transformers  # noqa: F401
-    import torch  # noqa: F401
-    m.marcar("4. torch + sentence_transformers", t)
+    if onnx:
+        # O caminho que vai ao ar desde o R7: nada de torch.
+        t = time.perf_counter()
+        import onnxruntime  # noqa: F401
+        import tokenizers  # noqa: F401
+        m.marcar("4. onnxruntime + tokenizers", t)
 
-    t = time.perf_counter()
-    from sentence_transformers import SentenceTransformer
-    codificador = SentenceTransformer(modelo, device="cpu")
-    m.marcar(f"5. modelo {modelo}", t)
+        t = time.perf_counter()
+        from ahu.consulta_onnx import criar_encoder
+        codificador = criar_encoder(modelo)
+        m.marcar(f"5. modelo ONNX {modelo}", t)
 
-    t = time.perf_counter()
-    codificador.encode([f"query: {consulta}"], normalize_embeddings=True,
-                       show_progress_bar=False)
-    m.marcar("6. primeira consulta codificada", t)
+        t = time.perf_counter()
+        codificador([consulta])
+        m.marcar("6. primeira consulta codificada", t)
+    else:
+        t = time.perf_counter()
+        import sentence_transformers  # noqa: F401
+        import torch  # noqa: F401
+        m.marcar("4. torch + sentence_transformers", t)
+
+        t = time.perf_counter()
+        from sentence_transformers import SentenceTransformer
+        codificador = SentenceTransformer(modelo, device="cpu")
+        m.marcar(f"5. modelo {modelo}", t)
+
+        t = time.perf_counter()
+        codificador.encode([f"query: {consulta}"], normalize_embeddings=True,
+                           show_progress_bar=False)
+        m.marcar("6. primeira consulta codificada", t)
 
     pico = max(e["rss_mb"] for e in m.etapas)
     saida = {
@@ -161,6 +177,8 @@ def main() -> None:
     ap.add_argument("--so-modelo", action="store_true",
                     help="Mede só torch e o modelo, sem carregar app_dados/.")
     ap.add_argument("--consulta", default="deserção de soldados")
+    ap.add_argument("--onnx", action="store_true",
+                    help="mede o caminho que vai ao ar (onnxruntime), e não o do torch")
     ap.add_argument("--com-app", action="store_true",
                     help="acrescenta uma etapa importando o grafo de módulos do app.py "
                          "(plotly, fpdf2 e os módulos da F3)")
@@ -168,7 +186,7 @@ def main() -> None:
     args = ap.parse_args()
 
     print(f"Medindo a carga fria ({sys.platform}, python {sys.version.split()[0]}):")
-    resultado = medir(args.modelo, args.so_modelo, args.consulta, args.com_app)
+    resultado = medir(args.modelo, args.so_modelo, args.consulta, args.com_app, args.onnx)
     print(f"\nPico de RSS: {resultado['pico_rss_mb']:.1f} MiB · "
           f"carga fria: {resultado['carga_fria_s']:.1f} s")
     if args.saida:

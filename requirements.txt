@@ -1,14 +1,18 @@
-# Índice do PyTorch só-CPU. Sem esta linha, o `torch` do PyPI em Linux arrasta as bibliotecas
-# CUDA da NVIDIA (alguns GB) que o app nunca usa, e a instalação no Streamlit Community Cloud
-# fica pesada ou quebra. O sufixo `+cpu` só existe neste índice, por isso o pin é explícito.
---extra-index-url https://download.pytorch.org/whl/cpu
+# Execução — é esta lista que o Streamlit Community Cloud instala.
+#
+# **Sem `torch` e sem `sentence-transformers`** (plano v3.1, R7): juntos eles custavam ~312 MiB
+# de RSS antes de qualquer peso de modelo, e a plataforma garante 690 MiB. A consulta é
+# codificada por `onnxruntime` + `tokenizers`; os vetores dos documentos continuam os que o
+# `sentence-transformers` produziu na máquina do autor.
+#
+# Para reconstruir o corpus, use requirements-build.txt.
 
 streamlit==1.55.0
 pandas==2.3.3
 pyarrow==23.0.1
 numpy==2.4.3
 rank-bm25==0.2.2
-sentence-transformers==5.2.3
-torch==2.8.0+cpu
+onnxruntime==1.28.0
+tokenizers==0.22.2
 plotly==6.9.0
 fpdf2==2.8.9
