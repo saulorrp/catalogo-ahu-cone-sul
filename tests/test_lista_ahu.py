@@ -162,73 +162,215 @@ def test_lista_nao_usa_a_cota_quebrada(corpus_busca):
 
 
 # ---------------------------------------------------------------------------
-# O PDF
+# O PDF (R3): uma folha para levar ao arquivo
 # ---------------------------------------------------------------------------
 
-def test_pdf_sai_com_cabecalho_e_paginas(corpus_busca):
+def texto_do_pdf(bruto: bytes) -> str:
+    import io as _io
+
+    import pypdf
+
+    return "\n".join(p.extract_text() for p in pypdf.PdfReader(_io.BytesIO(bruto)).pages)
+
+
+def paginas(bruto: bytes) -> int:
+    import io as _io
+
+    import pypdf
+
+    return len(pypdf.PdfReader(_io.BytesIO(bruto)).pages)
+
+
+def _sem_espacos(texto: str) -> str:
+    return "".join(texto.split())
+
+
+@pytest.fixture
+def pdf_do_corpus(corpus_busca):
+    grupos = la.ler_lista(la.lista_de_documentos(
+        corpus_busca, corpus_busca.documentos["doc_uid"].tolist()), corpus_busca)
+    return la.gerar_pdf(grupos, corpus_busca)
+
+
+def test_o_pdf_abre_e_fecha_bem(pdf_do_corpus):
+    assert pdf_do_corpus.startswith(b"%PDF") and pdf_do_corpus.rstrip().endswith(b"%%EOF")
+
+
+def test_a4_paisagem(pdf_do_corpus):
+    """R3: A4 paisagem — 297 × 210 mm, ou seja 841,89 × 595,28 pontos."""
+    import io as _io
+
+    import pypdf
+
+    caixa = pypdf.PdfReader(_io.BytesIO(pdf_do_corpus)).pages[0].mediabox
+    largura, altura = float(caixa.width), float(caixa.height)
+    assert largura > altura
+    assert round(largura) == 842 and round(altura) == 595
+
+
+def test_o_alto_da_pagina_tem_so_o_titulo_e_a_data(pdf_do_corpus):
+    from datetime import date
+
+    texto = texto_do_pdf(pdf_do_corpus)
+    primeiras = [ln.strip() for ln in texto.splitlines() if ln.strip()][:2]
+    assert primeiras[0] == la.TITULO
+    assert primeiras[1] == date.today().strftime("%d/%m/%Y")
+
+
+def test_as_colunas_sao_as_seis_do_plano(pdf_do_corpus):
+    texto = _sem_espacos(texto_do_pdf(pdf_do_corpus))
+    assert "NºAnoCotaResumoDigitArq" in texto
+
+
+def test_cada_documento_tem_numero_ano_cota_e_resumo(corpus_busca, pdf_do_corpus):
+    texto = _sem_espacos(texto_do_pdf(pdf_do_corpus))
+    docs = corpus_busca.documentos
+    for numero, (_, linha) in enumerate(docs.iterrows(), start=1):
+        assert str(numero) in texto
+        assert _sem_espacos(str(linha["description"])[:40]) in texto, numero
+        assert _sem_espacos(str(int(linha["ano_isolado"]))) in texto
+
+
+def test_o_resumo_sai_inteiro_e_nao_cortado(corpus_busca):
+    """R3: "Resumo: full, wrapped" — nada de reticências."""
+    docs = corpus_busca.documentos
+    original = docs["description"].copy()
+    try:
+        comprido = "palavra " * 90
+        docs.loc[docs.index[0], "description"] = comprido.strip()
+        uid = docs["doc_uid"].iloc[0]
+        grupos = la.ler_lista(la.lista_de_documentos(corpus_busca, [uid]), corpus_busca)
+        texto = _sem_espacos(texto_do_pdf(la.gerar_pdf(grupos, corpus_busca)))
+        assert "…" not in texto
+        assert texto.count("palavra") == 90
+    finally:
+        docs["description"] = original
+
+
+def test_a_cota_traz_a_referencia_abaixo(corpus_busca):
+    grupos = la.ler_lista("AHU_ACL_CU_021, Cx. 6, D. 390.", corpus_busca)
+    texto = _sem_espacos(texto_do_pdf(la.gerar_pdf(grupos, corpus_busca)))
+    assert "AHU_ACL_CU_021,Cx.6,D.390" in texto      # a cota do Resgate, sem o ponto final
+    assert "PT/AHU/CU/021/0006/00390" in texto       # o código de referência
+
+
+def test_o_digitarq_e_um_rotulo_clicavel_e_nao_a_url(pdf_do_corpus):
+    texto = texto_do_pdf(pdf_do_corpus)
+    assert "abrir" in texto
+    assert "https://digitarq" not in texto          # a URL crua não vai impressa
+    # mas o link está lá, como anotação do PDF
+    assert b"digitarq.arquivos.pt" in pdf_do_corpus
+
+
+def test_o_rodape_e_a_linha_do_plano(pdf_do_corpus):
+    texto = _sem_espacos(texto_do_pdf(pdf_do_corpus))
+    assert _sem_espacos(la.RODAPE) in texto
+    assert "página1/" in texto
+
+
+@pytest.mark.parametrize("proibido", [
+    "scribe_mediation", "doc_uid", "proveniência", "SRSP", "Tipologia", "Remetente",
+    "Pesquisador", "Projeto", "Instituição",
+])
+def test_o_pdf_nao_traz_o_que_o_r3_tirou(pdf_do_corpus, proibido):
+    assert proibido.lower() not in texto_do_pdf(pdf_do_corpus).lower(), proibido
+
+
+def test_grupos_viram_faixas_de_titulo(corpus_busca):
+    texto = ("# Dia 1\n"
+             "PT/AHU/CU/021/0006/00390\n"
+             "# Dia 2\n"
+             "AHU_ACL_CU_014, Cx. 13, D. 1063\n")
+    bruto = la.gerar_pdf(la.ler_lista(texto, corpus_busca), corpus_busca)
+    lido = _sem_espacos(texto_do_pdf(bruto))
+    assert "Dia1(1)" in lido and "Dia2(1)" in lido
+
+
+def test_a_numeracao_e_continua_entre_grupos(corpus_busca):
     uids = corpus_busca.documentos["doc_uid"].tolist()
-    grupos = la.ler_lista(la.lista_de_documentos(corpus_busca, uids, "tipologia"), corpus_busca)
-    bruto = la.gerar_pdf(grupos, corpus_busca, {
-        "titulo": "Consulta de teste", "pesquisador": "Saulo Rocha",
-        "instituicao": "UFSC", "projeto": "AHU-Sul", "datas_consulta": "12 a 16/01/2027",
-        "observacao": "Documentos para registro fotográfico.",
-    })
-    assert bruto.startswith(b"%PDF") and bruto.rstrip().endswith(b"%%EOF")
-    assert len(bruto) > 5_000
-    # A4 paisagem: a largura (297 mm) é maior que a altura.
-    assert b"/MediaBox" in bruto
+    texto = la.lista_de_documentos(corpus_busca, uids, agrupar_por="tipologia")
+    bruto = la.gerar_pdf(la.ler_lista(texto, corpus_busca), corpus_busca)
+    lido = _sem_espacos(texto_do_pdf(bruto))
+    assert str(len(uids)) in lido
 
 
 def test_pdf_de_uma_cota_de_fora_do_corpus_nao_quebra(corpus_busca):
     grupos = la.ler_lista("AHU_ACL_CU_099, Cx. 1, D. 1\ncota inventada\n", corpus_busca)
-    assert la.gerar_pdf(grupos, corpus_busca).startswith(b"%PDF")
+    texto = texto_do_pdf(la.gerar_pdf(grupos, corpus_busca))
+    assert "não consta no catálogo AHU-Sul" in texto
 
 
-def test_pdf_sem_cabecalho_nenhum(corpus_busca):
-    grupos = la.ler_lista("PT/AHU/CU/021/0006/00390\n", corpus_busca)
-    assert la.gerar_pdf(grupos, corpus_busca).startswith(b"%PDF")
+def test_pdf_a_partir_da_selecao(corpus_busca):
+    from ahu.selecao import Selecao
+
+    s = Selecao()
+    s.adicionar(corpus_busca.documentos["doc_uid"].tolist()[:3])
+    bruto = la.pdf_da_selecao(corpus_busca, s)
+    texto = _sem_espacos(texto_do_pdf(bruto))
+    assert _sem_espacos(la.TITULO) in texto
+    for numero in (1, 2, 3):
+        assert str(numero) in texto
+
+
+def test_pdf_de_selecao_vazia_sai_so_com_o_cabecalho(corpus_busca):
+    from ahu.selecao import Selecao
+
+    bruto = la.pdf_da_selecao(corpus_busca, Selecao())
+    assert bruto.startswith(b"%PDF")
+    assert la.TITULO in texto_do_pdf(bruto)
 
 
 # ---------------------------------------------------------------------------
-# As fontes embutidas (compartilhadas com o WP 3.3)
+# A fonte embutida (R3)
 # ---------------------------------------------------------------------------
 
-def test_as_fontes_estao_no_repositorio():
-    for familia in mod_pdf.FAMILIAS:
-        for estilo in ("", "B", "I"):
-            caminho = mod_pdf.caminho_da_fonte(familia, estilo)
-            assert caminho.is_file() and caminho.stat().st_size > 100_000
-    assert (mod_pdf.PASTA_FONTES / "LICENSE-DejaVu.txt").is_file()
+def test_a_fonte_esta_no_repositorio_com_a_licenca():
+    for estilo in ("", "B", "I"):
+        caminho = mod_pdf.caminho_da_fonte(estilo)
+        assert caminho.is_file() and caminho.stat().st_size > 100_000
+        assert caminho.name.startswith("NotoSerif")
+    assert (mod_pdf.PASTA_FONTES / "LICENSE-NotoSerif-OFL.txt").is_file()
 
 
-def test_familia_desconhecida_erra_alto():
-    with pytest.raises(mod_pdf.ErroDeFonte, match="desconhecido"):
-        mod_pdf.caminho_da_fonte("Comic", "")
+def test_as_dejavu_sairam_com_o_dossie():
+    """D7: a DejaVu servia ao dossiê, que saiu. Uma família só no repositório."""
+    assert not list(mod_pdf.PASTA_FONTES.glob("DejaVu*"))
+    assert sorted(p.name for p in mod_pdf.PASTA_FONTES.glob("*.ttf")) == [
+        "NotoSerif-Bold.ttf", "NotoSerif-Italic.ttf", "NotoSerif-Regular.ttf"]
 
 
-def test_acentos_do_portugues_passam_pelas_duas_familias():
-    from fpdf import FPDF
-
-    amostra = "ÁÀÂÃÉÊÍÓÔÕÚÜÇ áàâãéêíóôõúüç ºª — … « » §"
-    for familia in mod_pdf.FAMILIAS:
-        documento = FPDF()
-        mod_pdf.preparar(documento, familia)
-        documento.add_page()
-        documento.set_font(familia, "", 12)
-        documento.multi_cell(0, 8, amostra)
-        assert bytes(documento.output()).startswith(b"%PDF")
+def test_estilo_desconhecido_erra_alto():
+    with pytest.raises(mod_pdf.ErroDeFonte, match="Estilo desconhecido"):
+        mod_pdf.caminho_da_fonte("Negrito")
 
 
-def test_a_caixa_de_marcar_existe_na_familia_da_lista():
-    """A lista usa `☐`, que a DejaVu Sans tem e a Serif não — é por isso que a lista é Sans."""
+def test_acentos_do_portugues_e_o_capitulum_passam():
     from fontTools.ttLib import TTFont
 
-    def tem_glifo(caminho, caractere):
-        with TTFont(caminho) as fonte:
-            return any(ord(caractere) in t.cmap for t in fonte["cmap"].tables)
+    with TTFont(mod_pdf.caminho_da_fonte()) as fonte:
+        cmap = set()
+        for tabela in fonte["cmap"].tables:
+            cmap |= set(tabela.cmap)
+    for caractere in "ÁÀÂÃÉÊÍÓÔÕÚÜÇáàâãéêíóôõúüçºª—…«»":
+        assert ord(caractere) in cmap, caractere
+    assert 0x2E3F in cmap, "o ⸿ da identidade do EINS"
 
-    assert tem_glifo(mod_pdf.caminho_da_fonte("Sans"), "☐")
-    assert "☐" in la.MARCACOES
+
+def test_a_caixa_de_marcar_e_desenhada_porque_a_fonte_nao_a_tem():
+    """R3: a Noto Serif não traz glifo de caixa; por isso a caixa é um retângulo."""
+    from fontTools.ttLib import TTFont
+
+    with TTFont(mod_pdf.caminho_da_fonte()) as fonte:
+        cmap = set()
+        for tabela in fonte["cmap"].tables:
+            cmap |= set(tabela.cmap)
+    assert 0x2610 not in cmap and 0x25A1 not in cmap
+    assert hasattr(mod_pdf, "caixa_de_marcar")
+
+
+def test_o_pdf_nao_escreve_glifo_de_caixa(corpus_busca):
+    grupos = la.ler_lista("PT/AHU/CU/021/0006/00390", corpus_busca)
+    assert "☐".encode() not in la.gerar_pdf(grupos, corpus_busca)
 
 
 # ---------------------------------------------------------------------------

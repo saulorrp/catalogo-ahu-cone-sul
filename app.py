@@ -587,19 +587,9 @@ def painel_da_lista_ahu(dados, resposta) -> None:
             st.warning("Cotas não reconhecidas (confira a digitação): "
                        + "; ".join(r["sem_referencia"][:10]))
 
-        campos = st.columns(2)
-        cabecalho = {
-            "titulo": campos[0].text_input(
-                "Título", "Documentos para consulta presencial e registro fotográfico"),
-            "pesquisador": campos[0].text_input("Pesquisador(a)"),
-            "instituicao": campos[0].text_input("Instituição / vínculo"),
-            "projeto": campos[1].text_input("Projeto"),
-            "datas_consulta": campos[1].text_input("Datas agendadas no CRAV"),
-            "observacao": campos[1].text_input("Observação (opcional)"),
-        }
-        pdf_pronto("Gerar a lista em PDF", "lista_pdf",
-                   lambda: mod_lista.gerar_pdf(grupos, dados, cabecalho),
-                   "lista_documentos_AHU.pdf")
+        pdf_pronto("Gerar PDF desta lista", "lista_pdf",
+                   lambda: mod_lista.gerar_pdf(grupos, dados),
+                   "lista_consulta_AHU.pdf")
 
 
 # ---------------------------------------------------------------------------

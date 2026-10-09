@@ -1,21 +1,36 @@
-"""lista_ahu.py — WP 3.3a: a lista de documentos para consulta presencial no AHU (PDF).
+"""lista_ahu.py — a lista de documentos para consulta no AHU (plano v3.1, R3).
 
-Portado do `lista_ahu.py` do pacote antigo, com uma mudança de fundo: o catálogo não é mais um
-JSON à parte, é **`app_dados/`** (AGENTS.md 3). O resto do comportamento é o mesmo, porque é o que
-o autor leva ao arquivo: A4 paisagem, uma linha por documento, agrupável, com código de
-referência CRAV, link do DigitArq, data, tipologia, remetente, resumo do AHU e duas caixas para
-marcar à mão ("consultado", "fotografado").
+É o **único** PDF que o app gera, e o único arquivo que ele entrega: a D7 retirou o CSV, o JSON e
+o dossiê. Ele existe para uma coisa, descrita pelo autor: levar ao arquivo uma folha por onde
+conferir e fotografar.
 
-Duas entradas, as mesmas do painel antigo:
+O que ele tem, e nada mais:
 
-* **a seleção** do WP 3.1, por `lista_de_documentos`, que vira texto na caixa;
-* **uma lista colada**, uma cota por linha, em qualquer das formas usuais. Linha começando com
-  `#` abre um grupo (um autor, um dia de consulta); depois de `|` vem nota livre, e um `http…` do
-  Resgate vira a coluna *Resgate*.
+| Nº | Ano | Cota | Resumo | DigitArq | caixa |
+|---|---|---|---|---|---|
+
+* **Nº** liga a linha à fotografia;
+* **Cota** traz a cota do Resgate na primeira linha e o código `PT/AHU/CU/…` abaixo, em corpo
+  menor;
+* **Resumo** sai inteiro, com quebra de linha — não cortado;
+* **DigitArq** é um "abrir" clicável, não a URL crua;
+* a **caixa** é desenhada, para marcar à mão.
+
+Sem explicação, sem proveniência, sem tipologia, sem remetente, sem SRSP e sem a inferência de
+mediação de escrivão (D8). No alto só o título e a data; no pé, uma linha de 8 pt.
+
+Duas entradas, as mesmas de sempre:
+
+* **a seleção** (`pdf_da_selecao`), na ordem em que o pesquisador marcou;
+* **uma lista colada** (`ler_lista`), uma cota por linha, em qualquer das formas usuais. Linha
+  começando com `#` abre um grupo — um autor, um dia de consulta — e vira uma faixa de título no
+  PDF; depois de `|` vem nota livre, e um `http…` do Resgate entra como link na cota.
 
 **Cotas de fora do corpus funcionam**, e isso é de propósito: o código de referência e o link do
 DigitArq saem da própria cota, pela regra do preprint §1, mesmo que o documento não seja AHU-Sul.
-O que falta, nesse caso, é só o que vem do catálogo — data, tipologia, remetente e resumo.
+O que falta, nesse caso, é só o resumo, que vem do catálogo.
+
+O catálogo é **`app_dados/`** (AGENTS.md 3), nunca um JSON à parte.
 """
 from __future__ import annotations
 
@@ -25,22 +40,23 @@ from dataclasses import dataclass, field
 from datetime import date
 
 import pandas as pd
-from fpdf.fonts import FontFace
 
 from ahu import pdf as mod_pdf
 from ahu.links import digitarq, referencia_crav
+from ahu.links import limpar_cota as _limpar_cota
 
-TITULO_PADRAO = "Documentos para consulta presencial"
-SUBTITULO = "Arquivo Histórico Ultramarino (AHU/DGLAB) · Lisboa"
-MARCACOES = "☐ consultado\n☐ fotografado"
+TITULO = "Lista para consulta no AHU"
 
-# Soma 273 mm: A4 paisagem (297) menos as margens de 12.
-LARGURAS = (9, 48, 52, 108, 17, 17, 22)
-CABECALHO_TABELA = ("Nº", "Cota (Resgate) / Código de referência",
-                    "Data · Tipologia · Remetente", "Resumo do catálogo (AHU)",
-                    "DigitArq", "Resgate", "Consulta")
-LIMITE_RESUMO = 520
-LIMITE_REMETENTE = 140
+# Medidas da página (A4 paisagem, 297 × 210, margens de 12).
+MARGEM = 12
+LARGURA_UTIL = 297 - 2 * MARGEM         # 273 mm
+# Nº · Ano · Cota · Resumo · DigitArq · caixa — soma 273.
+COLUNAS = (("Nº", 10), ("Ano", 14), ("Cota", 60), ("Resumo", 152),
+           ("DigitArq", 18), ("", 19))
+CORPO_PT = 9
+ENTRELINHA = 1.35
+ALTURA_LINHA = CORPO_PT * ENTRELINHA / 2.8346      # 9 pt × 1,35, em mm ≈ 4,29
+RODAPE = "Classificador AHU-Sul"
 
 
 def _dobrar(texto: str) -> str:
@@ -223,113 +239,191 @@ def relatorio(grupos: list[Grupo]) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# O PDF
+# O PDF (R3)
 # ---------------------------------------------------------------------------
 
-def _meta_do_documento(dados, linha_i: int, quantas: int) -> tuple[str, str]:
-    """As duas colunas de texto: (data · tipologia · remetente, resumo)."""
-    linha = dados.documentos.iloc[linha_i]
+def _dados_da_linha(dados, item: Item, numero: int) -> dict:
+    """O que vai na linha do PDF: número, ano, cota, referência, resumo e link."""
+    ano, resumo = "", ""
+    if item.linhas:
+        linha = dados.documentos.iloc[item.linhas[0]]
 
-    def valor(campo):
-        v = linha.get(campo)
-        return "" if v is None or pd.isna(v) else str(v)
+        def valor(campo):
+            v = linha.get(campo)
+            return "" if v is None or pd.isna(v) else v
 
-    meta = "\n".join(x for x in (
-        mod_pdf.data_extenso(valor("document_id_and_date")),
-        valor("tipologia"),
-        mod_pdf.encurtar(valor("sender_name"), LIMITE_REMETENTE),
-    ) if x)
-    resumo = mod_pdf.encurtar(valor("description"), LIMITE_RESUMO)
-    if quantas > 1:
-        resumo += f"\n[{quantas} documentos no catálogo com esta cota]"
-    return meta, resumo
+        bruto = valor("ano_isolado")
+        ano = "" if bruto == "" else str(int(bruto))
+        resumo = str(valor("description") or "")
+        if len(item.linhas) > 1:
+            resumo += f" [{len(item.linhas)} documentos no catálogo com esta cota]"
+    else:
+        resumo = "não consta no catálogo AHU-Sul"
+    if item.nota:
+        resumo = (resumo + " " if resumo else "") + f"— {item.nota}"
+    return {
+        "n": numero,
+        "ano": ano,
+        "cota": _limpar_cota(item.cota_digitada),
+        "referencia": item.referencia or "",
+        "resumo": resumo,
+        "digitarq": digitarq(item.referencia) if item.referencia else None,
+        "resgate": item.link_resgate,
+    }
+
+
+def _x_das_colunas() -> list[float]:
+    """A borda esquerda de cada coluna, em mm."""
+    bordas, x = [], MARGEM
+    for _, largura in COLUNAS:
+        bordas.append(x)
+        x += largura
+    return bordas
+
+
+def _cabecalho_da_tabela(pdf) -> None:
+    """A faixa com os nomes das colunas, repetida em cada página."""
+    y = pdf.get_y()
+    pdf.set_font(mod_pdf.FAMILIA, "B", 8)
+    pdf.set_fill_color(236, 232, 221)
+    pdf.rect(MARGEM, y, LARGURA_UTIL, ALTURA_LINHA + 1.6, style="F")
+    for (nome, largura), x in zip(COLUNAS, _x_das_colunas()):
+        if not nome:
+            continue
+        pdf.set_xy(x + 1.2, y + 0.8)
+        pdf.cell(largura - 2.4, ALTURA_LINHA, nome)
+    pdf.set_y(y + ALTURA_LINHA + 2.6)
+    pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT)
+
+
+def _altura_da_linha(pdf, dados_linha: dict) -> float:
+    """A altura de que a linha precisa: o maior entre o resumo e o bloco da cota."""
+    largura_resumo = dict(COLUNAS)["Resumo"] - 2.4
+    largura_cota = dict(COLUNAS)["Cota"] - 2.4
+
+    pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT)
+    alto_resumo = pdf.multi_cell(w=largura_resumo, h=ALTURA_LINHA,
+                                 text=dados_linha["resumo"] or "—",
+                                 dry_run=True, output="HEIGHT")
+    alto_cota = pdf.multi_cell(w=largura_cota, h=ALTURA_LINHA,
+                               text=dados_linha["cota"] or "—",
+                               dry_run=True, output="HEIGHT")
+    if dados_linha["referencia"]:
+        pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT - 1.5)
+        alto_cota += pdf.multi_cell(w=largura_cota, h=ALTURA_LINHA - 0.6,
+                                    text=dados_linha["referencia"],
+                                    dry_run=True, output="HEIGHT")
+        pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT)
+    return max(alto_resumo, alto_cota, ALTURA_LINHA)
+
+
+def _desenhar_linha(pdf, dados_linha: dict, altura: float) -> None:
+    """Uma linha da lista, com a caixa desenhada e o "abrir" clicável."""
+    larguras = dict(COLUNAS)
+    x_numero, x_ano, x_cota, x_resumo, x_link, x_caixa = _x_das_colunas()
+    y = pdf.get_y()
+
+    pdf.set_font(mod_pdf.FAMILIA, "B", CORPO_PT)
+    pdf.set_xy(x_numero + 1.2, y)
+    pdf.cell(larguras["Nº"] - 2.4, ALTURA_LINHA, str(dados_linha["n"]))
+
+    pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT)
+    pdf.set_xy(x_ano + 1.2, y)
+    pdf.cell(larguras["Ano"] - 2.4, ALTURA_LINHA, dados_linha["ano"] or "—")
+
+    # Cota: a do Resgate em cima, o código de referência abaixo, em corpo menor.
+    pdf.set_xy(x_cota + 1.2, y)
+    pdf.multi_cell(larguras["Cota"] - 2.4, ALTURA_LINHA, dados_linha["cota"] or "—",
+                   new_x="LEFT", new_y="NEXT", link=dados_linha["resgate"] or "")
+    if dados_linha["referencia"]:
+        pdf.set_x(x_cota + 1.2)
+        pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT - 1.5)
+        pdf.set_text_color(105, 105, 105)
+        pdf.multi_cell(larguras["Cota"] - 2.4, ALTURA_LINHA - 0.6, dados_linha["referencia"],
+                       new_x="LEFT", new_y="NEXT")
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT)
+
+    pdf.set_xy(x_resumo + 1.2, y)
+    pdf.multi_cell(larguras["Resumo"] - 2.4, ALTURA_LINHA, dados_linha["resumo"] or "—",
+                   new_x="LEFT", new_y="NEXT")
+
+    if dados_linha["digitarq"]:
+        pdf.set_xy(x_link + 1.2, y)
+        pdf.set_text_color(45, 85, 125)
+        pdf.cell(larguras["DigitArq"] - 2.4, ALTURA_LINHA, "abrir",
+                 link=dados_linha["digitarq"])
+        pdf.set_text_color(0, 0, 0)
+
+    mod_pdf.caixa_de_marcar(pdf, x_caixa + 3, y + 0.6)
+
+    # A régua fina que separa as linhas.
+    base = y + altura + 1.2
+    pdf.set_draw_color(205, 201, 180)
+    pdf.set_line_width(0.1)
+    pdf.line(MARGEM, base, 297 - MARGEM, base)
+    pdf.set_draw_color(0, 0, 0)
+    pdf.set_y(base + 1.4)
+
+
+def _faixa_de_grupo(pdf, titulo: str, quantos: int) -> None:
+    pdf.ln(1.5)
+    pdf.set_font(mod_pdf.FAMILIA, "B", CORPO_PT + 1)
+    pdf.cell(0, ALTURA_LINHA + 1, f"{titulo}  ({quantos})", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT)
+    pdf.ln(0.8)
 
 
 def gerar_pdf(grupos: list[Grupo], dados, cabecalho: dict | None = None) -> bytes:
-    """O PDF da lista. `cabecalho`: titulo, pesquisador, instituicao, projeto, datas_consulta,
-    observacao, rodape."""
+    """O PDF da lista (R3): A4 paisagem, título, data, e uma linha por documento.
+
+    `cabecalho` aceita só `titulo`; o resto do que o painel antigo pedia — pesquisador,
+    instituição, projeto, datas, observação — saiu, porque o autor pediu uma folha sem cerimônia.
+
+    A lista é montada linha a linha, e não pela tabela do fpdf2, por duas razões: para a caixa de
+    marcar poder ser **desenhada** (a Noto Serif não tem glifo de caixa) e para **nenhuma linha se
+    partir no meio do resumo** — a altura de cada linha é medida antes, e se não couber na página
+    ela inteira vai para a seguinte.
+    """
     cab = cabecalho or {}
-    documento = mod_pdf.PDFBase(orientation="L", unit="mm", format="A4")
-    documento.familia = "Sans"
-    documento.set_margins(12, 12, 12)
-    documento.set_auto_page_break(True, margin=14)
-    mod_pdf.preparar(documento, "Sans")
+    pdf = mod_pdf.PDFBase(orientation="L", unit="mm", format="A4")
+    pdf.set_margins(MARGEM, MARGEM, MARGEM)
+    pdf.set_auto_page_break(False)          # as quebras são decididas linha a linha
+    mod_pdf.preparar(pdf)
+    pdf.rodape_texto = RODAPE
+    pdf.set_title(cab.get("titulo") or TITULO)
+    pdf.add_page()
 
-    total = sum(len(g.itens) for g in grupos)
-    documento.rodape_texto = cab.get("rodape") or (
-        f"Lista gerada em {date.today().strftime('%d/%m/%Y')} · códigos de referência e links "
-        "DigitArq calculados a partir das cotas")
-    documento.set_title(cab.get("titulo") or TITULO_PADRAO)
-    documento.set_author(cab.get("pesquisador") or "")
-    documento.add_page()
+    pdf.set_font(mod_pdf.FAMILIA, "B", 15)
+    pdf.cell(0, 9, cab.get("titulo") or TITULO, new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font(mod_pdf.FAMILIA, "", 9)
+    pdf.set_text_color(105, 105, 105)
+    pdf.cell(0, 5, date.today().strftime("%d/%m/%Y"), new_x="LMARGIN", new_y="NEXT")
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(3)
+    _cabecalho_da_tabela(pdf)
 
-    documento.set_font("Sans", "B", 14)
-    documento.cell(0, 8, cab.get("titulo") or TITULO_PADRAO, new_x="LMARGIN", new_y="NEXT")
-    documento.set_font("Sans", "", 9.5)
-    documento.cell(0, 5, SUBTITULO, new_x="LMARGIN", new_y="NEXT")
-    documento.ln(1.5)
-    campos = (("Pesquisador(a)", cab.get("pesquisador")),
-              ("Instituição", cab.get("instituicao")),
-              ("Projeto", cab.get("projeto")),
-              ("Consulta agendada (CRAV)", cab.get("datas_consulta")),
-              ("Total", f"{total} documento{'s' if total != 1 else ''}"))
-    for rotulo, valor in campos:
-        if not valor:
-            continue
-        documento.set_font("Sans", "B", 9)
-        documento.cell(50, 4.8, rotulo + ":")
-        documento.set_font("Sans", "", 9)
-        documento.multi_cell(0, 4.8, str(valor), new_x="LMARGIN", new_y="NEXT")
-    if cab.get("observacao"):
-        documento.ln(1)
-        documento.set_font("Sans", "I", 8.5)
-        documento.multi_cell(0, 4.3, cab["observacao"], new_x="LMARGIN", new_y="NEXT")
-    documento.ln(3)
-
-    estilo_cabecalho = FontFace(emphasis="BOLD", fill_color=(232, 232, 232), size_pt=8)
+    limite = 210 - 14          # a altura da página menos a faixa do rodapé
     numero = 0
     for grupo in grupos:
         if grupo.titulo:
-            if documento.get_y() > documento.h - 45:
-                documento.add_page()
-            documento.set_font("Sans", "B", 10.5)
-            documento.cell(0, 7, f"{grupo.titulo}  ({len(grupo.itens)})",
-                           new_x="LMARGIN", new_y="NEXT")
-        documento.set_font("Sans", "", 7.6)
-        with documento.table(
-                col_widths=LARGURAS,
-                text_align=("CENTER", "LEFT", "LEFT", "LEFT", "CENTER", "CENTER", "LEFT"),
-                line_height=3.6, headings_style=estilo_cabecalho, padding=1.4,
-                repeat_headings=1, borders_layout="SINGLE_TOP_LINE") as tabela:
-            linha_tabela = tabela.row()
-            for celula in CABECALHO_TABELA:
-                linha_tabela.cell(celula)
-            for item in grupo.itens:
-                numero += 1
-                if item.linhas:
-                    doc = dados.documentos.iloc[item.linhas[0]]
-                    bruto = doc.get("new_code")
-                    cota = (item.cota_digitada if bruto is None or pd.isna(bruto)
-                            else str(bruto))
-                    meta, resumo = _meta_do_documento(dados, item.linhas[0], len(item.linhas))
-                else:
-                    cota = item.cota_digitada
-                    meta, resumo = "não consta no catálogo AHU-Sul", ""
-                if item.nota:
-                    resumo = (resumo + "\n" if resumo else "") + f"Nota: {item.nota}"
-                linha_tabela = tabela.row()
-                linha_tabela.cell(str(numero))
-                linha_tabela.cell(f"{cota}\n{item.referencia or '— (cota não reconhecida)'}")
-                linha_tabela.cell(meta)
-                linha_tabela.cell(resumo or "—")
-                if item.referencia:
-                    linha_tabela.cell("abrir ↗", link=digitarq(item.referencia))
-                else:
-                    linha_tabela.cell("—")
-                if item.link_resgate:
-                    linha_tabela.cell("abrir ↗", link=item.link_resgate)
-                else:
-                    linha_tabela.cell("—")
-                linha_tabela.cell(MARCACOES)
-        documento.ln(3)
-    return bytes(documento.output())
+            if pdf.get_y() + 3 * ALTURA_LINHA > limite:
+                pdf.add_page()
+                _cabecalho_da_tabela(pdf)
+            _faixa_de_grupo(pdf, grupo.titulo, len(grupo.itens))
+        for item in grupo.itens:
+            numero += 1
+            linha = _dados_da_linha(dados, item, numero)
+            altura = _altura_da_linha(pdf, linha)
+            if pdf.get_y() + altura + 2 > limite:
+                pdf.add_page()
+                _cabecalho_da_tabela(pdf)
+            # Salvaguarda: um resumo mais alto que a página inteira não cabe em linha nenhuma. No
+            # corpus de hoje o maior ocupa 86 mm contra 166 mm úteis, mas um catálogo futuro pode
+            # trazer um maior — e aí é melhor deixar o fpdf2 quebrar a linha do que perder texto
+            # para fora da folha.
+            parte = altura + MARGEM + 2 > limite
+            pdf.set_auto_page_break(parte, margin=14)
+            _desenhar_linha(pdf, linha, altura)
+            pdf.set_auto_page_break(False)
+    return bytes(pdf.output())

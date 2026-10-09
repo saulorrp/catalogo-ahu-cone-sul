@@ -42,6 +42,19 @@ _RE_ACL = re.compile(
     r"D(?:oc)?\.?[\s.\-–—]*(\d+)", re.I)
 
 
+def limpar_cota(texto) -> str:
+    """A cota como se imprime: sem a pontuação solta que o catálogo deixa no fim.
+
+    O catálogo traz `AHU_ACL_CU_003, Cx. 4, D. 360.]` e `… D. 390.`; o ponto e o colchete são
+    resto de extração, e na folha que vai ao arquivo eles só confundem quem procura a cota.
+    """
+    import pandas as pd
+
+    if texto is None or (not isinstance(texto, str) and pd.isna(texto)):
+        return ""
+    return str(texto).strip().rstrip(" .];,")
+
+
 def referencia_crav(texto: str | None) -> str | None:
     """Converte uma cota (Resgate ou CRAV) no código de referência: `PT/AHU/CU/005/0135/10451`.
 

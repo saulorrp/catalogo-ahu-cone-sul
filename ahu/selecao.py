@@ -89,6 +89,7 @@ class Selecao:
         O `doc_uid` volta só em `uid`, para o ✕ saber que linha remover; ele não é para a tela
         (D10).
         """
+        from ahu.links import limpar_cota as _limpar_cota
         from ahu.links import referencia_crav
 
         docs = dados.documentos
@@ -108,7 +109,7 @@ class Selecao:
                 "n": posicao,
                 "uid": uid,
                 "ano": "" if ano == "" else int(ano),
-                "cota": str(cota).rstrip("."),
+                "cota": _limpar_cota(cota),
                 "referencia": (referencia_crav(valor("reference_code"))
                                or referencia_crav(valor("new_code")) or ""),
                 "resumo": str(valor("description") or ""),

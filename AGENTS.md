@@ -44,7 +44,7 @@ Quatro tarefas: **T1 Encontrar · T2 Recortar · T3 Amostrar · T4 Levar e citar
 ## Estrutura
 ```
 ahu/          módulos do app, sem Streamlit exceto app.py
-ahu/fontes/   DejaVu embutida nos PDFs (licença em LICENSE-DejaVu.txt)
+ahu/fontes/   Noto Serif embutida no PDF (SIL OFL, licença na pasta)
 build/        scripts de construção (importar_base, importar_biografias_v2, construir_indice, construir_app)
 avaliacao/    consultas de ouro, julgamento, métricas
 corpus/       base + camadas (spec §3.1)
@@ -104,7 +104,8 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | **F3** | **remodelada** | ver o plano v3.1: o WP 3.2 e o WP 3.3 foram retirados (D7) |
 | v3.1 | R1 Remoções | feito (D7–D11: lentes, CSV/JSON/dossiê, identificadores) |
 | v3.1 | R2 Seleção rápida | feito (0 buscas por clique; corpo do fragmento em ~46 ms; espelho na URL) |
-| v3.1 | R3…R8 | pendente |
+| v3.1 | R3 PDF da lista do AHU | feito (Noto Serif; Nº·Ano·Cota·Resumo·DigitArq·caixa; linha nunca partida) |
+| v3.1 | R4…R8 | pendente |
 | F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.

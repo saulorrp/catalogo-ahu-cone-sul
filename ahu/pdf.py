@@ -1,18 +1,19 @@
-"""pdf.py — os ajudantes de PDF que a lista do AHU (WP 3.3a) e o dossiê (WP 3.3) partilham.
+"""pdf.py — fonte embutida e ajudantes do único PDF que o app gera (plano v3.1, R3).
 
-Sem Streamlit. Aqui ficam as três coisas que os dois PDFs precisam e que não deviam existir em
-duas cópias: as **fontes embutidas**, a **classe base com rodapé e numeração**, e o punhado de
-formatadores de texto (`encurtar`, `data_extenso`).
+Sem Streamlit. Aqui ficam a **fonte**, a classe base com o rodapé e dois formatadores de texto.
 
-**Fontes.** As duas famílias são DejaVu, de licença livre (`fontes/LICENSE-DejaVu.txt`), embutidas
-no PDF para os acentos do português saírem certos em qualquer leitor:
+**Uma família só: Noto Serif** (SIL OFL, `fontes/LICENSE-NotoSerif-OFL.txt`), embutida no PDF para
+os acentos do português saírem certos em qualquer leitor. Ela tem os acentos todos e o ⸿ (U+2E3F),
+o capitulum da identidade do EINS.
 
-* **`Sans`** (DejaVu Sans Condensed) — a lista de consulta do WP 3.3a. Condensada porque a tabela
-  em A4 paisagem tem sete colunas, e é a família que tem o `☐` das caixas "consultado/fotografado".
-* **`Serif`** (DejaVu Serif) — o dossiê do WP 3.3, que é texto corrido para ler. A §8.2 pede Noto
-  Serif; a DejaVu Serif cumpre o que a spec quer dela (serifada, com os acentos do português) e já
-  está no repositório, sem uma dependência nova. **Ela não tem o glifo `☐`**, e é por isso que as
-  caixas de marcar são coisa da lista, não do dossiê.
+**O que ela não tem, e o que isso decidiu.** Esta Noto Serif não traz nenhum glifo de caixa —
+nem `☐` (U+2610), nem `□` (U+25A1). A caixa de marcar do R3 é, por isso, **desenhada** com
+`rect`, e não escrita: a 9 pt um retângulo de traço fino sai mais limpo que qualquer glifo, e não
+depende de o leitor ter uma fonte de reserva. É também a razão pela qual a lista é montada linha a
+linha, em vez de pela tabela do fpdf2 — assim se desenha dentro da célula e se garante que
+**nenhuma linha se parte no meio do resumo**.
+
+As DejaVu, que serviam ao dossiê do WP 3.3, saíram com a D7.
 """
 from __future__ import annotations
 
@@ -23,17 +24,11 @@ from fpdf import FPDF
 
 PASTA_FONTES = Path(__file__).resolve().parent / "fontes"
 
-FAMILIAS = {
-    "Sans": {
-        "": "DejaVuSansCondensed.ttf",
-        "B": "DejaVuSansCondensed-Bold.ttf",
-        "I": "DejaVuSansCondensed-Oblique.ttf",
-    },
-    "Serif": {
-        "": "DejaVuSerif.ttf",
-        "B": "DejaVuSerif-Bold.ttf",
-        "I": "DejaVuSerif-Italic.ttf",
-    },
+FAMILIA = "Serif"
+ARQUIVOS = {
+    "": "NotoSerif-Regular.ttf",
+    "B": "NotoSerif-Bold.ttf",
+    "I": "NotoSerif-Italic.ttf",
 }
 
 MESES = ("janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto",
@@ -43,16 +38,15 @@ _RE_ORDINAL_DO_ITEM = re.compile(r"^\s*\d+\.\s*")
 
 
 class ErroDeFonte(RuntimeError):
-    """Uma fonte embutida não está no repositório: o PDF não pode sair sem acentos."""
+    """A fonte embutida não está no repositório: o PDF não pode sair sem acentos."""
 
 
-def caminho_da_fonte(familia: str, estilo: str = "") -> Path:
+def caminho_da_fonte(estilo: str = "") -> Path:
     try:
-        nome = FAMILIAS[familia][estilo]
+        nome = ARQUIVOS[estilo]
     except KeyError:
         raise ErroDeFonte(
-            f"Família ou estilo desconhecido: {familia!r}/{estilo!r}. "
-            f"Há {', '.join(FAMILIAS)}."
+            f"Estilo desconhecido: {estilo!r}. Há {', '.join(repr(e) for e in ARQUIVOS)}."
         ) from None
     caminho = PASTA_FONTES / nome
     if not caminho.exists():
@@ -65,22 +59,30 @@ def caminho_da_fonte(familia: str, estilo: str = "") -> Path:
 class PDFBase(FPDF):
     """FPDF com rodapé de uma linha: texto à esquerda, página à direita."""
 
-    familia = "Sans"
     rodape_texto = ""
 
     def footer(self) -> None:
         self.set_y(-10)
-        self.set_font(self.familia, "", 7)
+        self.set_font(FAMILIA, "", 8)
         self.set_text_color(110, 110, 110)
         self.cell(0, 5, self.rodape_texto, align="L")
-        self.cell(0, 5, f"{self.page_no()}/{{nb}}", align="R")
+        self.cell(0, 5, f"página {self.page_no()}/{{nb}}", align="R")
+        self.set_text_color(0, 0, 0)
 
 
-def preparar(pdf: FPDF, familia: str = "Sans") -> FPDF:
-    """Embute os três estilos de uma família. Chamar antes do primeiro `set_font`."""
-    for estilo in ("", "B", "I"):
-        pdf.add_font(familia, estilo, str(caminho_da_fonte(familia, estilo)))
+def preparar(pdf: FPDF) -> FPDF:
+    """Embute os três estilos. Chamar antes do primeiro `set_font`."""
+    for estilo in ARQUIVOS:
+        pdf.add_font(FAMILIA, estilo, str(caminho_da_fonte(estilo)))
     return pdf
+
+
+def caixa_de_marcar(pdf: FPDF, x: float, y: float, lado: float = 3.2) -> None:
+    """A caixa para marcar à mão, **desenhada**: a Noto Serif não tem glifo de caixa."""
+    pdf.set_draw_color(90, 90, 90)
+    pdf.set_line_width(0.2)
+    pdf.rect(x, y, lado, lado)
+    pdf.set_draw_color(0, 0, 0)
 
 
 # ---------------------------------------------------------------------------
