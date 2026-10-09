@@ -34,45 +34,63 @@ de modo que um tempo medido numa máquina de verdade é um piso otimista, não u
 
 `python scripts/medir_memoria.py` mede, num processo novo e em etapas, o RSS (memória residente) e
 o tempo de cada parte da carga fria. O script fica no repositório para a medida poder ser
-repetida, e aceita `--modelo` para comparar modelos sem reindexar nada.
+repetida: `--modelo` compara modelos sem reindexar nada, e `--com-app` acrescenta uma etapa que
+importa o grafo de módulos do `app.py`.
 
-Medido em **08/10/2026**, na máquina do autor (Windows 11, Python 3.12, cache do Hugging Face
-quente), nos 7.051 documentos:
+**Meça com o cache do Hugging Face quente.** Numa máquina que acabou de baixar o modelo o pico
+sai baixo demais, porque os pesos ainda não estão todos residentes — foi o erro da primeira
+medição, corrigido abaixo.
 
-| Etapa | e5-large | e5-base | e5-small |
+### 2.1 A medida que vale (09/10/2026, depois da F3)
+
+Medido na máquina do autor (Windows 11, Python 3.12, 8 núcleos), nos 7.051 documentos, com o cache
+do Hugging Face **quente** e com `--com-app`, que importa o grafo de módulos que o `app.py` de
+verdade carrega (plotly do painel, fpdf2 dos PDFs e os módulos da F3):
+
+| Etapa | e5-small | e5-base | e5-large |
 |---|---:|---:|---:|
-| 1. python + streamlit + pandas | 112 MiB | 112 MiB | 113 MiB |
-| 2. artefatos de `app_dados/` | 203 MiB | 205 MiB | 205 MiB |
-| 3. primeira busca léxica (sem modelo) | 205 MiB | 207 MiB | 207 MiB |
-| 4. `torch` + `sentence_transformers` importados | 517 MiB | 519 MiB | 520 MiB |
-| 5. modelo carregado | 658 MiB | 872 MiB | 625 MiB |
-| 6. **primeira consulta codificada (pico)** | **1.771 MiB** | **1.204 MiB** | **717 MiB** |
+| 1. python + streamlit + pandas | 113 MiB | — | — |
+| 2. artefatos de `app_dados/` | 203 MiB | — | — |
+| 2b. módulos do app (plotly, fpdf2, F3) | 226 MiB | — | — |
+| 3. primeira busca léxica (sem modelo) | 229 MiB | — | — |
+| 4. `torch` + `sentence_transformers` importados | 541 MiB | — | — |
+| 5. modelo carregado | 862 MiB | 880 MiB | 881 MiB |
+| 6. **primeira consulta codificada (pico)** | **948 MiB** | **1.211 MiB** | **2.013 MiB** |
 
-O que esses números dizem:
+Repetida quatro vezes, a medida do e5-small variou entre 936 e 948 MiB. As etapas 1 a 4 são as
+mesmas nos três modelos (é o mesmo app e o mesmo `torch`); só as duas últimas mudam.
 
-- **o e5-large não cabe.** O pico de 1,77 GiB é 2,6× o mínimo garantido de 690 MiB, e fica acima
-  do patamar em que os apps do Community Cloud começam a ser derrubados. A resposta à pergunta do
-  WP 2.5 é **não**;
-- **o e5-base também não cabe**: 1,20 GiB, ainda 1,7× o mínimo;
-- **o e5-small cabe, apertado**: 717 MiB de pico — na vizinhança do mínimo garantido, e com folga
-  grande até o máximo documentado;
-- **a etapa 5 engana e a etapa 6 é a que vale.** Na etapa 5 o e5-small (625 MiB) aparece *abaixo*
-  do e5-large (658 MiB), o que é impossível pelo tamanho dos pesos: é o carregamento preguiçoso do
-  `sentence-transformers`, que só materializa os tensores na primeira passagem. É por isso que a
-  linha que decide é a 6, o pico de uma consulta de verdade;
-- **o custo maior não é o modelo, é o `torch`**: só importar `torch` e `sentence_transformers`
-  custa ~310 MiB, mais que o peso do e5-small (~105 MiB na etapa 5). Trocar de modelo resolve o
-  estouro, mas não deixa o app leve;
-- **abrir o app e buscar por cota custa 205 MiB e ~7 s**, porque o modelo semântico só carrega na
-  primeira consulta que precisa dele (decisão do WP 2.3). É a mesma razão pela qual a carga fria
-  medida não é a carga fria *percebida*: quem abre o app e busca uma cota não paga o modelo.
+**Correção de um número que este arquivo trazia errado.** Na primeira medição (08/10) o pico do
+e5-small saiu **717 MiB**, e era baixo demais: o modelo tinha acabado de ser baixado e os pesos
+ainda não estavam todos residentes. Com o cache quente, eles se materializam no carregamento, e o
+pico verdadeiro é ~**948 MiB** — 230 MiB acima do que foi relatado. A **decisão não muda** (o
+e5-small continua sendo o único dos três na faixa possível), mas a **margem é mais apertada** do
+que o texto anterior dava a entender, e é isso que importa saber antes do deploy.
 
-Sobre o tempo: a carga fria completa (até a primeira consulta semântica) ficou em 92,6 s com o
-e5-large e 108 s com os outros dois — mas nestes dois o número inclui o **download** do modelo, que
-na nuvem acontece uma vez e fica em cache. O que a medição permite afirmar com segurança é a
-divisão: ~5 s de Python e Streamlit, ~1 s dos artefatos, ~60 s de importação do `torch` nesta
-máquina. **O A10 (< 90 s) não está verificado em produção** e só poderá ser verificado depois do
-primeiro deploy — está anotado como pendência abaixo.
+O que os números dizem:
+
+- **o e5-large não cabe**: 2,01 GiB é 2,9× o mínimo garantido de 690 MiB. A resposta à pergunta do
+  WP 2.5 continua sendo **não**;
+- **o e5-base não cabe**: 1,21 GiB, 1,8× o mínimo;
+- **o e5-small cabe, mas sem folga**: 948 MiB é 1,4× o mínimo garantido e 35% do máximo
+  documentado de 2,7 GiB. Ele está exatamente na vizinhança do ~1 GiB que os relatos de "gone
+  over its resource limits" costumam citar. É o melhor que se tem sem reescrever a inferência;
+- **o custo maior não é o modelo, é o `torch`**: importar `torch` e `sentence_transformers` custa
+  ~312 MiB antes de qualquer peso, e os pesos do e5-small somam ~320 MiB. Trocar de modelo resolveu
+  o estouro; não deixou o app leve;
+- **a F3 custou ~19 MiB** (etapa 2b: plotly, fpdf2 e os módulos novos) e **nada** no caminho
+  quente. Os PDFs são montados sob demanda, em dois passos, justamente para não entrarem no custo
+  de cada clique;
+- **abrir o app e buscar por cota custa 229 MiB e ~4 s**, porque o modelo semântico só carrega na
+  primeira consulta que precisa dele (decisão do WP 2.3). A carga fria *medida* não é a carga fria
+  *percebida*: quem abre o app e busca uma cota não paga o modelo;
+- **o número de linhas de execução do `torch` quase não muda a memória**: com
+  `OMP_NUM_THREADS` em 1, 2 e 4 o pico ficou em 936, 937 e 947 MiB. Não há ganho a tirar daí.
+
+Sobre o tempo: a carga fria completa (até a primeira consulta semântica) ficou em ~32 s nesta
+máquina, dos quais ~22 a 26 s são a importação do `torch`. **O A10 (< 90 s) não está verificado em
+produção** e só pode ser verificado depois do primeiro deploy, com um oitavo de núcleo — está
+anotado como pendência abaixo.
 
 ## 3. Decisão: `multilingual-e5-small`
 

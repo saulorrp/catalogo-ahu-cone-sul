@@ -126,9 +126,12 @@ Atualize esta tabela ao concluir cada pacote.
   app e buscar por cota não pagam os ~56 s do e5.
 
 **Decidido no WP 2.5 (08/10): o modelo que vai para o ar é o `multilingual-e5-small`.** Medido
-em `scripts/medir_memoria.py`, o pico de RSS de uma consulta semântica é de 1.771 MiB com o
-e5-large, 1.204 MiB com o e5-base e 717 MiB com o e5-small; o mínimo garantido pelo Streamlit
-Community Cloud é 690 MiB. Só o small cabe. A calibração fina (margens de rigor, pesos do RRF,
+em `scripts/medir_memoria.py --com-app`, com o cache do Hugging Face quente (09/10, depois da F3),
+o pico de RSS de uma consulta semântica é de **2.013 MiB** com o e5-large, **1.211 MiB** com o
+e5-base e **948 MiB** com o e5-small; o mínimo garantido pelo Streamlit Community Cloud é 690 MiB
+e o máximo documentado, 2,7 GiB. Só o small cabe, e sem folga. (A primeira medição dera 717 MiB
+para o small, com o modelo recém-baixado e os pesos ainda não residentes: o número certo é 948.
+A correção está em `docs/publicacao.md` §2.1.) A calibração fina (margens de rigor, pesos do RRF,
 `LIMITE_DESTAQUE`) foi medida no e5-large e refaz-se no WP 4.2; os números estão todos em
 constantes de `ahu/busca.py`. O raciocínio inteiro, a reindexação e os passos de publicação estão
 em [`docs/publicacao.md`](docs/publicacao.md).

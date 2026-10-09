@@ -6,6 +6,7 @@ em etapas, o RSS (memória residente) e o tempo de cada parte da carga fria:
 
   1. o interpretador com `streamlit`, `pandas` e `numpy` importados — o piso do processo;
   2. `ahu.dados.carregar()` — os artefatos de `app_dados/`;
+  2b. com `--com-app`, o grafo de módulos que o `app.py` carrega (plotly, fpdf2, F3);
   3. a primeira consulta **léxica** (sem o modelo) — é o que abrir o app e buscar uma cota paga;
   4. `torch` e `sentence_transformers` importados — o custo da biblioteca, sem peso de modelo;
   5. o modelo de embeddings carregado e a primeira consulta semântica — o pico.
@@ -95,7 +96,8 @@ class Medidor:
               f"(total {self.etapas[-1]['acumulado_s']:6.2f} s)", flush=True)
 
 
-def medir(modelo: str | None, so_modelo: bool, consulta: str) -> dict:
+def medir(modelo: str | None, so_modelo: bool, consulta: str,
+          com_app: bool = False) -> dict:
     m = Medidor()
     t = time.perf_counter()
     import numpy  # noqa: F401
@@ -109,6 +111,13 @@ def medir(modelo: str | None, so_modelo: bool, consulta: str) -> dict:
         from ahu.dados import carregar_sem_cache
         dados = carregar_sem_cache()
         m.marcar("2. artefatos de app_dados/", t)
+
+        if com_app:
+            # O grafo de módulos que o app de verdade carrega: plotly (painel), fpdf2 (PDFs) e
+            # os módulos da F3. Sem esta etapa a medição ignora o que a F3 acrescentou.
+            t = time.perf_counter()
+            import app  # noqa: F401
+            m.marcar("2b. módulos do app (plotly, fpdf2, F3)", t)
 
         t = time.perf_counter()
         from ahu.busca import buscar
@@ -152,11 +161,14 @@ def main() -> None:
     ap.add_argument("--so-modelo", action="store_true",
                     help="Mede só torch e o modelo, sem carregar app_dados/.")
     ap.add_argument("--consulta", default="deserção de soldados")
+    ap.add_argument("--com-app", action="store_true",
+                    help="acrescenta uma etapa importando o grafo de módulos do app.py "
+                         "(plotly, fpdf2 e os módulos da F3)")
     ap.add_argument("--saida", default=None, help="Grava o resultado em JSON.")
     args = ap.parse_args()
 
     print(f"Medindo a carga fria ({sys.platform}, python {sys.version.split()[0]}):")
-    resultado = medir(args.modelo, args.so_modelo, args.consulta)
+    resultado = medir(args.modelo, args.so_modelo, args.consulta, args.com_app)
     print(f"\nPico de RSS: {resultado['pico_rss_mb']:.1f} MiB · "
           f"carga fria: {resultado['carga_fria_s']:.1f} s")
     if args.saida:
