@@ -345,3 +345,60 @@ def test_app_abre_a_aba_pessoas_e_o_painel_sem_excecao():
     # As cinco abas continuam sendo as da §9: a aba Pessoas não criou aba nova no topo.
     import app as modulo
     assert [t.label for t in at.tabs] == list(modulo.ABAS)
+
+
+# ---------------------------------------------------------------------------
+# R9: busca de nome tolerante
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
+@pytest.mark.parametrize("procurado, esperado", [
+    # o caso que o autor relatou: falta um "s" e sobra um "t"
+    ("domingo de britto", "Domingos de Brito Peixoto"),
+    ("Domingos de Britto", "Domingos de Brito Peixoto"),
+    ("domingos de brito", "Domingos de Brito Peixoto"),
+    # grafia antiga: z/s, ae/ai, letra dobrada
+    ("Jozé da Silva Paes", "José da Silva Pais"),
+    ("Joze da Silva Pais", "José da Silva Pais"),
+    ("Martinho de Mello e Castro", "Martinho de Melo e Castro"),
+    # e o A2 continua de pé
+    ("Lavradio", "D. Luís de Almeida Portugal Soares de Alarcão Eça e Melo Silva e Mascarenhas"),
+])
+def test_busca_de_nome_tolera_grafia_e_prefixo(corpus_real, procurado, esperado):
+    achadas = mp.encontrar(corpus_real, procurado)
+    assert achadas, procurado
+    assert esperado in [p.nome for p in achadas[:3]], (procurado, [p.nome for p in achadas[:3]])
+
+
+@pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
+def test_a_ordem_e_de_semelhanca(corpus_real):
+    """Quem busca o nome inteiro quer a pessoa daquele nome em primeiro."""
+    achadas = mp.encontrar(corpus_real, "Martinho de Melo e Castro")
+    assert achadas[0].nome == "Martinho de Melo e Castro"
+
+
+def test_a_regra_de_prefixo_exige_tres_letras():
+    """Um token de até duas letras casa só inteiro: "sa" não pode abrir "Sampaio"."""
+    assert mp._casa_tokens(["bri"], ["brito"])            # 3 letras: prefixo vale
+    assert mp._casa_tokens(["domingo"], ["domingos"])     # o caso do autor
+    assert not mp._casa_tokens(["sa"], ["sampaio"])       # 2 letras: não
+    assert mp._casa_tokens(["de"], ["de"])                # 2 letras, inteiro: vale
+    # a função recebe tokens **já neutralizados** pela `_tokens`; é lá que "britto" vira "brito"
+    assert mp._tokens("Britto Domingo") == ["brito", "domingo"]
+    # a ordem dos tokens não importa, e cada um consome um token do candidato
+    assert mp._casa_tokens(mp._tokens("britto domingo"), mp._tokens("Domingos de Brito"))
+    assert not mp._casa_tokens(["brito", "brito"], ["brito", "peixoto"])
+
+
+@pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
+def test_busca_sem_resultado_devolve_vazio(corpus_real):
+    assert mp.encontrar(corpus_real, "zzzqqq inexistente") == []
+
+
+@pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
+def test_a_tabela_traz_a_fonte_como_url(corpus_real):
+    """R9: o link da fonte vai à tabela como URL; a interface o torna legível."""
+    tabela = mp.tabela(mp.listar(corpus_real, so_confianca_alta=True))
+    assert "Fonte" in tabela.columns
+    fontes = [f for f in tabela["Fonte"] if f]
+    assert fontes and all(f.startswith("http") for f in fontes)

@@ -103,6 +103,19 @@ def gaveta(rotulo: str, nome: str, expandida: bool = False):
             yield expansor
 
 
+def tabela_estreita(tabela, **extras) -> None:
+    """Uma tabela pequena: largura do conteúdo, centrada na página.
+
+    `width="content"` existe no Streamlit 1.55 e faz a tabela parar de se esticar por toda a
+    largura. A centragem vem de uma coluna vazia de cada lado — o Streamlit não tem alinhamento
+    de elemento, e esta é a forma que não depende de CSS frágil.
+    """
+    esquerda, meio, direita = st.columns([1, 6, 1])
+    del esquerda, direita
+    with meio:
+        st.dataframe(tabela, width="content", hide_index=True, **extras)
+
+
 def selecao_atual() -> mod_selecao.Selecao:
     """A seleção vive só em `st.session_state` (§8.1, R4): nada é gravado no servidor."""
     if "selecao" not in st.session_state:
@@ -653,6 +666,12 @@ def lista_de_pessoas(dados) -> None:
     escolha = st.dataframe(
         tabela, use_container_width=True, hide_index=True, on_select="rerun",
         selection_mode="single-row",
+        column_config={
+            "Fonte": st.column_config.LinkColumn(
+                "Fonte", display_text="abrir", width="small",
+                help="A página de onde o dado de nascimento foi lido."),
+            "Nº de documentos": st.column_config.NumberColumn(width="small"),
+        },
     )
     st.caption("Clique numa linha para abrir a página da pessoa.")
     linhas = escolha.selection.rows if hasattr(escolha, "selection") else []
@@ -834,8 +853,7 @@ def amostra_diacronica_na_tela(dados, consulta: Consulta) -> None:
                 "autoria verificada.")
         return
 
-    st.dataframe(pd.DataFrame(list(r["por_ano"].items()), columns=["Ano", "Documentos"]),
-                 use_container_width=True, hide_index=True)
+    tabela_estreita(pd.DataFrame(list(r["por_ano"].items()), columns=["Ano", "Documentos"]))
     mostrar_lotes(dados, amostra)
     baixar_amostra(dados, amostra, consulta, "amostra_diacronica")
 
@@ -896,8 +914,7 @@ def amostra_estratificada_na_tela(dados, consulta: Consulta) -> None:
             + ("…" if len(r["insuficientes"]) > 8 else ""))
 
     st.markdown("#### Relatório por estrato")
-    st.dataframe(mod_amostras.tabela_do_relatorio(amostra), use_container_width=True,
-                 hide_index=True)
+    tabela_estreita(mod_amostras.tabela_do_relatorio(amostra))
     mostrar_lotes(dados, amostra)
     baixar_amostra(dados, amostra, consulta, "amostra_estratificada")
 
@@ -966,8 +983,9 @@ def aba_painel(dados) -> None:
     grafico, tabela = st.columns([3, 2])
     grafico.plotly_chart(mod_graficos.barras_por_pais(painel, tema()),
                          use_container_width=True)
-    tabela.dataframe(painel.paises.rename(columns={"pais": "País", "contagem": unidade}),
-                     use_container_width=True, hide_index=True)
+    with tabela:
+        st.dataframe(painel.paises.rename(columns={"pais": "País", "contagem": unidade}),
+                     width="content", hide_index=True)
 
     st.markdown("#### Por década, com a cor do país de nascimento")
     st.plotly_chart(mod_graficos.barras_por_decada(painel, tema()), use_container_width=True)
@@ -975,9 +993,8 @@ def aba_painel(dados) -> None:
     if len(painel.paises) > len(nomeados):
         st.caption(f"Os {len(nomeados)} países mais frequentes têm cor própria; "
                    "os demais entram como \"Outros\".")
-    st.dataframe(painel.decadas.rename(columns={
-        "decada": "Década", "pais": "País", "contagem": unidade}),
-        use_container_width=True, hide_index=True)
+    tabela_estreita(painel.decadas.rename(columns={
+        "decada": "Década", "pais": "País", "contagem": unidade}))
 
     st.info("Em breve: o mapa das cidades de nascimento, com coordenadas da Wikidata "
             "(P625, WP 5.2).")
@@ -1033,11 +1050,6 @@ def aba_sobre(dados) -> None:
     st.markdown("#### Avaliação da busca")
     st.info("Em breve: a tabela v2 × v3 com nDCG@10, Recall@20 e MRR (WP 4.1).")
 
-    st.markdown("#### Como citar")
-    st.markdown(
-        "Rocha, S. R. P. *Classificador AHU-Sul v3* (software e dados), 2026. "
-        "A citação com o DOI do Zenodo entra na versão 3.0.0 (WP 4.4)."
-    )
     st.markdown("#### Licença")
     st.markdown("Código: MIT. Dados derivados: CC BY 4.0 (provisório). "
                 "Resumos e cotas: AHU e Projeto Resgate \"Barão do Rio Branco\".")

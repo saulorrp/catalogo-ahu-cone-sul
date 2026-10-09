@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 import pandas as pd
 
 from ahu import links
-from ahu.texto import chave_titulo, normalizar_busca
+from ahu.texto import chave_titulo, fonetica, normalizar_busca
 
 # §7.1: a lista própria. Os papéis vêm da coluna `tipo` de `doc_pessoa.parquet`.
 TIPOS_COLETIVOS = ("instituicao", "coletivo")
@@ -206,20 +206,95 @@ def listar(dados, texto: str | None = None, paises: list[str] | None = None,
     return ordenar(saida, ordem)
 
 
+# Abaixo deste tamanho um prefixo casaria com meio corpus, e por isso ele passa a exigir token
+# inteiro. Com 3, "sa" não casa "Sampaio", mas "bri" ainda casa "Britto".
+MINIMO_PREFIXO_NOME = 3
+
+
+def _tokens(texto: str) -> list[str]:
+    """Tokens de um nome, já neutralizados: acento, caixa e grafia antiga fora.
+
+    Usa a `fonetica` da §5.1, que é a mesma do `p4_validar.py` das biografias v2: letra dobrada
+    colapsa (Britto→brito), `y→i`, `z→s`, `th→t`, `ph→f`, `ch→x`, `ae→ai`, `oe→oi`. É o que faz
+    "Jozé" achar "José" e "Paes" achar "Pais".
+    """
+    return [fonetica(t) for t in normalizar_busca(texto).split() if t]
+
+
+def _casa_tokens(procurados: list[str], candidatos: list[str]) -> bool:
+    """Cada token procurado tem de ser **prefixo** de algum token do candidato.
+
+    É o que faz "domingo de britto" achar "Domingos de Britto": `domingo` é prefixo de
+    `domingos`. A ordem não importa — quem busca nem sempre lembra dela.
+    """
+    disponiveis = list(candidatos)
+    for procurado in procurados:
+        achou = None
+        for i, candidato in enumerate(disponiveis):
+            cabe = (candidato.startswith(procurado)
+                    if len(procurado) >= MINIMO_PREFIXO_NOME else candidato == procurado)
+            if cabe:
+                achou = i
+                break
+        if achou is None:
+            return False
+        disponiveis.pop(achou)
+    return True
+
+
+def semelhanca(procurado: str, candidato: str) -> float:
+    """0 a 1, para ordenar o que casou. `difflib` da biblioteca padrão: zero dependências.
+
+    O `rapidfuzz` seria mais rápido, mas aqui são 1.359 nomes por consulta — o `difflib` resolve
+    em milissegundos, e o orçamento de memória do Community Cloud não comporta dependência que
+    não seja necessária.
+    """
+    from difflib import SequenceMatcher
+
+    return SequenceMatcher(None, procurado, candidato).ratio()
+
+
 def _casar(pessoas: list[PessoaNaLista], texto: str) -> list[PessoaNaLista]:
-    """Pessoas cujo nome, variante ou título contém o texto buscado (§7.1, A2)."""
+    """Pessoas cujo nome, variante ou título casa com o texto buscado (§7.1, A2).
+
+    Três formas de casar, da mais forte para a mais fraca, e **todas** valem:
+
+    1. o texto aparece dentro de uma das chaves, como antes ("Lavradio" acha o marquês);
+    2. os tokens do texto são prefixos dos tokens de alguma chave, já neutralizados
+       ("domingo de britto" acha "Domingos de Britto");
+    3. nada mais — não há casamento difuso solto, que traria gente demais.
+
+    O resultado sai ordenado por semelhança com a melhor chave de cada pessoa.
+    """
     alvo = normalizar_busca(texto)
     if not alvo:
         return pessoas
-    return [p for p in pessoas if any(alvo in c for c in p.chaves_de_busca())]
+    alvo_fonetico = " ".join(_tokens(texto))
+    procurados = _tokens(texto)
+
+    achadas = []
+    for p in pessoas:
+        melhor = 0.0
+        for chave in p.chaves_de_busca():
+            chave_fonetica = " ".join(fonetica(t) for t in chave.split())
+            if alvo in chave or alvo_fonetico and alvo_fonetico in chave_fonetica:
+                melhor = max(melhor, 1.0)
+            elif _casa_tokens(procurados, chave_fonetica.split()):
+                melhor = max(melhor, semelhanca(alvo_fonetico, chave_fonetica))
+        if melhor > 0:
+            achadas.append((melhor, p))
+    achadas.sort(key=lambda par: (-par[0], -par[1].n_documentos,
+                                  normalizar_busca(par[1].nome)))
+    return [p for _, p in achadas]
 
 
 def encontrar(dados, texto: str) -> list[PessoaNaLista]:
     """Busca de pessoa por nome, variante ou título. É o caminho do A2.
 
-    Ordena por nº de documentos, e por isso "Lavradio" devolve uma única pessoa, com 163.
+    A ordem é a de **semelhança** (`_casar` já a devolve assim), com o nº de documentos como
+    desempate: quem escreveu "Lavradio" quer o marquês, não um homônimo de um documento só.
     """
-    return ordenar(_casar(todas(dados), texto), "documentos")
+    return _casar(todas(dados), texto)
 
 
 def tabela(pessoas: list[PessoaNaLista]) -> pd.DataFrame:
@@ -238,6 +313,9 @@ def tabela(pessoas: list[PessoaNaLista]) -> pd.DataFrame:
         "Nascimento": p.nascimento or "—",
         "Confiança": p.nivel or "—",
         "Origem do dado": p.origem_do_dado or "—",
+        # A URL crua vai para a coluna; quem a transforma em link legível é o `column_config`
+        # da interface (`LinkColumn` com `display_text`). Cadeia vazia = sem fonte.
+        "Fonte": p.fonte or "",
     } for p in pessoas])
 
 
