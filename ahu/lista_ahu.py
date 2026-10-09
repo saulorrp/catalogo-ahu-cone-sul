@@ -306,12 +306,12 @@ def _altura_da_linha(pdf, dados_linha: dict) -> float:
                                  text=dados_linha["resumo"] or "—",
                                  dry_run=True, output="HEIGHT")
     alto_cota = pdf.multi_cell(w=largura_cota, h=ALTURA_LINHA,
-                               text=dados_linha["cota"] or "—",
+                               text=dados_linha["cota"] or "—", align="L",
                                dry_run=True, output="HEIGHT")
     if dados_linha["referencia"]:
         pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT - 1.5)
         alto_cota += pdf.multi_cell(w=largura_cota, h=ALTURA_LINHA - 0.6,
-                                    text=dados_linha["referencia"],
+                                    text=dados_linha["referencia"], align="L",
                                     dry_run=True, output="HEIGHT")
         pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT)
     return max(alto_resumo, alto_cota, ALTURA_LINHA)
@@ -333,14 +333,16 @@ def _desenhar_linha(pdf, dados_linha: dict, altura: float) -> None:
 
     # Cota: a do Resgate em cima, o código de referência abaixo, em corpo menor.
     pdf.set_xy(x_cota + 1.2, y)
+    # Alinhada à esquerda, nunca justificada: a cota é um código, e esticá-la abriria buracos
+    # entre "Cx." e o número.
     pdf.multi_cell(larguras["Cota"] - 2.4, ALTURA_LINHA, dados_linha["cota"] or "—",
-                   new_x="LEFT", new_y="NEXT", link=dados_linha["resgate"] or "")
+                   align="L", new_x="LEFT", new_y="NEXT", link=dados_linha["resgate"] or "")
     if dados_linha["referencia"]:
         pdf.set_x(x_cota + 1.2)
         pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT - 1.5)
         pdf.set_text_color(105, 105, 105)
         pdf.multi_cell(larguras["Cota"] - 2.4, ALTURA_LINHA - 0.6, dados_linha["referencia"],
-                       new_x="LEFT", new_y="NEXT")
+                       align="L", new_x="LEFT", new_y="NEXT")
         pdf.set_text_color(0, 0, 0)
         pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT)
 
