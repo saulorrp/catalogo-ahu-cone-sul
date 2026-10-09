@@ -14,11 +14,14 @@ Rodar:
 """
 from __future__ import annotations
 
+import contextlib
+
 import pandas as pd
 import streamlit as st
 
 from ahu import amostras as mod_amostras
 from ahu import busca
+from ahu import estilo as mod_estilo
 from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
 from ahu import graficos as mod_graficos
@@ -39,16 +42,6 @@ AHU_ACL_CU_017, Cx. 5, D. 487 | ver anexo
 PT/AHU/CU/019/0003/00230"""
 
 # §9: proporcional para o texto, monoespaçada só para cotas e números.
-ESTILO = """
-<style>
-  .cota, .numero { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  .cota { font-size: 0.92rem; }
-  .rotulo { color: #5f6368; font-size: 0.85rem; }
-  .aviso-distante { background: #fff6e5; border-left: 4px solid #e8a33d; padding: 0.6rem 0.8rem;
-                    border-radius: 4px; margin: 0.4rem 0 0.8rem; }
-</style>
-"""
-
 # ---------------------------------------------------------------------------
 # Estado
 # ---------------------------------------------------------------------------
@@ -91,6 +84,23 @@ def guardar(consulta: Consulta) -> None:
     if espelho:
         parametros[mod_selecao.CHAVE_URL] = espelho
     st.query_params.from_dict(parametros)
+
+
+@contextlib.contextmanager
+def gaveta(rotulo: str, nome: str, expandida: bool = False):
+    """Uma **gaveta do EINS**: expansor sem moldura, com o fleurão por interruptor.
+
+    O que a marca como gaveta é a `key` do `st.container` que a embrulha, que o Streamlit
+    transforma na classe `st-key-…` — é essa classe que o CSS de `ahu/estilo.py` procura.
+
+    Por que o invólucro, e não a `key` do próprio `st.expander`: no Streamlit 1.55 o expansor só
+    ganha identificador (e portanto classe) quando é **stateful**, isto é, quando recebe
+    `on_change`. E `on_change` faria cada abrir e fechar reexecutar a página inteira — justamente
+    o que o R2 tirou. O `st.container`, ao contrário, emite a classe só por ter chave.
+    """
+    with st.container(key=mod_estilo.chave_de_gaveta(nome)):
+        with st.expander(rotulo, expanded=expandida) as expansor:
+            yield expansor
 
 
 def selecao_atual() -> mod_selecao.Selecao:
@@ -230,7 +240,7 @@ def barra_lateral(dados, consulta: Consulta) -> Consulta:
             help="Nome principal, variantes e títulos.")
         f.destinatario = st.text_input("Destinatário contém", value=f.destinatario or "") or None
 
-        with st.expander("Inferências do DeepSeek (começam desligadas)"):
+        with gaveta("Inferências do DeepSeek (começam desligadas)", "deepseek"):
             f.categorias = st.multiselect("Categoria social",
                                           [c for c, _ in opcoes["categorias"]], default=f.categorias)
             f.vetores = st.multiselect("Vetor", [v for v, _ in opcoes["vetores"]],
@@ -249,7 +259,7 @@ def barra_lateral(dados, consulta: Consulta) -> Consulta:
                        f"{faixas['medio'][0]}–{faixas['medio'][1]} · "
                        f"{faixas['alto'][0]}–{faixas['alto'][1]}. {opcoes['nota_srsp']}")
 
-        with st.expander("Origem do remetente"):
+        with gaveta("Origem do remetente", "origem"):
             f.paises_origem = st.multiselect("País (atual)", opcoes["paises_origem"],
                                              default=f.paises_origem)
             f.cidades_origem = st.multiselect("Cidade de nascimento", opcoes["cidades_origem"],
@@ -357,7 +367,7 @@ def desenhar_ficha(dados, doc_uid: str, termos: list[str], resultado=None) -> No
             st.caption(" · ".join(evidencia))
 
         if f.inferencias:
-            with st.expander(mod_ficha.TITULO_IA, expanded=False):
+            with gaveta(mod_ficha.TITULO_IA, f"ia_{doc_uid}"):
                 for etiqueta, valor in f.inferencias.items():
                     st.markdown(f"**{etiqueta}:** {valor}")
 
@@ -445,7 +455,7 @@ def aba_busca(dados, consulta: Consulta) -> None:
 
 def painel_do_link(consulta: Consulta) -> None:
     """"Copiar link desta busca": abrir o link reproduz a busca, a página e a semente (A6)."""
-    with st.expander("Copiar link desta busca", expanded=False):
+    with gaveta("Copiar link desta busca", "link"):
         st.caption(
             "O link carrega a consulta inteira — texto, modo, rigor, filtros, ordenação, "
             "página e semente. Abrir de novo reproduz a mesma lista, na mesma ordem. Use o ícone "
@@ -466,8 +476,8 @@ def painel_de_selecao(dados, resposta) -> None:
     """
     selecao = selecao_atual()
     quantos = len(selecao)
-    titulo = f"⸿ {quantos}" if quantos else "Seleção vazia"
-    with st.expander(titulo, expanded=bool(quantos)):
+    titulo = f"Seleção — {quantos} documento(s)" if quantos else "Seleção vazia"
+    with gaveta(titulo, "selecao", expandida=bool(quantos)):
         acoes = st.columns([3, 2, 2])
         if acoes[0].button(f"Selecionar os {resposta.total} do resultado",
                            width="stretch", disabled=not resposta.total,
@@ -545,7 +555,7 @@ def painel_da_lista_ahu(dados, resposta) -> None:
     if "lista_ahu_texto" not in st.session_state:
         st.session_state.lista_ahu_texto = ""
 
-    with st.expander("❧ Colar cotas", expanded=False):
+    with gaveta("Colar cotas", "cotas"):
         st.caption(
             "Uma cota por linha, em qualquer formato. `#` abre um grupo, `|` acrescenta nota ou "
             "link. Cotas de outras capitanias também funcionam.")
@@ -626,7 +636,7 @@ def lista_de_pessoas(dados) -> None:
     ordem = colunas[1].selectbox(
         "Ordenar por", mod_pessoas.ORDENS,
         format_func=lambda o: mod_pessoas.ROTULOS_ORDEM[o])
-    with st.expander("Filtros de origem (só biografias exibíveis)"):
+    with gaveta("Filtros de origem (só biografias exibíveis)", "origem_pessoas"):
         esquerda, direita = st.columns(2)
         paises = esquerda.multiselect("País (atual)", opcoes["paises_origem"])
         cidades = direita.multiselect("Cidade de nascimento", opcoes["cidades_origem"])
@@ -737,7 +747,8 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
     direita.dataframe(pd.DataFrame(pagina.destinatarios, columns=["Destinatário", "Documentos"]),
                       use_container_width=True, hide_index=True)
 
-    with st.expander(f"Documentos em ordem cronológica ({len(pagina.documentos)})"):
+    with gaveta(f"Documentos em ordem cronológica ({len(pagina.documentos)})",
+                "documentos_pessoa"):
         st.dataframe(
             pagina.documentos.drop(columns=["doc_uid"]).rename(columns={
                 "ano": "Ano", "tipologia": "Tipologia", "destinatario": "Destinatário",
@@ -1037,7 +1048,7 @@ def aba_sobre(dados) -> None:
 
 def main() -> None:
     st.set_page_config(page_title=TITULO, page_icon="📜", layout="wide")
-    st.markdown(ESTILO, unsafe_allow_html=True)
+    st.markdown(mod_estilo.CSS, unsafe_allow_html=True)
     st.title(TITULO)
     st.caption(SUBTITULO)
 

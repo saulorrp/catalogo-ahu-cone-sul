@@ -8,6 +8,8 @@ Leva o pesquisador de uma pergunta a um conjunto de cotas que ele possa justific
 Quatro tarefas: **T1 Encontrar · T2 Recortar · T3 Amostrar · T4 Levar e citar**.
 
 ## Documentos de referência
+- **Seletores do Streamlit de que o CSS depende:** [`docs/seletores_streamlit.md`](docs/seletores_streamlit.md)
+  — reler a cada atualização do Streamlit.
 - **Remodelação em curso (v3.1):** [`docs/plano_remodelacao_v3_1.md`](docs/plano_remodelacao_v3_1.md)
   — aprovada em 09/10/2026, substitui as partes abertas da F3 e vem antes da F4 e do deploy.
   Identidade visual: [`docs/relatorio_identidade_visual_eins.md`](docs/relatorio_identidade_visual_eins.md).
@@ -45,6 +47,7 @@ Quatro tarefas: **T1 Encontrar · T2 Recortar · T3 Amostrar · T4 Levar e citar
 ```
 ahu/          módulos do app, sem Streamlit exceto app.py
 ahu/fontes/   Noto Serif embutida no PDF (SIL OFL, licença na pasta)
+ahu/estilo.py o único lugar com CSS (gaveta do EINS, fleurão por interruptor)
 build/        scripts de construção (importar_base, importar_biografias_v2, construir_indice, construir_app)
 avaliacao/    consultas de ouro, julgamento, métricas
 corpus/       base + camadas (spec §3.1)
