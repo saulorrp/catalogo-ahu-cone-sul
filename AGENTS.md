@@ -1,5 +1,9 @@
 # AGENTS.md — Classificador AHU-Sul v3
 
+> **Comece lendo [`docs/HANDOFF.md`](docs/HANDOFF.md).** Ele diz em que ponto o trabalho está, o
+> que vem a seguir, as decisões em vigor e as armadilhas desta máquina. Este arquivo aqui é o
+> contrato do projeto; o HANDOFF é o estado dele.
+
 Guia único para qualquer agente de IA (Claude, Gemini, Codex, etc.). `CLAUDE.md` e `GEMINI.md` só apontam para este arquivo.
 
 ## Propósito
@@ -98,17 +102,20 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F2 | 2.3 Interface de busca e ficha | feito (A1 nas 7.051 fichas; app sobe em ~4 s) |
 | F2 | 2.4 Pessoas | feito (A2: "Lavradio" -> 1 pessoa, 163 documentos) |
 | F2 | 2.5 Publicação da v3 núcleo | **aberto**: índice e5-small no ar localmente; deploy adiado para depois da F3; A10 pendente do primeiro deploy |
-| F3 | 3.1 Seleção | feito (teto de 500, atravessa buscas, JSON para baixar e carregar) |
-| F3 | 3.2 Exportação CSV e JSON | feito (o CSV reabre igual; proveniência com Consulta, versões e DOI) |
+| F3 | 3.1 Seleção | feito, **refeito no R2** (teto de 500, atravessa buscas, espelho na URL) |
+| F3 | 3.2 Exportação CSV e JSON | **retirado pela D7** |
+| F3 | 3.3 Dossiê em PDF | **retirado pela D7**; A8 aposentado |
+| F3 | 3.3a Lista de consulta no AHU | feito, **refeito no R3** (7.050 de 7.051 cotas com código CRAV) |
 | F3 | 3.4 Link da busca | feito (A6 com cinco buscas variadas, de ponta a ponta) |
-| F3 | 3.3a Lista de consulta no AHU | feito (portada do pacote antigo; 7.050 de 7.051 cotas com código CRAV) |
-| F3 | 3.3 Dossiê em PDF | feito (A8: capa com proveniência, uma seção por documento, mediação com ressalva) |
-| F3 | 3.5 Amostras e plano EINS | feito (A7 e A9; "Gerar amostra diacrônica" habilitado) |
-| **F3** | **remodelada** | ver o plano v3.1: o WP 3.2 e o WP 3.3 foram retirados (D7) |
-| v3.1 | R1 Remoções | feito (D7–D11: lentes, CSV/JSON/dossiê, identificadores) |
-| v3.1 | R2 Seleção rápida | feito (0 buscas por clique; corpo do fragmento em ~46 ms; espelho na URL) |
-| v3.1 | R3 PDF da lista do AHU | feito (Noto Serif; Nº·Ano·Cota·Resumo·DigitArq·caixa; linha nunca partida) |
-| v3.1 | R4…R8 | pendente |
+| F3 | 3.5 Amostras e plano EINS | feito (A7 e A9) |
+| **F3** | **remodelada pelo plano v3.1** | |
+| v3.1 | R1 Remoções | feito (D7–D11) |
+| v3.1 | R2 Seleção rápida | feito (0 buscas por clique; fragmento em ~46 ms) |
+| v3.1 | R3 PDF da lista do AHU | feito (Noto Serif; linha nunca partida) |
+| v3.1 | R6 §2 Glifos de manuscrito | feito (fleurão por interruptor, gaveta do EINS) |
+| v3.1 | R9 Ajustes do autor | em curso |
+| v3.1 | R7 Caminho sem torch | pendente — **bloqueia o deploy** |
+| v3.1 | R4, R5, R6 (resto), R8 | **pausados** por decisão do autor (09/10) |
 | F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.
