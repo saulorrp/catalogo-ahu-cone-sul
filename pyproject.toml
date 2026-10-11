@@ -1,6 +1,6 @@
 [project]
 name = "classificador-ahu-sul"
-version = "3.0.0.dev0"
+version = "3.0.0"
 description = "Classificador AHU-Sul v3: triagem documental sobre o catálogo do AHU"
 requires-python = ">=3.11"
 license = { text = "MIT" }

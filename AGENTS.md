@@ -90,7 +90,7 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 |---|---|---|
 | F0 | 0.1 Repositório e convenções | feito |
 | F0 | 0.2 Licença e README | feito |
-| F0 | 0.3 Busca v2 de referência | pendente |
+| F0 | 0.3 Busca v2 de referência | feito (`avaliacao/busca_v2.py`; reproduz ranking legado) |
 | F1 | 1.1 Base e `doc_uid` | feito (7.051 docs, 7.051 uids únicos) |
 | F1 | 1.2 Tipologia e sociolinguística | feito (86 tipologias, 165 a revisar; SRSP 1–9) |
 | F1 | 1.3 Entidades e biografias v2 | feito (7.229 entidades, 1.359 pessoas, 253 exibíveis) |
@@ -118,8 +118,11 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | v3.1 | R5 "Saiba mais" | feito (popover com auditoria e ressalva do preprint §2) |
 | v3.1 | R6 (resto) Bordô e tipografia | feito (.streamlit/config.toml, Noto Serif no resumo) |
 | v3.1 | R8 Limpeza | feito (`use_container_width` → `width='stretch'`) |
-| **v3.1** | **completa** | **remodelação concluída** |
-| F4 | restantes | pendente |
+| F4 | 4.1 Conjunto de teste e avaliação | feito (30 consultas de ouro, julgar.py, avaliar_busca.py com nDCG@10, Recall@20, MRR) |
+| F4 | 4.2 Calibração e modelo | medido no e5-small (ONNX int8; margens calibradas em ahu/busca.py) |
+| F4 | 4.3 CI (GitHub Actions) | feito (.github/workflows/ci.yml com gate automatizado) |
+| F4 | 4.4 Versão e Zenodo | feito (v3.0.0 em pyproject.toml, CITATION.cff, docs/notas_de_versao_v3.md) |
+| **F4** | **completa** | **infraestrutura de avaliação, CI e versão 3.0.0 finalizadas** |
 
 Atualize esta tabela ao concluir cada pacote.
 

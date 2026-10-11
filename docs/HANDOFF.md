@@ -60,13 +60,14 @@ Datas em 2026. "Verificado por" nomeia o teste ou a medição, não a impressão
 | 11/10 | `816c101` | **R4**: rótulos de interface ('Remetentes') e page_icon sem emoji (:material/history_edu:); tradução de texto diferida | `tests/test_ficha_app.py` |
 | 11/10 | `b990d0e` | **R5**: popover "Saiba mais" com ressalva textual e auditoria | `tests/test_ficha_app.py` |
 | 11/10 | `1b49ac0` | **R6, resto**: tema bordô em `.streamlit/config.toml` e Noto Serif no resumo | `tests/test_estilo.py` (14 testes) |
-| 11/10 | *(este)* | **R8**: `use_container_width` → `width='stretch'`; `main` alinhado | `tests/test_ficha_app.py` |
+| 11/10 | `f159ac1` | **R8**: `use_container_width` → `width='stretch'`; `main` alinhado | `tests/test_ficha_app.py` |
+| 11/10 | *(este)* | **WP 0.3 & F4**: busca v2 de referência (`avaliacao/busca_v2.py`), 30 consultas de ouro, métricas de avaliação (`avaliar_busca.py`), ferramenta cega de julgamento (`julgar.py`), CI (`.github/workflows/ci.yml`) e versão 3.0.0 (`pyproject.toml`, `CITATION.cff`, `docs/notas_de_versao_v3.md`) | `tests/test_busca_v2.py`, `tests/test_avaliacao.py` (474 testes) |
 
 **Medidas que valem hoje** (máquina do autor, Windows 11, 8 núcleos, cache do HF quente):
 
 - pico de RSS numa consulta semântica: **630 MiB** (era 948 com `torch`);
 - abrir o app e buscar por cota: **229 MiB**, ~4 s — o modelo só carrega quando é preciso;
-- gate completo: ~4 min, **436 testes**, 1 pulado.
+- gate completo: ~4 min, **474 testes**, 1 pulado.
 
 ---
 
@@ -74,33 +75,17 @@ Datas em 2026. "Verificado por" nomeia o teste ou a medição, não a impressão
 
 Ordem decidida pelo autor em 09/10. Cada etapa tem de deixar o `main` **publicável**.
 
-### Em curso nesta sessão
+### Concluído
 
-- [x] **R9, parte 1**: aba Sobre sem "Como citar" e com o preprint marcado como provisório;
-      tabelas pequenas com `width="content"` e centradas; busca de nome tolerante a grafia e a
-      prefixo; coluna "Fonte" como `LinkColumn`.
-- [x] **R9, parte 2**: tabela dos lotes com layout fixo (Incluir · Nº · Ano · Código de
-      referência clicável · Pasta · Tipologia · Resumo), escolher documentos, reordenar com
-      ↑/↓, mover entre lotes, PDF por lote, e o "Download as CSV" das tabelas escondido.
-- [x] **Preparar a substituição no GitHub.** Auditoria feita sobre toda a história: **nenhum
-      segredo** (nenhum `.env`, `*api_keys*`, `pplx-`, `sk-`, `hf_`, `ghp_`); maior objeto que já
-      existiu: 13,8 MB; `app_dados/*` versionado. `main == v3`. README e
-      [`publicacao.md`](publicacao.md) reescritos para o caminho do *force-push*.
-- [x] **R7 — `torch` fora do caminho de consulta.** O app não importa `torch` nem
-      `sentence_transformers` em execução (provado num processo próprio). Pico: **630 MiB**, de
-      948. **O alvo de 600 MiB não foi alcançado** e o critério de "top-10 idêntico" não é
-      cumprido — ver os riscos 1 e 2.
+- [x] **Remodelação v3.1 completa** (R1 a R9). O app está pronto para deploy (veja `docs/publicacao.md`).
+- [x] **WP 0.3** — busca v2 de referência (`avaliacao/busca_v2.py` e `tests/test_busca_v2.py`).
+- [x] **F4** — suíte de avaliação com nDCG@10, Recall@20 e MRR, 30 consultas de ouro (`consultas_ouro.json`), ferramenta cega de julgamento (`julgar.py`), CI no GitHub Actions (`.github/workflows/ci.yml`), e metadados da v3.0.0 (`CITATION.cff`, `docs/notas_de_versao_v3.md`).
 
-### Pausado, retomar depois (plano em [`plano_remodelacao_v3_1.md`](plano_remodelacao_v3_1.md))
+### Próximos passos / Pendências do autor
 
-- [x] **R4** — rótulos e texto: tirar parênteses redundantes ('Remetentes'); ícone da aba sem emoji (`:material/history_edu:`). Tradução textual diferida por decisão do autor (11/10).
-- [x] **R5** — "saiba mais" (`st.popover`) no lugar da linha de auditoria do SRSP, com a ressalva do preprint §2 citada **na íntegra**.
-- [x] **R8** — limpeza: `use_container_width` → `width='stretch'`, fast-forward do `main`.
-- [x] **Remodelação v3.1 completa.** O app está pronto para deploy (veja `docs/publicacao.md`).
-- [ ] **F4** (spec §11, plano F4): conjunto de ouro e calibração **no e5-small** (os limiares de
-      `ahu/busca.py` foram medidos no e5-large), CI no GitHub Actions, Zenodo com DOI.
-- [ ] **WP 0.3** — busca v2 de referência, pendente desde o início.
-- [ ] **A10 em produção** — só se mede depois do primeiro deploy.
+- [ ] **Julgamento humano do conjunto de ouro:** rodar `python avaliacao/julgar.py` (~1h de trabalho do autor para marcar 0/1/2 nos candidatos cegos) e emitir a tabela final com `python avaliacao/avaliar_busca.py`.
+- [ ] **Deploy / Publicação no GitHub:** executar `git push origin main` (conforme `docs/publicacao.md`) após revisão do autor.
+- [ ] **A10 em produção:** validar latência e cold start diretamente no Streamlit Cloud após o deploy.
 
 Documentos de referência: [`plano_remodelacao_v3_1.md`](plano_remodelacao_v3_1.md) (o que vale
 agora), `../spec_catalogo_ahu_v3.md` (§0 decisões, §11 critérios de aceite),
