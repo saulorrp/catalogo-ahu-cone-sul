@@ -12,15 +12,15 @@ que produziu este repositório — consiga continuar o trabalho só com o que es
 
 ## 1. Estado atual, em um parágrafo
 
-O app funciona de ponta a ponta no `localhost` e **não está publicado**: o repositório não tem
-`remote` configurado, e o que está no ar em `catalogo-ahu-sul.streamlit.app` ainda é o app **v2**.
-O repositório **está pronto para substituí-lo** — veja [`publicacao.md`](publicacao.md), que tem os
-comandos exatos; o autor pode publicar a qualquer momento. O corpus modular está pronto (7.051
-documentos, 1.359 pessoas, índice semântico `multilingual-e5-small` de 384 dimensões), a busca
-híbrida funciona, a aba Pessoas e o painel diatópico funcionam, e o único arquivo que o app
-entrega é o PDF da **lista para consulta no AHU**, mais o plano de coleta do EINS na aba Amostras.
-O que **bloqueia o deploy** é o R7: em tempo de execução o app importa `torch`, e o pico de memória
-é de ~948 MiB contra os 690 MiB que o Streamlit Community Cloud garante.
+O app v3.0.0 está **publicado no GitHub** (branches `main` e `v3` sincronizados no commit `e906922`),
+com deploy automático ativo no Streamlit Community Cloud (`catalogo-ahu-sul.streamlit.app`).
+O app v2 legado está preservado no branch remoto `v2-arquivo`.
+O corpus modular está pronto (7.051 documentos, 1.359 pessoas, índice semântico `multilingual-e5-small`
+de 384 dimensões em ONNX int8 sem dependência de PyTorch em execução, pico de 630 MiB). A busca híbrida,
+a aba Pessoas, o painel diatópico, a geração de PDF da lista do AHU (A4 paisagem) e o plano de coleta
+do EINS (`eins-plano-coleta/1`) estão 100% funcionais e cobertos por 474 testes. A suíte de avaliação
+(WP 0.3 e WP 4.1) e o CI no GitHub Actions estão implementados. A extensão do mapa com Wikidata
+está planejada em [`plano_mapa_wikidata_wp5_2.md`](plano_mapa_wikidata_wp5_2.md).
 
 ---
 
@@ -83,9 +83,10 @@ Ordem decidida pelo autor em 09/10. Cada etapa tem de deixar o `main` **publicá
 
 ### Próximos passos / Pendências do autor
 
-- [ ] **Julgamento humano do conjunto de ouro:** rodar `python avaliacao/julgar.py` (~1h de trabalho do autor para marcar 0/1/2 nos candidatos cegos) e emitir a tabela final com `python avaliacao/avaliar_busca.py`.
-- [ ] **Deploy / Publicação no GitHub:** executar `git push origin main` (conforme `docs/publicacao.md`) após revisão do autor.
-- [ ] **A10 em produção:** validar latência e cold start diretamente no Streamlit Cloud após o deploy.
+- [x] **Deploy / Publicação no GitHub:** executado `git push origin main` e `git push origin v3` (commit `e906922`). O Streamlit Cloud já constrói a partir do `main`.
+- [ ] **A10 em produção:** validar latência e cold start diretamente em `catalogo-ahu-sul.streamlit.app` após a conclusão do deploy no Streamlit Cloud.
+- [ ] **Julgamento humano do conjunto de ouro (opcional para artigo):** rodar `python avaliacao/julgar.py` (~1h de trabalho do autor para marcar 0/1/2 nos candidatos cegos) e emitir a tabela final com `python avaliacao/avaliar_busca.py`.
+- [ ] **WP 5.2 — Mapa das cidades de nascimento com Wikidata (P625):** extensão planejada com detalhes técnicos, arquitetura offline (zero custo no runtime) e roteiro em [`plano_mapa_wikidata_wp5_2.md`](plano_mapa_wikidata_wp5_2.md).
 
 Documentos de referência: [`plano_remodelacao_v3_1.md`](plano_remodelacao_v3_1.md) (o que vale
 agora), `../spec_catalogo_ahu_v3.md` (§0 decisões, §11 critérios de aceite),

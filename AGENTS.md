@@ -127,11 +127,12 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 Atualize esta tabela ao concluir cada pacote.
 
 **Pendências para o autor:**
-- **publicar (WP 2.5), depois da F3.** A reindexação com o e5-small está feita (7.051 docs, 8,3
-  min, sanidade 5/5, `embeddings_e5small_v1` ativa) e os artefatos de `app_dados/` já são de 384
-  dimensões. O que falta é o `push` e o deploy, adiados por decisão do autor até a F3 terminar; os
-  passos estão em [`docs/publicacao.md`](docs/publicacao.md). **A10 segue pendente do primeiro
-  deploy**: tempo de resposta e carga fria só se medem na nuvem;
+- **publicação (WP 2.5):** o `push` para `main` e `v3` no GitHub foi realizado em 11/10/2026
+  (commit `e906922`). **A10 segue pendente da medição em produção**: tempo de resposta e carga
+  fria no Streamlit Cloud;
+- **mapa com Wikidata P625 (WP 5.2):** extensão técnica detalhada e documentada para os próximos
+  agentes em [`docs/plano_mapa_wikidata_wp5_2.md`](docs/plano_mapa_wikidata_wp5_2.md) (regras de
+  custo zero em runtime, geocodificação offline, uso do Plotly e cuidados com centróides e toponímia);
 - **limite conhecido do aviso de consulta distante (§5.5).** A regra nova (nenhum termo no corpus
   **e** destaque < 4,5) acerta as nove consultas medidas, mas basta **um** termo existir no corpus
   para o aviso calar, mesmo que o casamento seja acidental: `military desertion` escapa porque
