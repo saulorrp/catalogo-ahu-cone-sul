@@ -287,7 +287,7 @@ def barra_lateral(dados, consulta: Consulta) -> Consulta:
             st.caption(f"Faixas: {faixas['baixo'][0]}–{faixas['baixo'][1]} · "
                        f"{faixas['medio'][0]}–{faixas['medio'][1]} · "
                        f"{faixas['alto'][0]}–{faixas['alto'][1]}.")
-            with st.popover("? Saiba mais", use_container_width=True):
+            with st.popover("? Saiba mais", width="stretch"):
                 st.markdown(
                     "**O que são as inferências:**\n\n"
                     "Estimativas do modelo DeepSeek v3 em regime *zero-shot*, aplicadas ao resumo "
@@ -317,7 +317,7 @@ def barra_lateral(dados, consulta: Consulta) -> Consulta:
                 "Só confiança ALTA", value=f.so_confianca_alta,
                 help="Desmarcada: ALTA e MÉDIA. Nunca BAIXA nem rejeitada.")
 
-        if st.button("Limpar filtros", use_container_width=True):
+        if st.button("Limpar filtros", width="stretch"):
             guardar(Consulta(texto=consulta.texto, modo=consulta.modo, rigor=consulta.rigor))
             st.rerun()
 
@@ -337,7 +337,7 @@ def barra_de_busca(consulta: Consulta) -> Consulta:
         rigor = colunas[2].selectbox(
             "Rigor", busca.RIGORES, index=busca.RIGORES.index(consulta.rigor),
             format_func=lambda r: f"Rigor {r}", label_visibility="collapsed")
-        enviado = colunas[3].form_submit_button("Buscar", use_container_width=True)
+        enviado = colunas[3].form_submit_button("Buscar", width="stretch")
 
     if enviado:
         from ahu.consulta import asdict_raso
@@ -580,7 +580,7 @@ def pdf_pronto(rotulo: str, chave: str, montar, nome_do_arquivo: str) -> None:
     segundos em cada clique, e muito mais no oitavo de núcleo do Community Cloud. Daí os dois
     passos: um botão que monta e guarda na sessão, e o download do que já está pronto.
     """
-    if st.button(rotulo, use_container_width=True, key=f"btn_{chave}"):
+    if st.button(rotulo, width="stretch", key=f"btn_{chave}"):
         with st.spinner("Montando o PDF..."):
             try:
                 st.session_state[chave] = montar()
@@ -591,7 +591,7 @@ def pdf_pronto(rotulo: str, chave: str, montar, nome_do_arquivo: str) -> None:
     if pronto:
         st.download_button(
             f"Baixar {nome_do_arquivo} ({len(pronto) // 1024} KB)", data=pronto,
-            file_name=nome_do_arquivo, mime="application/pdf", use_container_width=True,
+            file_name=nome_do_arquivo, mime="application/pdf", width="stretch",
             key=f"baixar_{chave}")
 
 
@@ -623,10 +623,10 @@ def painel_da_lista_ahu(dados, resposta) -> None:
             st.session_state.lista_ahu_texto = "\n".join(x for x in (antigo, novo) if x.strip())
             st.rerun()
 
-        if enviar[0].button(f"Enviar a seleção ({len(selecao)})", use_container_width=True,
+        if enviar[0].button(f"Enviar a seleção ({len(selecao)})", width="stretch",
                             disabled=not len(selecao)):
             acrescentar(selecao.ordenar(dados, st.session_state.get("ordem_selecao", "chegada")))
-        if enviar[2].button(f"Enviar o resultado ({resposta.total})", use_container_width=True,
+        if enviar[2].button(f"Enviar o resultado ({resposta.total})", width="stretch",
                             disabled=not resposta.total):
             acrescentar([r.doc_uid for r in resposta.resultados])
 
@@ -700,7 +700,7 @@ def lista_de_pessoas(dados) -> None:
 
     tabela = mod_pessoas.tabela(achadas)
     escolha = st.dataframe(
-        tabela, use_container_width=True, hide_index=True, on_select="rerun",
+        tabela, width="stretch", hide_index=True, on_select="rerun",
         selection_mode="single-row",
         column_config={
             "Fonte": st.column_config.LinkColumn(
@@ -729,7 +729,7 @@ def lista_de_coletivos(dados) -> None:
     if not coletivos:
         st.info("Nenhum coletivo ou instituição com esse nome.")
         return
-    st.dataframe(mod_pessoas.tabela_de_coletivos(coletivos), use_container_width=True,
+    st.dataframe(mod_pessoas.tabela_de_coletivos(coletivos), width="stretch",
                  hide_index=True)
     papeis = mod_pessoas.contagem_de_remetentes(dados)
     sem_entidade = sum(papeis.get(t, 0) for t in mod_pessoas.TIPOS_SEM_ENTIDADE)
@@ -773,15 +773,15 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
         st.markdown(f"**Nascimento:** {p.rotulo}")
 
     acoes = st.columns([2, 3, 2])
-    acoes[0].link_button("Ver documentos", pagina.url_documentos, use_container_width=True,
+    acoes[0].link_button("Ver documentos", pagina.url_documentos, width="stretch",
                          help="Abre a aba Busca com o filtro desta pessoa aplicado.")
-    if acoes[1].button("Gerar amostra diacrônica", use_container_width=True,
+    if acoes[1].button("Gerar amostra diacrônica", width="stretch",
                        help="Ordem cronológica, em lotes de 10, com espaçamento por ano (§7.2)."):
         st.session_state.amostra_pessoa = p.pessoa_uid
         st.session_state.tipo_de_amostra = "Diacrônica por pessoa"
         st.success(f"Amostra de **{p.nome}** preparada. Abra a aba **Amostras** para ver os "
                    "lotes e baixar o plano de coleta.")
-    acoes[2].link_button("Reportar erro", pagina.url_issue, use_container_width=True,
+    acoes[2].link_button("Reportar erro", pagina.url_issue, width="stretch",
                          help="Abre uma issue no GitHub já preenchida com o dado que o app "
                               "mostra hoje e a sua fonte.")
 
@@ -790,17 +790,17 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
         st.caption("Nenhum documento com data.")
     else:
         st.plotly_chart(mod_graficos.barras_por_ano(pagina.linha_do_tempo, tema()),
-                        use_container_width=True)
+                        width="stretch")
     if pagina.sem_data:
         st.caption(f"{pagina.sem_data} documento(s) sem data não aparecem no gráfico.")
 
     esquerda, direita = st.columns(2)
     esquerda.markdown("#### Tipologias")
     esquerda.dataframe(pd.DataFrame(pagina.tipologias, columns=["Tipologia", "Documentos"]),
-                       use_container_width=True, hide_index=True)
+                       width="stretch", hide_index=True)
     direita.markdown("#### Destinatários")
     direita.dataframe(pd.DataFrame(pagina.destinatarios, columns=["Destinatário", "Documentos"]),
-                      use_container_width=True, hide_index=True)
+                      width="stretch", hide_index=True)
 
     with gaveta(f"Documentos em ordem cronológica ({len(pagina.documentos)})",
                 "documentos_pessoa"):
@@ -808,7 +808,7 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
             pagina.documentos.drop(columns=["doc_uid"]).rename(columns={
                 "ano": "Ano", "tipologia": "Tipologia", "destinatario": "Destinatário",
                 "autoria_verificada": "Autoria verificada"}),
-            use_container_width=True, hide_index=True)
+            width="stretch", hide_index=True)
         st.caption("A ficha completa de cada documento está na aba Busca, pelo botão "
                    "\"Ver documentos\".")
 
@@ -1002,7 +1002,7 @@ def mostrar_lotes(dados, amostra) -> None:
 
             tabela = mod_amostras.tabela_dos_documentos(dados, lote, editados.excluidos)
             editada = st.data_editor(
-                tabela, key=f"editor_lote_{i}", hide_index=True, use_container_width=True,
+                tabela, key=f"editor_lote_{i}", hide_index=True, width="stretch",
                 disabled=[c for c in mod_amostras.COLUNAS_DO_LOTE if c != "Incluir"],
                 column_config={
                     "Incluir": st.column_config.CheckboxColumn("✓", width="small",
@@ -1059,7 +1059,7 @@ def ordem_linhas(dados, editados, i: int, lote: list[str]) -> None:
         destino = controles[3].selectbox(
             "Para o lote", outros, key=f"destino_{i}",
             format_func=lambda j: f"Lote {j + 1}")
-        if controles[4].button("Mover", key=f"move_{i}", use_container_width=True):
+        if controles[4].button("Mover", key=f"move_{i}", width="stretch"):
             editados.trocar_de_lote(i, posicao, destino)
             st.rerun(scope="fragment")
 
@@ -1076,10 +1076,10 @@ def baixar_amostra(dados, amostra, consulta: Consulta, nome: str) -> None:
     colunas[0].download_button(
         "Plano de coleta (EINS)", data=mod_amostras.plano_em_json(dados, amostra, consulta),
         file_name="plano_coleta.eins.json", mime="application/json",
-        use_container_width=True,
+        width="stretch",
         help="Esquema eins-plano-coleta/1 (§7.4): o Acervo do EINS Lite importa e cria um "
              "Processo por código de referência.")
-    if colunas[1].button(f"Pôr os {len(amostra)} na seleção", use_container_width=True):
+    if colunas[1].button(f"Pôr os {len(amostra)} na seleção", width="stretch"):
         sobraram = selecao_atual().adicionar(amostra.doc_uids)
         if sobraram:
             st.warning(f"{sobraram} não couberam: o teto da seleção é {mod_selecao.LIMITE}.")
@@ -1114,13 +1114,13 @@ def aba_painel(dados) -> None:
     # de 3:1 contra o branco, e o guia de visualização exige a leitura por número também.
     grafico, tabela = st.columns([3, 2])
     grafico.plotly_chart(mod_graficos.barras_por_pais(painel, tema()),
-                         use_container_width=True)
+                         width="stretch")
     with tabela:
         st.dataframe(painel.paises.rename(columns={"pais": "País", "contagem": unidade}),
                      width="content", hide_index=True)
 
     st.markdown("#### Por década, com a cor do país de nascimento")
-    st.plotly_chart(mod_graficos.barras_por_decada(painel, tema()), use_container_width=True)
+    st.plotly_chart(mod_graficos.barras_por_decada(painel, tema()), width="stretch")
     nomeados = mod_graficos.dobrar_em_outros(painel.paises)
     if len(painel.paises) > len(nomeados):
         st.caption(f"Os {len(nomeados)} países mais frequentes têm cor própria; "

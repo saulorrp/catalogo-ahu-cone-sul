@@ -117,7 +117,8 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | v3.1 | R4 Rótulos da interface | feito (Remetentes, page_icon sem emoji; tradução diferida) |
 | v3.1 | R5 "Saiba mais" | feito (popover com auditoria e ressalva do preprint §2) |
 | v3.1 | R6 (resto) Bordô e tipografia | feito (.streamlit/config.toml, Noto Serif no resumo) |
-| v3.1 | R8 Limpeza | pendente |
+| v3.1 | R8 Limpeza | feito (`use_container_width` → `width='stretch'`) |
+| **v3.1** | **completa** | **remodelação concluída** |
 | F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.

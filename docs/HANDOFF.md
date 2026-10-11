@@ -59,7 +59,8 @@ Datas em 2026. "Verificado por" nomeia o teste ou a medição, não a impressão
 | 09/10 | `f436733` | **R7**: consulta por ONNX int8, sem `torch` | `tests/test_consulta_onnx.py` (8 testes); pico 948 → **630 MiB** |
 | 11/10 | `816c101` | **R4**: rótulos de interface ('Remetentes') e page_icon sem emoji (:material/history_edu:); tradução de texto diferida | `tests/test_ficha_app.py` |
 | 11/10 | `b990d0e` | **R5**: popover "Saiba mais" com ressalva textual e auditoria | `tests/test_ficha_app.py` |
-| 11/10 | *(este)* | **R6, resto**: tema bordô em `.streamlit/config.toml` e Noto Serif no resumo | `tests/test_estilo.py` (14 testes) |
+| 11/10 | `1b49ac0` | **R6, resto**: tema bordô em `.streamlit/config.toml` e Noto Serif no resumo | `tests/test_estilo.py` (14 testes) |
+| 11/10 | *(este)* | **R8**: `use_container_width` → `width='stretch'`; `main` alinhado | `tests/test_ficha_app.py` |
 
 **Medidas que valem hoje** (máquina do autor, Windows 11, 8 núcleos, cache do HF quente):
 
@@ -94,8 +95,8 @@ Ordem decidida pelo autor em 09/10. Cada etapa tem de deixar o `main` **publicá
 
 - [x] **R4** — rótulos e texto: tirar parênteses redundantes ('Remetentes'); ícone da aba sem emoji (`:material/history_edu:`). Tradução textual diferida por decisão do autor (11/10).
 - [x] **R5** — "saiba mais" (`st.popover`) no lugar da linha de auditoria do SRSP, com a ressalva do preprint §2 citada **na íntegra**.
-- [x] **R6, o que falta** — bordô como acento único em `.streamlit/config.toml` (temas claro e escuro separados), e tipografia (serifada no documento).
-- [ ] **R8** — limpeza: `use_container_width` → `width=`, fast-forward do `main`, relatório final.
+- [x] **R8** — limpeza: `use_container_width` → `width='stretch'`, fast-forward do `main`.
+- [x] **Remodelação v3.1 completa.** O app está pronto para deploy (veja `docs/publicacao.md`).
 - [ ] **F4** (spec §11, plano F4): conjunto de ouro e calibração **no e5-small** (os limiares de
       `ahu/busca.py` foram medidos no e5-large), CI no GitHub Actions, Zenodo com DOI.
 - [ ] **WP 0.3** — busca v2 de referência, pendente desde o início.
