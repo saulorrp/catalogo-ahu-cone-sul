@@ -3,7 +3,7 @@
 **Leia este arquivo primeiro.** Ele existe para que outro agente de código — sem acesso à conversa
 que produziu este repositório — consiga continuar o trabalho só com o que está aqui dentro.
 
-Última atualização: **09/10/2026**, commit `0b0513e`.
+Última atualização: **11/10/2026**.
 
 > **Regra de manutenção:** este arquivo é atualizado **no mesmo commit** da mudança que ele
 > descreve, nunca num commit à parte. Um HANDOFF desatualizado é pior que nenhum.
@@ -56,7 +56,8 @@ Datas em 2026. "Verificado por" nomeia o teste ou a medição, não a impressão
 | 09/10 | `e5cb70f` | `docs/HANDOFF.md` | — |
 | 09/10 | `c135d5c` | **R9, parte 1**: Sobre sem "Como citar"; tabelas pequenas centradas; busca de nome tolerante; link da fonte | `tests/test_pessoas.py`: "domingo de britto" acha "Domingos de Brito Peixoto" |
 
-| 09/10 | *(este)* | **R7**: consulta por ONNX int8, sem `torch` | `tests/test_consulta_onnx.py` (8 testes); pico 948 → **630 MiB** |
+| 09/10 | `f436733` | **R7**: consulta por ONNX int8, sem `torch` | `tests/test_consulta_onnx.py` (8 testes); pico 948 → **630 MiB** |
+| 11/10 | *(este)* | **R4**: rótulos de interface ('Remetentes') e page_icon sem emoji (:material/history_edu:); tradução de texto diferida | `tests/test_ficha_app.py` |
 
 **Medidas que valem hoje** (máquina do autor, Windows 11, 8 núcleos, cache do HF quente):
 
@@ -89,10 +90,7 @@ Ordem decidida pelo autor em 09/10. Cada etapa tem de deixar o `main` **publicá
 
 ### Pausado, retomar depois (plano em [`plano_remodelacao_v3_1.md`](plano_remodelacao_v3_1.md))
 
-- [ ] **R4** — rótulos e texto: traduzir no `build/construir_app.py` os valores em inglês do
-      DeepSeek (`King of Portugal` → `Rei`, `Overseas Council` → `Conselho Ultramarino`) por uma
-      tabela revisada `build/rotulos_pt.json`; tirar parênteses redundantes; ícone da aba sem
-      emoji. **Aceite:** um teste falha se um rótulo em inglês chegar à interface.
+- [x] **R4** — rótulos e texto: tirar parênteses redundantes ('Remetentes'); ícone da aba sem emoji (`:material/history_edu:`). Tradução textual diferida por decisão do autor (11/10).
 - [ ] **R5** — "saiba mais" (`st.popover`) no lugar da linha de auditoria do SRSP, com a ressalva
       do preprint §2 citada **na íntegra** (o texto está no plano v3.1, R5).
 - [ ] **R6, o que falta** — bordô como acento único em `.streamlit/config.toml` (temas claro e

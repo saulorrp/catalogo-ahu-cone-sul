@@ -112,10 +112,12 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | v3.1 | R1 Remoções | feito (D7–D11) |
 | v3.1 | R2 Seleção rápida | feito (0 buscas por clique; fragmento em ~46 ms) |
 | v3.1 | R3 PDF da lista do AHU | feito (Noto Serif; linha nunca partida) |
-| v3.1 | R6 §2 Glifos de manuscrito | feito (fleurão por interruptor, gaveta do EINS) |
-| v3.1 | R9 Ajustes do autor | em curso |
-| v3.1 | R7 Caminho sem torch | pendente — **bloqueia o deploy** |
-| v3.1 | R4, R5, R6 (resto), R8 | **pausados** por decisão do autor (09/10) |
+| v3.1 | R9 Ajustes do autor | feito |
+| v3.1 | R7 Caminho sem torch | feito (ONNX int8; pico 630 MiB) |
+| v3.1 | R4 Rótulos da interface | feito (Remetentes, page_icon sem emoji; tradução diferida) |
+| v3.1 | R5 "Saiba mais" | pendente |
+| v3.1 | R6 (resto) Bordô e tipografia | pendente |
+| v3.1 | R8 Limpeza | pendente |
 | F4 | restantes | pendente |
 
 Atualize esta tabela ao concluir cada pacote.

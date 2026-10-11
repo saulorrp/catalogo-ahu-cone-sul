@@ -264,7 +264,7 @@ def barra_lateral(dados, consulta: Consulta) -> Consulta:
         pessoas = opcoes["pessoas"]
         rotulo_de = {p["pessoa_uid"]: f"{p['nome']} ({p['n_documentos']})" for p in pessoas}
         f.pessoas = st.multiselect(
-            "Pessoa (remetente)", [p["pessoa_uid"] for p in pessoas], default=f.pessoas,
+            "Remetentes", [p["pessoa_uid"] for p in pessoas], default=f.pessoas,
             format_func=lambda u: rotulo_de.get(u, u),
             help="Nome principal, variantes e títulos.")
         f.destinatario = st.text_input("Destinatário contém", value=f.destinatario or "") or None
@@ -1171,7 +1171,7 @@ def aba_sobre(dados) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    st.set_page_config(page_title=TITULO, page_icon="📜", layout="wide")
+    st.set_page_config(page_title=TITULO, page_icon=":material/history_edu:", layout="wide")
     st.markdown(mod_estilo.CSS, unsafe_allow_html=True)
     st.title(TITULO)
     st.caption(SUBTITULO)
