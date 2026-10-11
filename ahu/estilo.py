@@ -83,6 +83,12 @@ CSS = f"""
 .rotulo {{ color: var(--text-color, #5f6368); opacity: 0.75; font-size: 0.85rem; }}
 .aviso-distante {{ background: rgba(232, 163, 61, 0.14); border-left: 4px solid #e8a33d;
                   padding: 0.6rem 0.8rem; border-radius: 4px; margin: 0.4rem 0 0.8rem; }}
+/* Documento é papel: resumo com Noto Serif / serif */
+.resumo, [data-testid="stExpanderDetails"] > div > [data-testid="stMarkdownContainer"] > p:first-child {{
+  font-family: "Noto Serif", Georgia, Cambria, "Times New Roman", serif;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}}
 
 /* ---------------------------------------------------------------------------
    O fleurão no lugar do galão, em TODO expansor — gaveta ou cartão.

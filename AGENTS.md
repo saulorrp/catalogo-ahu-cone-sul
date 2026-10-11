@@ -116,7 +116,7 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | v3.1 | R7 Caminho sem torch | feito (ONNX int8; pico 630 MiB) |
 | v3.1 | R4 Rótulos da interface | feito (Remetentes, page_icon sem emoji; tradução diferida) |
 | v3.1 | R5 "Saiba mais" | feito (popover com auditoria e ressalva do preprint §2) |
-| v3.1 | R6 (resto) Bordô e tipografia | pendente |
+| v3.1 | R6 (resto) Bordô e tipografia | feito (.streamlit/config.toml, Noto Serif no resumo) |
 | v3.1 | R8 Limpeza | pendente |
 | F4 | restantes | pendente |
 

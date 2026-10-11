@@ -149,3 +149,28 @@ def test_as_gavetas_comecam_fechadas(fonte_do_app):
         if "expandida=" not in argumentos:
             continue
         assert any(e in argumentos for e in excecoes), argumentos[:80]
+
+
+# ---------------------------------------------------------------------------
+# 5. R6: tema bordô e tipografia serifada no documento
+# ---------------------------------------------------------------------------
+
+def test_config_tema_streamlit_bordo():
+    """R6 §1: .streamlit/config.toml define o tema EINS com acento bordô."""
+    import tomllib
+    caminho = RAIZ / ".streamlit" / "config.toml"
+    assert caminho.exists(), "config.toml não encontrado"
+    with open(caminho, "rb") as f:
+        cfg = tomllib.load(f)
+    assert "theme" in cfg
+    assert cfg["theme"]["primaryColor"] == "#800000"
+    assert cfg["theme"]["backgroundColor"] == "#f5f2eb"
+    assert cfg["theme"]["light"]["primaryColor"] == "#800000"
+    assert cfg["theme"]["dark"]["primaryColor"] == "#a83030"
+    assert cfg["theme"]["dark"]["backgroundColor"] == "#0d0d0d"
+
+
+def test_tipografia_resumo_serifada():
+    """R6 §3: resumo documental usa Noto Serif / serif."""
+    assert "Noto Serif" in estilo.CSS
+    assert ".resumo" in estilo.CSS
