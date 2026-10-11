@@ -306,6 +306,9 @@ def test_app_sobe_sem_excecao_e_tem_as_abas():
     textos = " ".join(m.value for m in at.markdown)
     assert "Camadas e versões ativas" in textos
     assert "MAE 1.13" in textos or "MAE 1,13" in textos
+    # R5: popover de saiba mais com explicação e ressalva metodológica do preprint
+    assert "O que são as inferências" in textos
+    assert "Essa inferência, contudo, é metodologicamente delicada" in textos
 
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")

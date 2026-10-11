@@ -286,7 +286,27 @@ def barra_lateral(dados, consulta: Consulta) -> Consulta:
             faixas = opcoes["faixas_srsp"]
             st.caption(f"Faixas: {faixas['baixo'][0]}–{faixas['baixo'][1]} · "
                        f"{faixas['medio'][0]}–{faixas['medio'][1]} · "
-                       f"{faixas['alto'][0]}–{faixas['alto'][1]}. {opcoes['nota_srsp']}")
+                       f"{faixas['alto'][0]}–{faixas['alto'][1]}.")
+            with st.popover("? Saiba mais", use_container_width=True):
+                st.markdown(
+                    "**O que são as inferências:**\n\n"
+                    "Estimativas do modelo DeepSeek v3 em regime *zero-shot*, aplicadas ao resumo "
+                    "do catálogo (e não ao manuscrito original). Elas produzem a categoria social "
+                    "do remetente, o vetor de comunicação, o impacto da tipologia e a pontuação "
+                    "SRSP de 1 a 9.\n\n"
+                    "**Auditoria do SRSP (preprint §2.1):**\n\n"
+                    "MAE 1,13 · r = 0,48 · viés +0,59 · N = 705 · avaliador único. "
+                    "Diferenças de ±1 ponto não são distinguíveis.\n\n"
+                    "**Mediação notarial:**\n\n"
+                    "> \"Essa inferência, contudo, é metodologicamente delicada, por mais que seja uma "
+                    "informação fundamental para a linguística diacrônica (uma vez que a escolaridade "
+                    "variável desses notários coloniais atuava como um filtro permeável, ora favorecendo "
+                    "a hipercorreção, ora permitindo o escape indeliberado da sintaxe local), a sua "
+                    "classificação de forma puramente heurística é perigosa. Não é possível atestar tal "
+                    "mediação de forma categórica sem um extenso estudo paleográfico e diplomático do "
+                    "manuscrito original.\"\n\n"
+                    "[Preprint no SciELO Preprints](https://doi.org/10.1590/SciELOPreprints.16461)"
+                )
 
         with gaveta("Origem do remetente", "origem"):
             f.paises_origem = st.multiselect("País (atual)", opcoes["paises_origem"],

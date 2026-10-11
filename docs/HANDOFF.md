@@ -57,7 +57,8 @@ Datas em 2026. "Verificado por" nomeia o teste ou a medição, não a impressão
 | 09/10 | `c135d5c` | **R9, parte 1**: Sobre sem "Como citar"; tabelas pequenas centradas; busca de nome tolerante; link da fonte | `tests/test_pessoas.py`: "domingo de britto" acha "Domingos de Brito Peixoto" |
 
 | 09/10 | `f436733` | **R7**: consulta por ONNX int8, sem `torch` | `tests/test_consulta_onnx.py` (8 testes); pico 948 → **630 MiB** |
-| 11/10 | *(este)* | **R4**: rótulos de interface ('Remetentes') e page_icon sem emoji (:material/history_edu:); tradução de texto diferida | `tests/test_ficha_app.py` |
+| 11/10 | `816c101` | **R4**: rótulos de interface ('Remetentes') e page_icon sem emoji (:material/history_edu:); tradução de texto diferida | `tests/test_ficha_app.py` |
+| 11/10 | *(este)* | **R5**: popover "Saiba mais" com ressalva textual e auditoria | `tests/test_ficha_app.py` |
 
 **Medidas que valem hoje** (máquina do autor, Windows 11, 8 núcleos, cache do HF quente):
 
@@ -91,8 +92,7 @@ Ordem decidida pelo autor em 09/10. Cada etapa tem de deixar o `main` **publicá
 ### Pausado, retomar depois (plano em [`plano_remodelacao_v3_1.md`](plano_remodelacao_v3_1.md))
 
 - [x] **R4** — rótulos e texto: tirar parênteses redundantes ('Remetentes'); ícone da aba sem emoji (`:material/history_edu:`). Tradução textual diferida por decisão do autor (11/10).
-- [ ] **R5** — "saiba mais" (`st.popover`) no lugar da linha de auditoria do SRSP, com a ressalva
-      do preprint §2 citada **na íntegra** (o texto está no plano v3.1, R5).
+- [x] **R5** — "saiba mais" (`st.popover`) no lugar da linha de auditoria do SRSP, com a ressalva do preprint §2 citada **na íntegra**.
 - [ ] **R6, o que falta** — bordô como acento único em `.streamlit/config.toml` (temas claro e
       escuro separados; o Streamlit 1.55 tem `theme.light.*` e `theme.dark.*`), e a tipografia
       (monoespaçada na tela, serifada no documento). O item 2 (glifos) já está feito.
