@@ -27,6 +27,7 @@ from ahu import estilo as mod_estilo
 from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
 from ahu import graficos as mod_graficos
+from ahu import links as mod_links
 from ahu import lista_ahu as mod_lista
 from ahu import pdf as mod_pdf
 from ahu import pessoas as mod_pessoas
@@ -44,7 +45,8 @@ ABAS = ("Busca", "Pessoas", "Amostras", "Painel", "Conversor", "Sobre e método"
 # busca do DigitArq, sem a URL crua aparecer.
 RE_REFERENCIA = r"query=(.*?)&"
 
-EXEMPLO_DE_CONVERSAO = """PT/AHU/CU/017/0069/06420
+EXEMPLO_DE_CONVERSAO = "AHU_ACL_CU_019, Cx. 3, D. 246"
+EXEMPLO_DE_LOTE = """PT/AHU/CU/017/0069/06420
 AHU_ACL_CU_021, Cx. 6, D. 390
 AHU-São Paulo-MGouveia, cx. 2, doc. 126
 AHU-Santa Catarina, cx. 13, doc. 46"""
@@ -1156,49 +1158,107 @@ def enviar_do_conversor_a_lista(cotas: str) -> None:
 
 
 def aba_conversor(dados) -> None:
-    st.subheader("Conversor de cotas")
-    st.markdown(
-        "Converte uma cota em qualquer das três famílias — **código de referência** "
-        "(`PT/AHU/CU/…`), **cota do Resgate** (`AHU_ACL_CU_…`) e **cota antiga** "
-        "(`AHU-<região>, cx., doc.`) — nas outras duas. Funciona também com cotas que não estão "
-        "no catálogo.")
-    st.caption(
-        "Referência e Resgate são a mesma cota com outra grafia: a conversão é só formatação. "
-        "A cota antiga usa outra numeração de caixa e documento; ela só se converte pela base, "
-        "salvo nas coleções Castro e Almeida e Mendes Gouveia, que guardam a numeração atual.")
+    """Uma cota na entrada; o tipo reconhecido; as três cotas na saída, prontas para copiar.
 
-    texto = st.text_area("Cotas (uma por linha, em qualquer formato)", key="area_conversor",
-                         height=160, placeholder=EXEMPLO_DE_CONVERSAO)
-    if texto.strip():
-        conversoes = mod_conversor.converter_lista(texto, dados)
-        convertidas = sum(c.convertida for c in conversoes)
-        st.info(f"{len(conversoes)} linha(s) · {convertidas} convertida(s) · "
-                f"{len(conversoes) - convertidas} sem conversão.")
-        tabela = mod_conversor.tabela(conversoes)
-        # Os avisos vão abaixo da tabela, não numa coluna: oito colunas não cabem ao lado da
-        # barra lateral, e um aviso escondido à direita é um aviso que ninguém lê.
-        st.dataframe(
-            tabela, width="stretch", hide_index=True,
-            column_order=[c for c in tabela.columns if c != "Avisos"],
-            column_config={
-                "DigitArq": st.column_config.LinkColumn("DigitArq", display_text="abrir",
-                                                        width="small"),
-            })
-        avisos = dict.fromkeys(f"**{c.entrada or '(vazia)'}** — {a}"
-                               for c in conversoes for a in c.avisos)
-        if avisos:
-            st.markdown("\n".join(f"- {a}" for a in avisos))
-        st.button("Enviar à lista do AHU", key="conversor_para_lista",
-                  disabled=not convertidas,
-                  on_click=enviar_do_conversor_a_lista,
-                  args=(mod_conversor.para_lista_ahu(conversoes),),
-                  help="Acrescenta as cotas convertidas à gaveta \"Colar cotas\" da aba Busca, "
-                       "de onde sai o PDF da lista de consulta.")
+    O desenho é o das cotas da ficha (`desenhar_ficha`): rótulo à esquerda, `st.code` à direita,
+    que traz o botão de copiar de graça. Várias cotas de uma vez ficam numa gaveta abaixo.
+    """
+    st.subheader("Conversor de cotas")
+    st.caption(
+        "Cole uma cota em qualquer formato — código de referência (`PT/AHU/CU/…`), código atual "
+        "(`AHU_ACL_CU_…`) ou código antigo (`AHU-<região>, cx., doc.`) — e o tipo é reconhecido "
+        "sozinho. Funciona também com cotas que não estão no catálogo. O código antigo só se "
+        "converte pela base, salvo Castro e Almeida e Mendes Gouveia, que guardam a numeração "
+        "atual.")
+
+    entrada = st.text_input("Cota", key="entrada_conversor", placeholder=EXEMPLO_DE_CONVERSAO)
+    if entrada.strip():
+        mostrar_conversao(dados, mod_conversor.converter(entrada, dados))
+
+    with gaveta("Converter várias cotas de uma vez", "conversor_lote"):
+        conversor_em_lote(dados)
 
     with gaveta("A cifra série-estado", "cifra"):
         st.caption("As séries que o conversor conhece pelo nome. Uma série fora desta tabela "
-                   "ainda é convertida entre referência e Resgate, mas sem o nome do estado.")
+                   "ainda é convertida entre referência e código atual, mas sem o nome do estado.")
         tabela_estreita(mod_conversor.tabela_da_cifra())
+
+
+def mostrar_conversao(dados, conversoes) -> None:
+    escolhida = conversoes[0]
+    if len(conversoes) > 1:
+        escolhida = st.selectbox(
+            f"Esta entrada corresponde a {len(conversoes)} documentos atuais",
+            conversoes, key="escolha_conversor",
+            format_func=lambda c: " · ".join(x for x in (c.resgate or c.referencia,
+                                                         mod_conversor.rotulo_do_documento(dados, c.linha))
+                                            if x))
+
+    st.markdown(mod_conversor.descrever(escolhida))
+    if not escolhida.convertida:
+        st.warning(" ".join(escolhida.avisos))
+        return
+
+    cotas = {
+        mod_conversor.ROTULO_FAMILIA["referencia"]: escolhida.referencia,
+        mod_conversor.ROTULO_FAMILIA["resgate"]: escolhida.resgate,
+        mod_conversor.ROTULO_FAMILIA["antiga"]: escolhida.antiga,
+    }
+    if escolhida.linha is not None:
+        item = dados.documentos.iloc[escolhida.linha].get("document_id_and_date")
+        if isinstance(item, str) and item.strip():
+            cotas["Item e data"] = item
+    for etiqueta, valor in cotas.items():
+        colunas = st.columns([3, 9])
+        colunas[0].markdown(f"<span class='rotulo'>{etiqueta}</span>", unsafe_allow_html=True)
+        colunas[1].code(valor or "—", language=None)
+
+    for aviso in escolhida.avisos:
+        st.caption(aviso)
+    links = mod_links.do_documento({"reference_code": escolhida.referencia,
+                                    "new_code": escolhida.resgate})
+    destinos = [f"[Ficha no DigitArq]({links['digitarq']})"] if links.get("digitarq") else []
+    destinos.append(f"[Portal do Projeto Resgate]({links['resgate']})")
+    st.markdown(" · ".join(destinos))
+    if escolhida.linha is not None:
+        st.caption("No catálogo AHU-Sul: " + mod_conversor.rotulo_do_documento(dados, escolhida.linha, 300))
+
+    st.button("Enviar à lista do AHU", key="conversor_para_lista",
+              on_click=enviar_do_conversor_a_lista,
+              args=(mod_conversor.para_lista_ahu([escolhida]),),
+              help="Acrescenta a cota à gaveta \"Colar cotas\" da aba Busca, de onde sai o PDF "
+                   "da lista de consulta.")
+
+
+def conversor_em_lote(dados) -> None:
+    texto = st.text_area("Cotas (uma por linha, em qualquer formato)", key="area_conversor",
+                         height=160, placeholder=EXEMPLO_DE_LOTE)
+    if not texto.strip():
+        return
+    conversoes = mod_conversor.converter_lista(texto, dados)
+    convertidas = sum(c.convertida for c in conversoes)
+    st.info(f"{len(conversoes)} linha(s) · {convertidas} convertida(s) · "
+            f"{len(conversoes) - convertidas} sem conversão.")
+    tabela = mod_conversor.tabela(conversoes)
+    # Os avisos vão abaixo da tabela, não numa coluna: oito colunas não cabem ao lado da barra
+    # lateral, e um aviso escondido à direita é um aviso que ninguém lê.
+    st.dataframe(
+        tabela, width="stretch", hide_index=True,
+        column_order=[c for c in tabela.columns if c != "Avisos"],
+        column_config={
+            "DigitArq": st.column_config.LinkColumn("DigitArq", display_text="abrir",
+                                                    width="small"),
+        })
+    avisos = dict.fromkeys(f"**{c.entrada or '(vazia)'}** — {a}"
+                           for c in conversoes for a in c.avisos)
+    if avisos:
+        st.markdown("\n".join(f"- {a}" for a in avisos))
+    st.button("Enviar à lista do AHU", key="conversor_lote_para_lista",
+              disabled=not convertidas,
+              on_click=enviar_do_conversor_a_lista,
+              args=(mod_conversor.para_lista_ahu(conversoes),),
+              help="Acrescenta as cotas convertidas à gaveta \"Colar cotas\" da aba Busca, "
+                   "de onde sai o PDF da lista de consulta.")
 
 
 # ---------------------------------------------------------------------------
