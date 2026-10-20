@@ -52,3 +52,14 @@ Registro consolidado das transformações arquiteturais, metodológicas e de int
   - Métricas formais de recuperação de informação: nDCG@10, Recall@20 e MRR.
 - **Integração Contínua (WP 4.3):**
   - Pipeline GitHub Actions automatizado rodando linters (`ruff`) e suíte de testes de regressão (`pytest`).
+
+---
+
+## Depois da 3.0.0
+
+- **Aba Conversor de cotas** (entre Painel e Sobre e método): converte código de referência,
+  cota do Resgate e cota antiga entre si, em três níveis — formatação (referência ↔ Resgate,
+  para qualquer cota), numeração igual (Castro e Almeida, série 017-01; Mendes Gouveia, série
+  023-01) e concordância da base (as demais cotas antigas, que usam outra numeração). Fora da
+  base, a cota antiga comum não ganha palpite. As cotas convertidas vão à lista do AHU com um
+  clique. Com a mesma regra, os 7.051 documentos passam a ter código de referência CRAV.

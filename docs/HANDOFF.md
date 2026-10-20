@@ -3,7 +3,7 @@
 **Leia este arquivo primeiro.** Ele existe para que outro agente de código — sem acesso à conversa
 que produziu este repositório — consiga continuar o trabalho só com o que está aqui dentro.
 
-Última atualização: **11/10/2026**.
+Última atualização: **20/10/2026**.
 
 > **Regra de manutenção:** este arquivo é atualizado **no mesmo commit** da mudança que ele
 > descreve, nunca num commit à parte. Um HANDOFF desatualizado é pior que nenhum.
@@ -17,7 +17,7 @@ com deploy automático ativo no Streamlit Community Cloud (`catalogo-ahu-sul.str
 O app v2 legado está preservado no branch remoto `v2-arquivo`.
 O corpus modular está pronto (7.051 documentos, 1.359 pessoas, índice semântico `multilingual-e5-small`
 de 384 dimensões em ONNX int8 sem dependência de PyTorch em execução, pico de 630 MiB). A busca híbrida,
-a aba Pessoas, o painel diatópico, a geração de PDF da lista do AHU (A4 paisagem) e o plano de coleta
+a aba Pessoas, o painel diatópico, o conversor de cotas (aba Conversor), a geração de PDF da lista do AHU (A4 paisagem) e o plano de coleta
 do EINS (`eins-plano-coleta/1`) estão 100% funcionais e cobertos por 474 testes. A suíte de avaliação
 (WP 0.3 e WP 4.1) e o CI no GitHub Actions estão implementados. A extensão do mapa com Wikidata
 está planejada em [`plano_mapa_wikidata_wp5_2.md`](plano_mapa_wikidata_wp5_2.md).
@@ -61,7 +61,8 @@ Datas em 2026. "Verificado por" nomeia o teste ou a medição, não a impressão
 | 11/10 | `b990d0e` | **R5**: popover "Saiba mais" com ressalva textual e auditoria | `tests/test_ficha_app.py` |
 | 11/10 | `1b49ac0` | **R6, resto**: tema bordô em `.streamlit/config.toml` e Noto Serif no resumo | `tests/test_estilo.py` (14 testes) |
 | 11/10 | `f159ac1` | **R8**: `use_container_width` → `width='stretch'`; `main` alinhado | `tests/test_ficha_app.py` |
-| 11/10 | *(este)* | **WP 0.3 & F4**: busca v2 de referência (`avaliacao/busca_v2.py`), 30 consultas de ouro, métricas de avaliação (`avaliar_busca.py`), ferramenta cega de julgamento (`julgar.py`), CI (`.github/workflows/ci.yml`) e versão 3.0.0 (`pyproject.toml`, `CITATION.cff`, `docs/notas_de_versao_v3.md`) | `tests/test_busca_v2.py`, `tests/test_avaliacao.py` (474 testes) |
+| 11/10 | `e906922` | **WP 0.3 & F4**: busca v2 de referência (`avaliacao/busca_v2.py`), 30 consultas de ouro, métricas de avaliação (`avaliar_busca.py`), ferramenta cega de julgamento (`julgar.py`), CI (`.github/workflows/ci.yml`) e versão 3.0.0 (`pyproject.toml`, `CITATION.cff`, `docs/notas_de_versao_v3.md`) | `tests/test_busca_v2.py`, `tests/test_avaliacao.py` (474 testes) |
+| 20/10 | *(este)* | **Aba Conversor**: `ahu/conversor.py` converte código de referência, cota do Resgate e cota antiga entre si, em três níveis (formatação; numeração igual de Castro e Almeida e Mendes Gouveia; concordância da base); `referencia_crav` passa a usar a mesma regra, e o corpus fica com 7.051/7.051 cotas com CRAV | `tests/test_conversor.py`: 7.038 pares referência × Resgate sem diferença, 98 cotas de numeração igual, cifra conferida contra as pastas |
 
 **Medidas que valem hoje** (máquina do autor, Windows 11, 8 núcleos, cache do HF quente):
 
@@ -116,6 +117,7 @@ Uma linha cada. As D1–D6 estão na spec §0; as D7–D11 foram acrescentadas l
 
 | | Decisão | Por quê |
 |---|---|---|
+| **D15** | **O conversor não adivinha.** Cota antiga comum só se converte pela concordância da base; fora dela, "sem conversão". | A ordem antiga → atual só se mantém em 85–91% dos pares por série, e a caixa muda até 295 posições no Rio de Janeiro. Um palpite errado manda o pesquisador pedir a caixa errada no arquivo. |
 | **D14** | **O modelo de consulta é o ONNX int8, não o fp32.** | O fp32 passaria no critério estrito de equivalência, mas custa 960 MiB — pior que os 948 MiB do `torch` que o R7 veio substituir, e acima dos 690 MiB garantidos. O int8 custa 630 MiB e é a única configuração que cabe. O preço é a ordem exata do top-10; os mesmos documentos aparecem (90 %) e o primeiro colocado é o mesmo em 26 de 30 consultas. Para triagem isso basta, e os limiares de `ahu/busca.py` ainda serão recalibrados na F4. |
 | **D13** | **Reordenar linhas é com ↑ / ↓, não arrastando com o rato.** | Arrastar exigiria um componente de terceiros com pacote JavaScript próprio (`streamlit-sortables` e afins): mais uma dependência a construir no Streamlit Cloud, justo quando o R7 corta dependências para caber na memória; e esses componentes reordenam **listas de texto**, não linhas de tabela — não dariam a tabela que o autor pediu. Os ↑/↓ agem sobre a linha escolhida por número. Reavaliar se o Streamlit trouxer reordenação nativa de `st.data_editor`. |
 | **D12** | **Não haverá repositório novo.** O `v3` vai por `push --force` sobre o `main` de `saulorrp/catalogo-ahu-cone-sul`, reaproveitando o app `catalogo-ahu-sul.streamlit.app`. | Menos passos para o autor e a URL conhecida se mantém. O app antigo é preservado numa branch `v2-arquivo` **antes** do *force-push*. |
@@ -183,8 +185,15 @@ Estão em [`../AGENTS.md`](../AGENTS.md). As que mais pegam quem chega:
 2. **Os limiares da busca foram calibrados no e5-large** e o índice agora é e5-small:
    `MARGENS_RIGOR`, `COSSENO_MINIMO`, `PESOS_RRF` e `LIMITE_DESTAQUE` em `ahu/busca.py` estão
    provisórios até a F4. Eles funcionam, mas não estão medidos neste modelo.
-3. **Um documento sem código de referência CRAV** (`ahu-sul:6bb06bc3e0`): a única cota dele é
-   antiga e por região, sem número de série. Está contado no teste, não escondido.
+3. **Resolvido em 20/10:** o documento que não tinha código CRAV (`ahu-sul:6bb06bc3e0`) tem a cota
+   antiga `AHU-São Paulo-MGouveia, cx. 2, doc. 224.`, e Mendes Gouveia guarda a numeração do
+   Resgate; o conversor deriva `PT/AHU/CU/023-001/0002/00224`.
+3. **Cota antiga comum fora da base não converte.** A numeração antiga (por caixa) não é a atual
+   (sequencial por série): só 2,4% dos documentos mantêm o número. O conversor diz "sem
+   conversão" em vez de interpolar. A cifra série-estado está em `conversor.SERIES`; os nomes das
+   séries 003, 030 e 035 ("Brasil Geral", "Ultramar") vêm das pastas e estão a confirmar pelo autor.
+   Dois documentos têm seis dígitos no número (`PT/AHU/CU/017-001/0072/168746` e `…/0083/193221`),
+   provavelmente erro de catálogo; antes saíam cortados em cinco, agora saem como estão na base.
 4. **165 tipologias marcadas "a revisar"** e a coluna `decisao_manual` do
    `revisao_biografias.csv` ainda vazia nas 1.359 linhas — trabalho do autor, não do código.
 5. **O aviso de consulta distante (§5.5)** cala quando um único termo existe no corpus, mesmo por

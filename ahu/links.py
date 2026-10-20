@@ -15,7 +15,8 @@ Nada aqui depende de Streamlit nem de rede: são só URLs montadas.
 
 **`referencia_crav` (WP 3.3a)** é a conversão de cota em código de referência CRAV, trazida do
 `lista_ahu.py` do pacote antigo: ela aceita as duas famílias de cota (Resgate e CRAV) e devolve
-sempre `PT/AHU/CU/<série>/<caixa>/<documento>`, com os zeros à esquerda. Ela **não** é a
+sempre `PT/AHU/CU/<série>/<caixa>/<documento>`, com os zeros à esquerda. Desde a aba Conversor
+a regra mora em `ahu/conversor.py`, e esta função só a chama. Ela **não** é a
 `busca.chave_cota`, e a diferença importa: a `chave_cota` é uma chave de *lookup* dentro do
 corpus, que joga os zeros fora para poder casar as três grafias; esta monta o código oficial que o
 DigitArq entende e que vai impresso na lista de consulta.
@@ -23,23 +24,10 @@ DigitArq entende e que vai impresso na lista de consulta.
 from __future__ import annotations
 
 import os
-import re
 from urllib.parse import quote, urlencode
 
 DIGITARQ = "https://digitarq.arquivos.pt/search?query={cota}&isAdvancedSearch=false"
 RESGATE = "https://resgate.bn.gov.br/"
-
-# `PT/AHU/CU/021/0006/00390` e `PT/AHU/CU/017-01/0003/00387`.
-_RE_REF = re.compile(
-    r"PT\s*/\s*AHU\s*/\s*CU\s*/\s*(\d{3})(?:-(\d{1,3}))?\s*/\s*(\d{1,4})\s*/\s*(\d{1,5})", re.I)
-# `AHU_ACL_CU_021, Cx. 6, D. 390` e as suas variações de pontuação e espaço.
-#
-# Entre `D.` e o número do documento o catálogo às vezes traz lixo de extração — `D. .387-389.`,
-# `D. –1011-1015.` — e é por isso que há um `[\s.\-–—]*` ali: sem ele, três documentos do corpus
-# ficavam sem código de referência e sem link para o DigitArq. O número que vale é o primeiro.
-_RE_ACL = re.compile(
-    r"AHU[_\s]*ACL[_\s]*CU[_\s]*(\d{3})(?:\s*-\s*(\d{1,3}))?\s*,?\s*(?:C\s*x\.?)?\s*(\d+)\s*,?\s*"
-    r"D(?:oc)?\.?[\s.\-–—]*(\d+)", re.I)
 
 
 def limpar_cota(texto) -> str:
@@ -56,20 +44,20 @@ def limpar_cota(texto) -> str:
 
 
 def referencia_crav(texto: str | None) -> str | None:
-    """Converte uma cota (Resgate ou CRAV) no código de referência: `PT/AHU/CU/005/0135/10451`.
+    """Converte uma cota no código de referência: `PT/AHU/CU/005/0135/10451`.
 
-    Devolve None quando o texto não contém uma cota reconhecível — o caso do `UNFORMATTED_CODE`
-    e das cotas antigas por região (`AHU-São Paulo…`), que não trazem o número da série e por
-    isso não têm código CRAV derivável.
+    A regra é a do `ahu.conversor` (níveis 1 e 2): aceita a referência, a cota do Resgate e as
+    cotas antigas de numeração igual (Castro e Almeida, Mendes Gouveia). Devolve None quando o
+    texto não contém uma cota assim — o caso do `UNFORMATTED_CODE` e das cotas antigas comuns
+    (`AHU-São Paulo, cx. 26, doc. 8`), cuja numeração não é a atual e por isso não tem código
+    CRAV derivável.
     """
     if not texto:
         return None
-    m = _RE_REF.search(str(texto)) or _RE_ACL.search(str(texto))
-    if not m:
-        return None
-    serie, sub, caixa, documento = m.groups()
-    serie = serie + (f"-{int(sub):03d}" if sub else "")
-    return f"PT/AHU/CU/{serie}/{int(caixa):04d}/{int(documento):05d}"
+    from ahu.conversor import para_referencia, reconhecer
+
+    cota = reconhecer(str(texto))
+    return para_referencia(cota) if cota else None
 
 # O repositório onde as correções entram (spec §0). Em `AHU_REPO_GITHUB` para que um fork aponte
 # para o seu próprio repositório sem editar o código.

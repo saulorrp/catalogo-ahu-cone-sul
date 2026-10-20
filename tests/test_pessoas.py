@@ -342,7 +342,7 @@ def test_app_abre_a_aba_pessoas_e_o_painel_sem_excecao():
     textos = " ".join(m.value for m in at.markdown) + " ".join(c.value for c in at.caption)
     assert "Coletivos e instituições" in " ".join(
         str(r.options) for r in at.radio) or "Painel diatópico" in textos
-    # As cinco abas continuam sendo as da §9: a aba Pessoas não criou aba nova no topo.
+    # As abas continuam sendo as da §9, mais o Conversor: a aba Pessoas não criou aba no topo.
     import app as modulo
     assert [t.label for t in at.tabs] == list(modulo.ABAS)
 
