@@ -115,14 +115,17 @@ _RE_REFERENCIA = re.compile(
     re.I)
 # `AHU_ACL_CU_021, Cx. 6, D. 390.` e as grafias tortas da base: sem vírgula, `Cx.9`, `CX.`,
 # `C x.`, sem o `Cx.` (`AHU_ACL_CU_017, 8, D. 818.`), lixo entre `D.` e o número
-# (`D. .387-389.`, `D. –1011-1015.`) e intervalo com hífen dobrado (`D. 9--9`).
+# (`D. .387-389.`, `D. –1011-1015.`) e intervalo com hífen dobrado (`D. 9--9`). Entre as partes
+# vale qualquer separador que alguém digite ou cole: vírgula, ponto e vírgula, barra, contrabarra
+# (`AHU_ACL_CU_089, Cx. 10\Doc. 955`) ou barra vertical.
+_SEP = r"[\s,;:\\/|]*"
 _RE_RESGATE = re.compile(
-    r"AHU[_\s]*ACL[_\s]*CU[_\s]*(\d{1,3})(?:\s*-\s*(\d{1,3}))?\s*,?\s*(?:C\s*x\.?)?\s*(\d+)\s*,?\s*"
-    r"D(?:oc)?\.?[\s.\-–—]*(\d+)(?:\s*[-–—]{1,2}\s*(\d+))?", re.I)
+    rf"AHU[_\s]*ACL[_\s]*CU[_\s]*(\d{{1,3}})(?:\s*-\s*(\d{{1,3}}))?{_SEP}(?:C\s*x\.?)?\s*(\d+){_SEP}"
+    r"D(?:oc(?:umento)?)?\.?[\s.\-–—]*(\d+)(?:\s*[-–—]{1,2}\s*(\d+))?", re.I)
 # A cota antiga é lida sobre o texto dobrado (sem acento, minúsculo), porque a região vem com
 # grafias variadas: `Colónia`/`Colônia`, `SANTA-CATARINA`, `São Paulo, MGouveia`.
 _RE_ANTIGA_REGIAO = re.compile(r"\bahu\s*[-_]?\s*(?!acl\b)([a-z][a-z .\-]*?)\s*[,;_]")
-_RE_ANTIGA_PAR = re.compile(r"\bcx\.?\s*(\d+)\s*,?\s*docs?\.?\s*(\d+)(?:\s*-\s*(\d+))?\b")
+_RE_ANTIGA_PAR = re.compile(rf"\bcx\.?\s*(\d+){_SEP}docs?\.?\s*(\d+)(?:\s*-\s*(\d+))?\b")
 _RE_MARCA = re.compile(r"^\s*(mgouveia|calmeida)\b\s*[,;]?")
 
 
@@ -256,6 +259,7 @@ class Conversao:
     nivel: int | None = None
     avisos: list[str] = field(default_factory=list)
     linha: int | None = None          # a linha de `documentos.parquet`, quando está na base
+    serie: str | None = None          # a série da cota atual, como o Resgate a escreve
 
     @property
     def convertida(self) -> bool:
@@ -266,8 +270,30 @@ class Conversao:
         return NIVEIS.get(self.nivel, "sem conversão")
 
 
-ROTULO_FAMILIA = {"referencia": "código de referência", "resgate": "cota do Resgate",
-                  "antiga": "cota antiga"}
+# Os mesmos nomes da ficha do documento (`ficha.py`), para que a aba e a ficha falem igual.
+ROTULO_FAMILIA = {"referencia": "Código de referência", "resgate": "Código atual",
+                  "antiga": "Código antigo"}
+
+
+def descrever(c: Conversao) -> str:
+    """A linha que diz o que foi reconhecido e em que virou.
+
+    `Reconhecido: **código atual** → código de referência e código antigo · Rio Grande do Sul
+    (série 019) · por formatação`.
+    """
+    if c.familia is None:
+        return "Formato não reconhecido."
+    alvos = [ROTULO_FAMILIA[f].lower() for f, valor in
+             (("referencia", c.referencia), ("resgate", c.resgate), ("antiga", c.antiga))
+             if f != c.familia and valor]
+    partes = [f"Reconhecido: **{ROTULO_FAMILIA[c.familia].lower()}** → "
+              + (" e ".join(alvos) if alvos else "sem conversão")]
+    if c.estado or c.serie:
+        partes.append(" ".join(x for x in (c.estado, f"(série {c.serie})" if c.serie else None)
+                               if x))
+    if c.convertida:
+        partes.append(f"por {c.como}")
+    return " · ".join(partes)
 
 
 def converter(texto: str, dados=None) -> list[Conversao]:
@@ -298,7 +324,8 @@ def _converter_uma(entrada: str, cota: Cota, dados) -> list[Conversao]:
     # família vier: é a coluna que depende da regra mais estreita.
     nivel = 2 if serie is not None and serie.numeracao_igual else 1
     c = Conversao(entrada, cota.familia, para_referencia(cota), para_resgate(cota),
-                  para_antiga(cota), serie.nome if serie else None, nivel)
+                  para_antiga(cota), serie.nome if serie else None, nivel,
+                  serie=cota.codigo_serie)
     if serie is None:
         c.avisos.append(f"A série {cota.codigo_serie} não está na cifra: a forma foi convertida, "
                         "mas sem o nome do estado.")
@@ -317,14 +344,14 @@ def _converter_uma(entrada: str, cota: Cota, dados) -> list[Conversao]:
             antiga = documento.get("old_code")
             if isinstance(antiga, str) and antiga.strip():
                 c.antiga = limpar(antiga)
-                c.avisos.append("Cota antiga tirada da base, não da formatação.")
+                c.avisos.append("Código antigo tirado da base, não da formatação.")
         # Um intervalo que a referência perdeu, a base devolve.
         if cota.familia == "referencia":
             da_base = reconhecer(documento.get("new_code"))
             if da_base and da_base.documento_fim and da_base.documento == cota.documento:
                 c.resgate = para_resgate(da_base)
     elif c.antiga is None and dados is not None:
-        c.avisos.append("Fora da base: a cota antiga não é derivável desta série.")
+        c.avisos.append("Fora da base: o código antigo não é derivável desta série.")
     return [c]
 
 
@@ -332,7 +359,7 @@ def _pela_base(entrada: str, cota: Cota, dados) -> list[Conversao]:
     """Nível 3: a cota antiga comum só se converte pela concordância da base."""
     if dados is None:
         return [Conversao(entrada, "antiga", estado=cota.regiao, avisos=[
-            "Cota antiga: a numeração mudou na arrumação atual, e a conversão depende da base."])]
+            "Código antigo: a numeração mudou na arrumação atual, e a conversão depende da base."])]
     linhas = indice_de_antigas(dados).get(chave_antiga(cota), [])
     if not linhas:
         return [Conversao(entrada, "antiga", estado=cota.regiao, avisos=[
@@ -346,9 +373,10 @@ def _pela_base(entrada: str, cota: Cota, dados) -> list[Conversao]:
         serie = POR_CODIGO.get(atual.codigo_serie) if atual else None
         c = Conversao(entrada, "antiga",
                       para_referencia(atual) if atual else None,
-                      limpar(resgate) if isinstance(resgate, str) else None,
+                      para_resgate(atual) if atual else None,
                       limpar(documento.get("old_code")),
-                      serie.nome if serie else cota.regiao, 3, linha=i)
+                      serie.nome if serie else cota.regiao, 3, linha=i,
+                      serie=atual.codigo_serie if atual else None)
         if len(linhas) > 1:
             c.avisos.append(f"{posicao} de {len(linhas)} documentos atuais com esta cota antiga.")
         saida.append(c)
@@ -414,8 +442,8 @@ def tabela(conversoes: list[Conversao]):
         "Como": c.como,
         "Estado": c.estado or "—",
         "Código de referência": c.referencia or "—",
-        "Cota do Resgate": c.resgate or "—",
-        "Cota antiga": c.antiga or "—",
+        "Código atual": c.resgate or "—",
+        "Código antigo": c.antiga or "—",
         "DigitArq": digitarq(c.referencia) if c.referencia else None,
         "Avisos": " ".join(c.avisos),
     } for c in conversoes])
@@ -432,6 +460,18 @@ def tabela_da_cifra():
         "Cota antiga convertível": "sim, por formatação" if s.numeracao_igual else
                                    ("só pela base" if s.antiga else "—"),
     } for s in SERIES])
+
+
+def rotulo_do_documento(dados, linha: int | None, tamanho: int = 80) -> str:
+    """Ano e começo do resumo de um documento da base, para reconhecê-lo numa lista."""
+    if linha is None:
+        return ""
+    documento = dados.documentos.iloc[linha]
+    ano = documento.get("ano_isolado")
+    resumo = str(documento.get("description") or "")
+    if len(resumo) > tamanho:
+        resumo = resumo[:tamanho].rsplit(" ", 1)[0] + "…"
+    return " · ".join(x for x in ("sem data" if ano is None or ano != ano else str(int(ano)), resumo) if x)
 
 
 def para_lista_ahu(conversoes: list[Conversao]) -> str:

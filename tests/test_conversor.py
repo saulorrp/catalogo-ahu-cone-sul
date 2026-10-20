@@ -35,6 +35,12 @@ def corpus_real():
      "AHU_ACL_CU_017, Cx. 48, D. 4860."),
     ("ahu acl cu 021 cx 6 d 390", "PT/AHU/CU/021/0006/00390", "AHU_ACL_CU_021, Cx. 6, D. 390."),
     ("AHU_ACL_CU_017, 8, D. 818.", "PT/AHU/CU/017/0008/00818", "AHU_ACL_CU_017, Cx. 8, D. 818."),
+    # separadores digitados ou colados: contrabarra, barra, "Doc."/"Documento"
+    ("AHU_ACL_CU_089, Cx. 10\\Doc. 955", "PT/AHU/CU/089/0010/00955",
+     "AHU_ACL_CU_089, Cx. 10, D. 955."),
+    ("AHU_ACL_CU_089/Cx. 10/D. 955", "PT/AHU/CU/089/0010/00955", "AHU_ACL_CU_089, Cx. 10, D. 955."),
+    ("AHU_ACL_CU_019, Cx. 3, Documento 246", "PT/AHU/CU/019/0003/00246",
+     "AHU_ACL_CU_019, Cx. 3, D. 246."),
     # uma série fora da cifra converte do mesmo jeito: a cota não precisa estar no corpus
     ("PT/AHU/CU/005/0135/10451", "PT/AHU/CU/005/0135/10451", "AHU_ACL_CU_005, Cx. 135, D. 10451."),
 ])
@@ -61,6 +67,17 @@ def test_a_cifra_da_o_nome_e_a_serie_desconhecida_avisa():
     assert rj.estado == "Rio de Janeiro" and not rj.avisos
     [fora] = cv.converter("PT/AHU/CU/005/0135/10451")
     assert fora.estado is None and "não está na cifra" in fora.avisos[0]
+
+
+def test_descrever_diz_o_que_foi_reconhecido_e_em_que_virou():
+    [c] = cv.converter("AHU_ACL_CU_019, Cx. 3, D. 246")
+    assert cv.descrever(c) == ("Reconhecido: **código atual** → código de referência · "
+                               "Rio Grande do Sul (série 019) · por formatação")
+    [mg] = cv.converter("AHU-São Paulo-MGouveia, cx. 2, doc. 126.")
+    assert cv.descrever(mg).startswith(
+        "Reconhecido: **código antigo** → código de referência e código atual")
+    [nada] = cv.converter("lixo")
+    assert cv.descrever(nada) == "Formato não reconhecido."
 
 
 def test_serie_curta_e_completada_e_avisada():
@@ -122,7 +139,7 @@ def test_lista_ignora_grupos_notas_e_linhas_vazias():
 def test_tabelas_da_aba():
     t = cv.tabela(cv.converter_lista("PT/AHU/CU/017/0069/06420\nlixo"))
     assert list(t.columns) == ["Entrada", "Como", "Estado", "Código de referência",
-                               "Cota do Resgate", "Cota antiga", "DigitArq", "Avisos"]
+                               "Código atual", "Código antigo", "DigitArq", "Avisos"]
     assert t["DigitArq"].iloc[0].startswith("https://digitarq.arquivos.pt/")
     assert t["DigitArq"].iloc[1] is None
     assert len(cv.tabela_da_cifra()) == len(cv.SERIES)
@@ -217,7 +234,7 @@ def test_cota_antiga_fora_da_base_nao_ganha_palpite(corpus_real):
 def test_cota_atual_da_base_ganha_a_cota_antiga_da_base(corpus_real):
     [c] = cv.converter("PT/AHU/CU/023/0027/01237", corpus_real)
     assert c.antiga == "AHU-São Paulo, cx. 26, doc. 8." and c.linha is not None
-    assert any("tirada da base" in a for a in c.avisos)
+    assert any("tirado da base" in a for a in c.avisos)
     # o intervalo que a referência perdeu volta pela base
     [r] = cv.converter("PT/AHU/CU/017-001/0085/19657", corpus_real)
     assert r.resgate == "AHU_ACL_CU_017-01, Cx. 85, D. 19657-19674."
@@ -225,19 +242,47 @@ def test_cota_atual_da_base_ganha_a_cota_antiga_da_base(corpus_real):
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
 def test_aba_converte_e_envia_a_lista_do_ahu():
-    """De ponta a ponta no `app.py`: a aba converte, e o botão enche a caixa da aba Busca."""
+    """De ponta a ponta no `app.py`: a entrada única mostra as três cotas para copiar, o lote
+    converte várias, e os botões enchem a caixa da lista na aba Busca."""
     from streamlit.testing.v1 import AppTest
 
     from tests.test_ficha_app import RAIZ
 
     at = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=180)
     at.run()
-    caixa = next(t for t in at.text_area if t.key == "area_conversor")
-    caixa.input("PT/AHU/CU/017/0069/06420\nAHU-Rio de Janeiro, cx. 500, doc. 3").run()
+    entrada = next(t for t in at.text_input if t.key == "entrada_conversor")
+    entrada.input("AHU_ACL_CU_019, Cx. 3, D. 246").run()
     assert not at.exception, [e.value for e in at.exception]
-    assert any("1 convertida(s) · 1 sem conversão" in i.value for i in at.info)
+    codigos = [c.value for c in at.code]
+    assert "PT/AHU/CU/019/0003/00246" in codigos
+    assert "AHU-Rio Grande do Sul, cx. 4, doc. 24." in codigos
+    assert any("Reconhecido: **código atual**" in m.value for m in at.markdown)
 
     next(b for b in at.button if b.key == "conversor_para_lista").click().run()
     assert not at.exception, [e.value for e in at.exception]
     lista = next(t for t in at.text_area if t.key == "area_lista_ahu")
-    assert lista.value == "AHU_ACL_CU_017, Cx. 69, D. 6420."
+    assert lista.value == "AHU_ACL_CU_019, Cx. 3, D. 246."
+
+    lote = next(t for t in at.text_area if t.key == "area_conversor")
+    lote.input("PT/AHU/CU/017/0069/06420\nAHU-Rio de Janeiro, cx. 500, doc. 3").run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert any("1 convertida(s) · 1 sem conversão" in i.value for i in at.info)
+    next(b for b in at.button if b.key == "conversor_lote_para_lista").click().run()
+    lista = next(t for t in at.text_area if t.key == "area_lista_ahu")
+    assert lista.value == "AHU_ACL_CU_019, Cx. 3, D. 246.\nAHU_ACL_CU_017, Cx. 69, D. 6420."
+
+
+@pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
+def test_aba_escolhe_entre_varios_documentos_de_uma_cota_antiga():
+    from streamlit.testing.v1 import AppTest
+
+    from tests.test_ficha_app import RAIZ
+
+    at = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=180)
+    at.run()
+    next(t for t in at.text_input if t.key == "entrada_conversor").input(
+        "AHU-Rio de Janeiro, cx. 76, doc. 41.").run()
+    assert not at.exception, [e.value for e in at.exception]
+    escolha = next(s for s in at.selectbox if s.key == "escolha_conversor")
+    assert len(escolha.options) == 12
+    assert "PT/AHU/CU/017/0066/06200" in [c.value for c in at.code]
