@@ -5,9 +5,9 @@ e gráficos.
 O app lê **apenas** `app_dados/` (AGENTS.md 3), por `ahu.dados.carregar`, que recusa iniciar com
 artefato desalinhado (A4).
 
-Abas (§9): Busca · Pessoas · Amostras · Painel · Sobre e método. Busca e ficha são o WP 2.3;
-Pessoas e o painel diatópico, o WP 2.4. As que dependem da F3 e da F4 aparecem como "em breve",
-para que a navegação já seja a definitiva.
+Abas (§9): Busca · Pessoas · Amostras · Painel · Conversor · Sobre e método. Busca e ficha são o
+WP 2.3; Pessoas e o painel diatópico, o WP 2.4; o Conversor de cotas veio depois da v3.0. As
+que dependem da F3 e da F4 aparecem como "em breve", para que a navegação já seja a definitiva.
 
 Rodar:
     streamlit run app.py
@@ -22,6 +22,7 @@ import streamlit as st
 from ahu import amostras as mod_amostras
 from ahu import busca
 from ahu import consulta_onnx as mod_onnx
+from ahu import conversor as mod_conversor
 from ahu import estilo as mod_estilo
 from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
@@ -35,13 +36,18 @@ from ahu.dados import ErroDados, carregar
 
 TITULO = "Classificador AHU-Sul"
 SUBTITULO = "Triagem documental sobre o catálogo do Arquivo Histórico Ultramarino (coleção AHU-Sul)"
-ABAS = ("Busca", "Pessoas", "Amostras", "Painel", "Sobre e método")
+ABAS = ("Busca", "Pessoas", "Amostras", "Painel", "Conversor", "Sobre e método")
 
 # O que a caixa da lista de consulta mostra vazia (WP 3.3a).
 # O `display_text` do `LinkColumn` aceita uma expressão regular: o que estiver no grupo de
 # captura vira o texto do link. Assim a coluna mostra `PT/AHU/CU/021/0006/00390` e **leva** à
 # busca do DigitArq, sem a URL crua aparecer.
 RE_REFERENCIA = r"query=(.*?)&"
+
+EXEMPLO_DE_CONVERSAO = """PT/AHU/CU/017/0069/06420
+AHU_ACL_CU_021, Cx. 6, D. 390
+AHU-São Paulo-MGouveia, cx. 2, doc. 126
+AHU-Santa Catarina, cx. 13, doc. 46"""
 
 EXEMPLO_DE_LISTA = """# Dia 1
 AHU_ACL_CU_017, Cx. 5, D. 487 | ver anexo
@@ -1133,6 +1139,69 @@ def aba_painel(dados) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Conversor de cotas
+# ---------------------------------------------------------------------------
+
+def enviar_do_conversor_a_lista(cotas: str) -> None:
+    """Acrescenta as cotas convertidas à caixa "Colar cotas" da aba Busca.
+
+    É um `on_click`, e não um `if st.button(...)`, porque roda **antes** do script: a caixa da
+    lista já foi desenhada quando o script chega a esta aba, e o Streamlit recusa mudar o estado
+    de um widget já desenhado na mesma execução.
+    """
+    antigo = st.session_state.get("lista_ahu_texto", "")
+    novo = "\n".join(x for x in (antigo, cotas) if x.strip())
+    st.session_state.lista_ahu_texto = novo
+    st.session_state.area_lista_ahu = novo
+
+
+def aba_conversor(dados) -> None:
+    st.subheader("Conversor de cotas")
+    st.markdown(
+        "Converte uma cota em qualquer das três famílias — **código de referência** "
+        "(`PT/AHU/CU/…`), **cota do Resgate** (`AHU_ACL_CU_…`) e **cota antiga** "
+        "(`AHU-<região>, cx., doc.`) — nas outras duas. Funciona também com cotas que não estão "
+        "no catálogo.")
+    st.caption(
+        "Referência e Resgate são a mesma cota com outra grafia: a conversão é só formatação. "
+        "A cota antiga usa outra numeração de caixa e documento; ela só se converte pela base, "
+        "salvo nas coleções Castro e Almeida e Mendes Gouveia, que guardam a numeração atual.")
+
+    texto = st.text_area("Cotas (uma por linha, em qualquer formato)", key="area_conversor",
+                         height=160, placeholder=EXEMPLO_DE_CONVERSAO)
+    if texto.strip():
+        conversoes = mod_conversor.converter_lista(texto, dados)
+        convertidas = sum(c.convertida for c in conversoes)
+        st.info(f"{len(conversoes)} linha(s) · {convertidas} convertida(s) · "
+                f"{len(conversoes) - convertidas} sem conversão.")
+        tabela = mod_conversor.tabela(conversoes)
+        # Os avisos vão abaixo da tabela, não numa coluna: oito colunas não cabem ao lado da
+        # barra lateral, e um aviso escondido à direita é um aviso que ninguém lê.
+        st.dataframe(
+            tabela, width="stretch", hide_index=True,
+            column_order=[c for c in tabela.columns if c != "Avisos"],
+            column_config={
+                "DigitArq": st.column_config.LinkColumn("DigitArq", display_text="abrir",
+                                                        width="small"),
+            })
+        avisos = dict.fromkeys(f"**{c.entrada or '(vazia)'}** — {a}"
+                               for c in conversoes for a in c.avisos)
+        if avisos:
+            st.markdown("\n".join(f"- {a}" for a in avisos))
+        st.button("Enviar à lista do AHU", key="conversor_para_lista",
+                  disabled=not convertidas,
+                  on_click=enviar_do_conversor_a_lista,
+                  args=(mod_conversor.para_lista_ahu(conversoes),),
+                  help="Acrescenta as cotas convertidas à gaveta \"Colar cotas\" da aba Busca, "
+                       "de onde sai o PDF da lista de consulta.")
+
+    with gaveta("A cifra série-estado", "cifra"):
+        st.caption("As séries que o conversor conhece pelo nome. Uma série fora desta tabela "
+                   "ainda é convertida entre referência e Resgate, mas sem o nome do estado.")
+        tabela_estreita(mod_conversor.tabela_da_cifra())
+
+
+# ---------------------------------------------------------------------------
 # Sobre e método (§9)
 # ---------------------------------------------------------------------------
 
@@ -1199,7 +1268,7 @@ def main() -> None:
     dados = carregar_dados()
     consulta = consulta_atual(dados)
 
-    busca_, pessoas_, amostras_, painel_, sobre_ = st.tabs(ABAS)
+    busca_, pessoas_, amostras_, painel_, conversor_, sobre_ = st.tabs(ABAS)
     with busca_:
         aba_busca(dados, consulta)
     with pessoas_:
@@ -1208,6 +1277,8 @@ def main() -> None:
         aba_amostras(dados, consulta)
     with painel_:
         aba_painel(dados)
+    with conversor_:
+        aba_conversor(dados)
     with sobre_:
         aba_sobre(dados)
 

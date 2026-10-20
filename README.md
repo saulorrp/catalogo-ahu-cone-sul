@@ -16,6 +16,10 @@ e camadas de análise sobre eles.
 - **Pessoas**: lista de pessoas e lista separada de coletivos e instituições, página da pessoa com
   linha do tempo, tipologias e destinatários, e um painel diatópico por país de nascimento.
 - **Seleção** que atravessa buscas e sobrevive a um recarregamento (ela viaja na URL).
+- **Conversor de cotas**: código de referência (`PT/AHU/CU/…`), cota do Resgate (`AHU_ACL_CU_…`)
+  e cota antiga (`AHU-<região>, cx., doc.`) convertidos entre si, também para cotas de fora do
+  catálogo. A cota antiga só se converte pela base, salvo Castro e Almeida e Mendes Gouveia, que
+  guardam a numeração atual.
 - **Lista para consulta no AHU**, em PDF: a folha que se leva ao arquivo, com ano, cota, código de
   referência, resumo, link do DigitArq e uma caixa para marcar.
 - **Amostras**: diacrônica por pessoa e estratificada com semente visível, com exportação no

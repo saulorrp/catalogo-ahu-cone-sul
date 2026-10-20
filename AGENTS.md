@@ -105,7 +105,7 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F3 | 3.1 Seleção | feito, **refeito no R2** (teto de 500, atravessa buscas, espelho na URL) |
 | F3 | 3.2 Exportação CSV e JSON | **retirado pela D7** |
 | F3 | 3.3 Dossiê em PDF | **retirado pela D7**; A8 aposentado |
-| F3 | 3.3a Lista de consulta no AHU | feito, **refeito no R3** (7.050 de 7.051 cotas com código CRAV) |
+| F3 | 3.3a Lista de consulta no AHU | feito, **refeito no R3** (7.051 de 7.051 cotas com código CRAV desde a aba Conversor) |
 | F3 | 3.4 Link da busca | feito (A6 com cinco buscas variadas, de ponta a ponta) |
 | F3 | 3.5 Amostras e plano EINS | feito (A7 e A9) |
 | **F3** | **remodelada pelo plano v3.1** | |
@@ -123,6 +123,7 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F4 | 4.3 CI (GitHub Actions) | feito (.github/workflows/ci.yml com gate automatizado) |
 | F4 | 4.4 Versão e Zenodo | feito (v3.0.0 em pyproject.toml, CITATION.cff, docs/notas_de_versao_v3.md) |
 | **F4** | **completa** | **infraestrutura de avaliação, CI e versão 3.0.0 finalizadas** |
+| pós-3.0 | Aba Conversor de cotas | feito (`ahu/conversor.py`; referência ↔ Resgate ↔ cota antiga, em três níveis) |
 
 Atualize esta tabela ao concluir cada pacote.
 

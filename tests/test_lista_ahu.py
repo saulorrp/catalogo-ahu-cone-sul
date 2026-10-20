@@ -14,8 +14,9 @@ from ahu.dados import carregar_sem_cache
 from ahu.links import digitarq, referencia_crav
 from tests.conftest import APP_DADOS, tem_artefatos
 
-# O único documento do corpus sem código de referência derivável (ver o docstring).
-SEM_REFERENCIA_CONHECIDO = 1
+# Documentos do corpus sem código de referência derivável (ver o docstring). Era 1 até a aba
+# Conversor: a única exceção era uma cota Mendes Gouveia, que tem a numeração do Resgate.
+SEM_REFERENCIA_CONHECIDO = 0
 
 
 @pytest.fixture(scope="module")
@@ -42,6 +43,8 @@ def corpus_real():
     ("AHU_ACL_CU_017-01, Cx. 6, D. –1011-1015.", "PT/AHU/CU/017-001/0006/01011"),
     ("AHU_ACL_CU_017-01, Cx. 70, D. .16202", "PT/AHU/CU/017-001/0070/16202"),
     ("AHU_ACL_CU_003, Cx. 1, Doc. 100", "PT/AHU/CU/003/0001/00100"),
+    # cota antiga de numeração igual (aba Conversor, nível 2): Mendes Gouveia é a série 023-01
+    ("AHU-São Paulo-MGouveia, cx. 2, doc. 224.", "PT/AHU/CU/023-001/0002/00224"),
 ])
 def test_referencia_crav_normaliza_as_duas_familias(cota, esperado):
     assert referencia_crav(cota) == esperado
@@ -49,7 +52,7 @@ def test_referencia_crav_normaliza_as_duas_familias(cota, esperado):
 
 @pytest.mark.parametrize("cota", [
     None, "", "   ", "UNFORMATTED_CODE", "cota inventada",
-    "AHU-São Paulo-MGouveia, cx. 2, doc. 224.",       # cota antiga: não tem série
+    "AHU-São Paulo, cx. 26, doc. 8.",       # cota antiga comum: a numeração não é a atual
     "17",
 ])
 def test_cota_sem_codigo_derivavel_devolve_none(cota):
@@ -402,12 +405,15 @@ def test_encurtar_corta_no_espaco():
 def test_toda_cota_do_corpus_vira_referencia(corpus_real):
     """Cada documento do corpus produz um `PT/AHU/CU/…` válido.
 
-    A exceção documentada é o documento cuja única cota é antiga e por região: sem número de
-    série não há código CRAV, e o teste a conta em vez de a esconder.
+    Uma cota antiga comum não tem código CRAV derivável, e o teste contaria esses documentos em
+    vez de os esconder. Hoje não há nenhum: o único que só tinha cota antiga é de Mendes Gouveia
+    (`AHU-São Paulo-MGouveia, cx. 2, doc. 224.`), coleção de numeração igual à do Resgate.
     """
     import re
 
-    padrao = re.compile(r"^PT/AHU/CU/\d{3}(?:-\d{3})?/\d{4}/\d{5}$")
+    # Seis dígitos no documento: a base tem dois assim (`…/0072/168746`). Antes da aba Conversor
+    # eles saíam cortados em cinco (`…/16874`), o que não é a cota de ninguém.
+    padrao = re.compile(r"^PT/AHU/CU/\d{3}(?:-\d{3})?/\d{4}/\d{5,6}$")
     sem_referencia = []
     for uid in corpus_real.documentos["doc_uid"]:
         referencia = la.referencia_do_documento(corpus_real, uid)

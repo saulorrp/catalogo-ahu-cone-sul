@@ -141,10 +141,10 @@ def test_app_py_existe_e_e_python_valido():
     assert {"main", "aba_busca", "aba_sobre", "desenhar_ficha", "barra_lateral"} <= nomes
 
 
-def test_app_tem_as_cinco_abas_da_spec():
+def test_app_tem_as_abas_da_spec_e_o_conversor():
     import app
 
-    assert app.ABAS == ("Busca", "Pessoas", "Amostras", "Painel", "Sobre e método")
+    assert app.ABAS == ("Busca", "Pessoas", "Amostras", "Painel", "Conversor", "Sobre e método")
 
 
 def test_app_nao_tem_logica_de_negocio():
