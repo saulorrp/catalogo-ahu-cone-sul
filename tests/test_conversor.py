@@ -65,7 +65,9 @@ def test_subserie_de_numeracao_igual_e_nivel_2(entrada, referencia, resgate):
 def test_a_cifra_da_o_nome_e_a_serie_desconhecida_avisa():
     [rj] = cv.converter("PT/AHU/CU/017/0069/06420")
     assert rj.estado == "Rio de Janeiro" and not rj.avisos
-    [fora] = cv.converter("PT/AHU/CU/005/0135/10451")
+    [ba] = cv.converter("PT/AHU/CU/005/0135/10451")
+    assert ba.estado == "Bahia" and not ba.avisos
+    [fora] = cv.converter("PT/AHU/CU/001/0001/00001")
     assert fora.estado is None and "não está na cifra" in fora.avisos[0]
 
 
@@ -286,3 +288,19 @@ def test_aba_escolhe_entre_varios_documentos_de_uma_cota_antiga():
     escolha = next(s for s in at.selectbox if s.key == "escolha_conversor")
     assert len(escolha.options) == 12
     assert "PT/AHU/CU/017/0066/06200" in [c.value for c in at.code]
+
+
+@pytest.mark.parametrize("entrada, referencia", [
+    ("AHU_CU_011, Cx. 38, D. 3092.", "PT/AHU/CU/011/0038/03092"),
+    ("AHU_ACL_CU_005, Cx. 33. D 2968.", "PT/AHU/CU/005/0033/02968"),
+    ("AHU_CU_0005-01, Cx. 107, D. 20.836-20.840", "PT/AHU/CU/005-001/0107/20836"),
+])
+def test_variantes_dos_catalogos_impressos(entrada, referencia):
+    [c] = cv.converter(entrada)
+    assert c.referencia == referencia and not any("completada" in a for a in c.avisos)
+
+
+def test_a_cifra_cobre_as_series_do_brasil():
+    for codigo, nome in (("005-01", "Bahia, Castro e Almeida"), ("009", "Maranhão"),
+                         ("015", "Pernambuco"), ("089", "Conselho Ultramarino")):
+        assert cv.POR_CODIGO[codigo].nome == nome

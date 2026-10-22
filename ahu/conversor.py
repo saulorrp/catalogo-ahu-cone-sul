@@ -52,20 +52,44 @@ class Serie:
 
 SERIES: tuple[Serie, ...] = (
     Serie("003", "Brasil Geral"),
+    Serie("004", "Alagoas", "Alagoas"),
+    Serie("005", "Bahia", "Baía"),
+    # As duas coleções da Bahia sem cota antiga no catálogo: Castro e Almeida e Luísa da Fonseca.
+    Serie("005-01", "Bahia, Castro e Almeida"),
+    Serie("005-02", "Bahia, Luísa da Fonseca"),
+    Serie("006", "Ceará", "Ceará"),
+    Serie("007", "Espírito Santo"),
+    Serie("008", "Goiás"),
+    Serie("009", "Maranhão"),
+    Serie("010", "Mato Grosso", "Mato Grosso"),
+    Serie("011", "Minas Gerais", "Minas Gerais"),
     Serie("012", "Nova Colônia do Sacramento", "Nova Colónia do Sacramento"),
+    Serie("013", "Pará"),
+    Serie("014", "Paraíba", "Paraíba"),
+    Serie("015", "Pernambuco"),
+    Serie("016", "Piauí", "Piauí"),
     Serie("017", "Rio de Janeiro", "Rio de Janeiro"),
     Serie("017-01", "Rio de Janeiro, Castro e Almeida", "Rio de Janeiro-Calmeida",
           numeracao_igual=True),
+    Serie("018", "Rio Grande do Norte"),
     Serie("019", "Rio Grande do Sul", "Rio Grande do Sul"),
+    Serie("020", "Rio Negro"),
     Serie("021", "Santa Catarina", "Santa Catarina"),
+    Serie("022", "Sergipe d’el-Rei"),
     Serie("023", "São Paulo", "São Paulo"),
     Serie("023-01", "São Paulo, Mendes Gouveia", "São Paulo-MGouveia", numeracao_igual=True),
-    # 030 e 035 só aparecem na pasta "Ultramar", e nunca com cota antiga. Nome a confirmar.
-    Serie("030", "Ultramar"),
+    # 030 e 035 nunca trazem cota antiga. Na base do ahu-sul as duas estão na pasta "Ultramar";
+    # o catálogo do ACTD chama a 030 de "Serviço de Partes".
+    Serie("030", "Ultramar, Serviço de Partes"),
     Serie("035", "Ultramar"),
+    Serie("050", "Contratos do Sal", "Contratos do Sal"),
+    Serie("059", "Brasil-Limites", "Brasil-Limites"),
     Serie("065", "Montevidéu", "Montevidéu"),
     Serie("066", "Buenos Aires", "Buenos Aires"),
     Serie("071", "Paraguai", "Paraguai"),
+    Serie("081", "Sergipe", "Sergipe"),
+    Serie("084", "Visita do Ouro"),
+    Serie("089", "Conselho Ultramarino"),
 )
 POR_CODIGO = {s.codigo: s for s in SERIES}
 
@@ -119,9 +143,13 @@ _RE_REFERENCIA = re.compile(
 # vale qualquer separador que alguém digite ou cole: vírgula, ponto e vírgula, barra, contrabarra
 # (`AHU_ACL_CU_089, Cx. 10\Doc. 955`) ou barra vertical.
 _SEP = r"[\s,;:\\/|]*"
+# Aceita também as variantes dos catálogos impressos: `AHU_CU_011` (sem ACL), série com zero a
+# mais (`0005-01`), ponto antes do `D` (`Cx. 33. D 2968`) e milhar com ponto (`D. 20.836`).
+_NUM_DOC = r"(\d{1,3}(?:\.\d{3})+|\d+)"
 _RE_RESGATE = re.compile(
-    rf"AHU[_\s]*ACL[_\s]*CU[_\s]*(\d{{1,3}})(?:\s*-\s*(\d{{1,3}}))?{_SEP}(?:C\s*x\.?)?\s*(\d+){_SEP}"
-    r"D(?:oc(?:umento)?)?\.?[\s.\-–—]*(\d+)(?:\s*[-–—]{1,2}\s*(\d+))?", re.I)
+    rf"AHU[_\s]*(?:ACL[_\s]*)?CU[_\s]*0*?(\d{{1,3}})(?!\d)(?:\s*-\s*(\d{{1,3}}))?{_SEP}"
+    rf"(?:C\s*x\.?)?\s*(\d+)[\s,;:.\\/|]*"
+    rf"D(?:oc(?:umento)?)?\.?[\s.\-–—]*{_NUM_DOC}(?:\s*[-–—]{{1,2}}\s*{_NUM_DOC})?", re.I)
 # A cota antiga é lida sobre o texto dobrado (sem acento, minúsculo), porque a região vem com
 # grafias variadas: `Colónia`/`Colônia`, `SANTA-CATARINA`, `São Paulo, MGouveia`.
 _RE_ANTIGA_REGIAO = re.compile(r"\bahu\s*[-_]?\s*(?!acl\b)([a-z][a-z .\-]*?)\s*[,;_]")
@@ -156,7 +184,7 @@ def reconhecer_todas(texto: str | None) -> list[Cota]:
     m = _RE_RESGATE.search(texto)
     if m:
         serie, sub, caixa, doc, fim = m.groups()
-        fim = _int(fim)
+        doc, fim = doc.replace(".", ""), _int(fim and fim.replace(".", ""))
         return [Cota("resgate", int(caixa), int(doc), int(serie), _int(sub),
                      documento_fim=fim if fim and fim > int(doc) else None,
                      serie_curta=len(serie) < 3)]
