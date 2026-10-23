@@ -1,7 +1,8 @@
-# Imagem do Space do Hugging Face (tipo Docker). Também roda em qualquer serviço de contêiner.
+# Imagem do app. O GitHub a publica em ghcr.io/saulorrp/catalogo-ahu a cada mudança no main
+# (.github/workflows/imagem.yml); o servidor a roda com deploy/docker-compose.yml.
 FROM python:3.11-slim
 
-# O Hugging Face roda o contêiner com o uid 1000.
+# Usuário sem root.
 RUN useradd -m -u 1000 usuario
 WORKDIR /app
 
@@ -9,6 +10,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY --chown=usuario . .
+RUN mkdir -p /home/usuario/.cache/ahu-onnx && chown -R usuario /home/usuario/.cache
 USER usuario
 
 # O modelo ONNX da consulta é baixado na primeira busca semântica e fica aqui.
