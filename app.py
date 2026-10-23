@@ -15,6 +15,7 @@ Rodar:
 from __future__ import annotations
 
 import contextlib
+import os
 
 import pandas as pd
 import streamlit as st
@@ -187,6 +188,7 @@ def resposta_da_consulta(dados, consulta: Consulta):
     guardado = st.session_state.get("resposta_memoizada")
     if guardado is not None and guardado[0] == chave:
         return guardado[1]
+    st.session_state.modo_buscado = consulta.modo
     encoder = encoder_preguicoso(dados) if consulta.modo in ("automatico", "conceitual") else None
     resposta = executar(dados, consulta, encoder=encoder)
     st.session_state.resposta_memoizada = (chave, resposta)
@@ -215,6 +217,13 @@ def tema() -> str:
     except Exception:
         return "light"
 
+# A versão leve, para servidores gratuitos com pouca memória, liga isto (segredo do Streamlit
+# Cloud): a busca fica só por palavras e por cota, e o modelo semântico nunca é carregado.
+SEM_SEMANTICA = os.environ.get("AHU_SEM_SEMANTICA", "").strip().lower() in ("1", "sim", "true")
+AVISO_SEM_SEMANTICA = ("Esta é a versão leve do catálogo: a busca por sentido (modo Conceitual) "
+                       "não está disponível aqui, e a busca é feita por palavras e por cota.")
+
+
 @st.cache_resource(show_spinner="Carregando o modelo semântico (uma vez por sessão)...")
 def encoder_de_consulta(_dados):
     """O codificador da consulta, por **ONNX** (R7): nada de `torch` em execução.
@@ -232,6 +241,12 @@ def encoder_preguicoso(dados):
     carregamento à toa, e a carga fria da A10 estouraria. Se o download falhar, a busca
     conceitual avisa e as outras continuam funcionando.
     """
+    if SEM_SEMANTICA:
+        # Versão leve (Streamlit Community Cloud): sem o modelo, o app cabe nos 690 MiB.
+        if st.session_state.get("modo_buscado") == "conceitual":
+            st.info(AVISO_SEM_SEMANTICA, icon=":material/info:")
+        return None
+
     def encoder(textos):
         try:
             return encoder_de_consulta(dados)(textos)
@@ -1324,6 +1339,11 @@ def main() -> None:
     st.markdown(mod_estilo.CSS, unsafe_allow_html=True)
     st.title(TITULO)
     st.caption(SUBTITULO)
+    # No endereço antigo (streamlit.app), o segredo AHU_ENDERECO_NOVO aponta para o novo.
+    novo = os.environ.get("AHU_ENDERECO_NOVO")
+    if novo:
+        st.info(f"O catálogo mudou de endereço e agora cobre o Brasil todo: [{novo}]({novo})",
+                icon=":material/open_in_new:")
 
     dados = carregar_dados()
     consulta = consulta_atual(dados)

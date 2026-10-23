@@ -1,0 +1,37 @@
+# Catálogo AHU no servidor próprio (CasaOS ou qualquer Docker).
+# Passo a passo em deploy/SERVIDOR.md. Uso: docker compose up -d
+name: catalogo-ahu
+
+services:
+  app:
+    image: ghcr.io/saulorrp/catalogo-ahu:latest
+    restart: unless-stopped
+    ports:
+      - "8501:7860"            # na rede de casa: http://IP-DO-SERVIDOR:8501
+    volumes:
+      - modelo:/home/usuario/.cache/ahu-onnx   # o modelo da busca semântica, baixado uma vez
+    environment:
+      AHU_ONNX_CACHE: /home/usuario/.cache/ahu-onnx
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    mem_limit: 3g
+
+  # Confere a cada hora se o GitHub publicou uma imagem nova e reinicia o app com ela.
+  watchtower:
+    image: containrrr/watchtower:latest
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --label-enable --cleanup --interval 3600
+
+  # Endereço público https sem abrir portas no roteador. Precisa do token do túnel criado
+  # no painel da Cloudflare (Zero Trust → Networks → Tunnels), num arquivo .env ao lado:
+  #   CF_TUNNEL_TOKEN=eyJ...
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
+    depends_on: [ app ]
+
+volumes:
+  modelo:

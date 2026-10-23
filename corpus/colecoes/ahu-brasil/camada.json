@@ -1,0 +1,37 @@
+{
+  "nome": "base_ahu-brasil",
+  "tipo": "base",
+  "versao": "1",
+  "colecao": "ahu-brasil",
+  "processo": {
+    "script": "build/importar_colecao.py",
+    "versao_script": "1.0.0",
+    "commit": "fe76256"
+  },
+  "entrada": {
+    "arquivo": "documentos.parquet",
+    "sha256": "0bd3ecca78998d150f628bf775e83a9b169cd6f738687a1d9a29c8326c985e51"
+  },
+  "data": "2026-10-23T00:06:24+00:00",
+  "documentos": 160293,
+  "esquema": {
+    "doc_uid": "object",
+    "colecao": "object",
+    "folder": "object",
+    "description": "object",
+    "old_code": "object",
+    "new_code": "object",
+    "reference_code": "object",
+    "document_id_and_date": "object",
+    "ano_isolado": "Int64",
+    "extracted_typology": "object",
+    "sender_name": "object",
+    "recipient_name": "object",
+    "caminho_resgate": "object",
+    "url_actd": "object",
+    "pagina_actd": "float64",
+    "fonte_texto": "object",
+    "qc": "object"
+  },
+  "origem": "Arquivo Histórico Ultramarino (AHU): catálogos publicados no ACTD/IICT e no Projeto Resgate 'Barão do Rio Branco' (Biblioteca Nacional). Resumos e cotas pertencem a essas instituições e são creditados como tal."
+}

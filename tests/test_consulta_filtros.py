@@ -391,10 +391,13 @@ def test_destaque_do_topo_mede_o_quanto_o_melhor_se_separa():
 def test_filtros_nos_dados_reais():
     d = carregar_sem_cache(APP_DADOS)
     o = opcoes(d)
-    assert o["mostrar_colecao"] is False and o["colecoes"] == ["ahu-sul"]
-    assert o["documentos_sem_data"] == 186          # §6.1 cita este número
-    # 3.348 no dado bruto + 1 que a tabela de correções consertou ('OFICÍO' -> 'OFÍCIO').
-    assert dict(o["tipologias"])["OFÍCIO"] == 3349
+    assert o["mostrar_colecao"] is True and o["colecoes"] == ["ahu-brasil", "ahu-sul"]
+    assert o["documentos_sem_data"] == 2343
+    sul = d.documentos[d.documentos["colecao"] == "ahu-sul"]
+    assert int(sul["ano_isolado"].isna().sum()) == 186          # §6.1 cita este número
+    # No ahu-sul: 3.348 no dado bruto + 1 que a tabela de correções consertou ('OFICÍO').
+    assert int((sul["tipologia"] == "OFÍCIO").sum()) == 3349
+    assert dict(o["tipologias"])["OFÍCIO"] == 32440
     assert mod_filtros.escala_srsp(d) == [1, 9]
 
     # Os filtros que as lentes preenchiam continuam existindo sozinhos (D9).

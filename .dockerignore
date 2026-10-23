@@ -1,0 +1,9 @@
+.git
+corpus/
+legado/
+avaliacao/
+tests/
+docs/capturas/
+**/__pycache__
+.pytest_cache
+.ruff_cache

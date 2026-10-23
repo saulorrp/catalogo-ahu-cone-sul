@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import pickle
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -24,17 +23,51 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ahu.lexico import Lexico
+
 RAIZ = Path(__file__).resolve().parent.parent
 APP_DADOS = RAIZ / "app_dados"
 
 ARTEFATOS_PARQUET = ("documentos.parquet", "pessoas.parquet", "doc_pessoa.parquet",
                      "pdf_extra.parquet")
-ARTEFATOS = (*ARTEFATOS_PARQUET, "embeddings.f16.npy", "lexico.pkl")
+# Os vetores vêm em partes (`embeddings/parte_000.f16.npy`, ...) e o léxico numa pasta: o
+# manifesto lista cada arquivo. Estes são os que não podem faltar.
+ARTEFATOS = (*ARTEFATOS_PARQUET, "lexico/meta.json")
+PASTA_EMBEDDINGS = "embeddings"
 
 # D1: nunca na interface, nos filtros, no CSV nem no JSON. Só no dossiê em PDF.
 CAMPOS_SO_PDF = ("scribe_mediation_likely",)
 
 RECONSTRUIR = "Rode `python build/construir_app.py` para reconstruir os artefatos."
+
+
+class Vetores:
+    """Os vetores dos documentos, em partes lidas por `mmap`: nada vai inteiro para a memória.
+
+    Uma parte só tem menos de 100 MB (o limite de arquivo do GitHub). O cosseno é calculado
+    parte por parte, em blocos, para não converter a matriz inteira para float32 de uma vez.
+    """
+
+    BLOCO = 20_000
+
+    def __init__(self, partes: list[np.ndarray]):
+        self.partes = partes
+        dimensao = partes[0].shape[1] if partes and partes[0].ndim == 2 else 0
+        self.shape = (sum(p.shape[0] for p in partes), dimensao)
+        self.ndim = 2
+
+    def __len__(self) -> int:
+        return self.shape[0]
+
+    def produto(self, vetor: np.ndarray) -> np.ndarray:
+        saida = np.empty(len(self), dtype=np.float32)
+        inicio = 0
+        for parte in self.partes:
+            for a in range(0, parte.shape[0], self.BLOCO):
+                bloco = np.asarray(parte[a:a + self.BLOCO], dtype=np.float32)
+                saida[inicio + a: inicio + a + len(bloco)] = bloco @ vetor
+            inicio += parte.shape[0]
+        return saida
 
 
 class ErroDados(RuntimeError):
@@ -49,8 +82,8 @@ class Dados:
     pessoas: pd.DataFrame
     doc_pessoa: pd.DataFrame
     pdf_extra: pd.DataFrame
-    embeddings: np.ndarray
-    lexico: dict
+    embeddings: Vetores
+    lexico: Lexico
     manifesto: dict
     pasta: Path
     posicao: dict = field(repr=False, default_factory=dict)
@@ -112,16 +145,17 @@ def verificar_hashes(pasta: Path, manifesto: dict) -> None:
     if not esperados:
         raise ErroDados(f"O manifesto não lista os artefatos. {RECONSTRUIR}")
     for nome in ARTEFATOS:
+        if nome not in esperados:
+            raise ErroDados(f"O manifesto não registra o artefato {nome}. {RECONSTRUIR}")
+    for nome, esperado in esperados.items():
         caminho = pasta / nome
         if not caminho.exists():
             raise ErroDados(f"Artefato ausente: {caminho}. {RECONSTRUIR}")
-        if nome not in esperados:
-            raise ErroDados(f"O manifesto não tem o hash de {nome}. {RECONSTRUIR}")
         obtido = _sha256_arquivo(caminho)
-        if obtido != esperados[nome]:
+        if obtido != esperado:
             raise ErroDados(
                 f"{nome} mudou depois da construção: o manifesto espera "
-                f"{esperados[nome][:12]}... e o arquivo tem {obtido[:12]}.... {RECONSTRUIR}"
+                f"{esperado[:12]}... e o arquivo tem {obtido[:12]}.... {RECONSTRUIR}"
             )
 
 
@@ -156,14 +190,9 @@ def verificar_alinhamento(dados: dict, manifesto: dict) -> None:
                 f"A ordem dos uids de {nome} não é a registrada no manifesto. {RECONSTRUIR}"
             )
 
-    if lexico.get("doc_uids") != uids:
-        raise ErroDados(f"O léxico BM25 não está na ordem de documentos.parquet. {RECONSTRUIR}")
-    esperado = (manifesto.get("lexico") or {}).get("rank_bm25")
-    if esperado and lexico.get("rank_bm25") != esperado:
-        raise ErroDados(
-            f"O léxico foi gerado com rank-bm25 {lexico.get('rank_bm25')} e o manifesto diz "
-            f"{esperado}. {RECONSTRUIR}"
-        )
+    if len(lexico) != len(uids):
+        raise ErroDados(f"O léxico tem {len(lexico)} linhas e são {len(uids)} documentos. "
+                        f"{RECONSTRUIR}")
 
     orfaos = set(dados["doc_pessoa"]["doc_uid"]) - set(uids)
     if orfaos:
@@ -214,9 +243,9 @@ def carregar_sem_cache(pasta: Path | str = APP_DADOS) -> Dados:
     verificar_hashes(pasta, manifesto)
 
     dados = {nome.split(".")[0]: pd.read_parquet(pasta / nome) for nome in ARTEFATOS_PARQUET}
-    dados["embeddings"] = np.load(pasta / "embeddings.f16.npy", mmap_mode="r")
-    with open(pasta / "lexico.pkl", "rb") as f:
-        dados["lexico"] = pickle.load(f)
+    partes = sorted(n for n in manifesto["artefatos"] if n.startswith(f"{PASTA_EMBEDDINGS}/"))
+    dados["embeddings"] = Vetores([np.load(pasta / n, mmap_mode="r") for n in partes])
+    dados["lexico"] = Lexico(pasta, dados["documentos"]["doc_uid"].astype(str).tolist())
 
     verificar_alinhamento(dados, manifesto)
     verificar_regras(dados)

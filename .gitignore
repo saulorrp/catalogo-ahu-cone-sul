@@ -7,9 +7,9 @@ __pycache__/
 *.key
 perplexity_api_keys.txt
 *.pkl
-!app_dados/lexico.pkl
 *.npy
-!app_dados/embeddings.f16.npy
+!app_dados/embeddings/*.npy
+!app_dados/lexico/*.npy
 
 # Cache de modelos ONNX, se algum dia cair dentro do repositorio por engano (R7).
 /C/

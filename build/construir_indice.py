@@ -46,6 +46,7 @@ PREFIXO_DOCUMENTO = "passage: "
 PREFIXO_CONSULTA = "query: "
 MAX_TOKENS = 512
 TAMANHO_CHUNK = 128
+LIMIAR_GEMEO = 0.99  # cosseno entre dois documentos a partir do qual são quase duplicatas
 RECEITA_TEXTO = (
     'passage: <extracted_typology>. <sender_name>. <folder>. <description> '
     "(partes vazias são omitidas; separador '. ')"
@@ -179,9 +180,13 @@ def verificar_sanidade(
     for linha, i in enumerate(idx):
         topo = int(np.argmax(notas[linha]))
         propria = float(notas[linha, i])
+        # Num corpus grande há resumos quase iguais (a mesma carta patente copiada em dois
+        # catálogos): perder o 1º lugar para um vetor quase idêntico ao próprio não é erro.
+        gemeo = float(emb[topo].astype(np.float32) @ emb[i].astype(np.float32)) >= LIMIAR_GEMEO
         resultado.append({
             "doc_uid": str(df["doc_uid"].iloc[i]), "linha": i, "primeiro": topo == i,
-            "aceito": propria >= float(notas[linha, topo]) - tolerancia, "cosseno_proprio": round(propria, 4),
+            "aceito": propria >= float(notas[linha, topo]) - tolerancia or gemeo,
+            "cosseno_proprio": round(propria, 4),
         })
     return resultado
 
@@ -325,7 +330,7 @@ def construir_indice(
     corpus: Path, colecao: str | list[str] | None, modelo: str, encoder: Encoder,
     limite: int | None = None, forcar: bool = False, manter_parciais: bool = False,
     tamanho_chunk: int = TAMANHO_CHUNK, log: Callable[[str], None] = print,
-    desativar_outras: bool = False,
+    desativar_outras: bool = False, refazer_sanidade: bool = False,
 ) -> dict:
     """Indexa uma coleção, várias, ou (com `colecao=None`) todas as do manifesto, nessa ordem."""
     if colecao is None:
@@ -357,6 +362,16 @@ def construir_indice(
     textos = textos_da_base(df)
     hashes = [sha1(t) for t in textos]
 
+    if refazer_sanidade and indice_atualizado(pasta, hashes, uids):
+        emb = np.load(pasta / "embeddings.f16.npy")
+        sanidade = verificar_sanidade(df, emb, encoder)
+        camada = gravar_camada(pasta, df, emb, hashes, modelo, colecoes, sanidade, nome, amostra)
+        registrar_no_manifesto(corpus, pasta, camada, desativar_outras, log)
+        for s in sanidade:
+            log(f"  sanidade {s['doc_uid']}: {'OK' if s['aceito'] else 'FALHOU'} "
+                f"(cosseno {s['cosseno_proprio']})")
+        return {"nome": nome, "atualizado": False, "documentos": len(uids),
+                "sanidade_aprovada": camada["sanidade_aprovada"]}
     if not forcar and indice_atualizado(pasta, hashes, uids):
         log(f"O índice {nome} já está atualizado ({len(uids)} documentos). Use --forcar para refazer.")
         return {"nome": nome, "atualizado": False, "documentos": len(uids)}
@@ -396,6 +411,8 @@ def main() -> int:
     )
     ap.add_argument("--forcar", action="store_true")
     ap.add_argument("--manter-parciais", action="store_true")
+    ap.add_argument("--refazer-sanidade", action="store_true",
+                    help="índice já atualizado: só refaz a verificação de sanidade e o registro")
     ap.add_argument("--desativar-outras", action="store_true",
                     help="desativa no manifesto as outras camadas de embeddings ativas "
                          "(troca de modelo; WP 2.5)")
@@ -405,7 +422,8 @@ def main() -> int:
         encoder = criar_encoder(args.modelo, args.lote, args.dispositivo)
         r = construir_indice(Path(args.corpus), args.colecao, args.modelo, encoder, args.limite,
                              args.forcar, args.manter_parciais,
-                             desativar_outras=args.desativar_outras)
+                             desativar_outras=args.desativar_outras,
+                             refazer_sanidade=args.refazer_sanidade)
     except FileNotFoundError as e:
         print(f"ERRO: {e}", file=sys.stderr)
         return 1

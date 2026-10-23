@@ -4,7 +4,7 @@ Em execução o app não pode importar `torch` nem `sentence_transformers`: junt
 ~312 MiB de RSS antes de qualquer peso de modelo, e o Streamlit Community Cloud garante 690 MiB.
 Aqui a consulta é codificada com `onnxruntime` + `tokenizers`, que é tudo o que ela precisa.
 
-**Os documentos não são reindexados.** Os vetores de `app_dados/embeddings.f16.npy` continuam os
+**Os documentos não são reindexados.** Os vetores de `app_dados/embeddings/` continuam os
 que o `sentence-transformers` produziu na máquina do autor; o que muda é só quem codifica a
 *consulta*. Por isso a equivalência é cobrada por teste: cosseno ≥ 0,99 contra o
 `sentence-transformers` em ~30 consultas reais, e o mesmo top-10 em ≥ 90 % delas
@@ -57,13 +57,18 @@ BASE = os.environ.get("AHU_ONNX_BASE_URL", "https://huggingface.co/{repositorio}
 # lista densa. Para um instrumento de **triagem** isso é aceitável; para um teste de ranqueamento
 # não seria.
 #
-# `AHU_ONNX_ARQUIVO=onnx/model.onnx` volta ao fp32 sem tocar no código.
+# Com os 167 mil documentos da coleção ahu-brasil (23/10/2026) o app já não cabe nos 690 MiB
+# (956 MiB medidos com o int8) e vai para uma hospedagem com mais memória. A lista ficou tão
+# densa que o int8 dava o mesmo primeiro colocado em só 70 % das consultas; o fp32 passa nos
+# limites do teste de equivalência. O padrão voltou a ser o fp32.
+#
+# `AHU_ONNX_ARQUIVO=onnx/model_quantized.onnx` volta ao int8 sem tocar no código.
 ESPELHOS = {
     "intfloat/multilingual-e5-small": "Xenova/multilingual-e5-small",
     "intfloat/multilingual-e5-base": "Xenova/multilingual-e5-base",
     "intfloat/multilingual-e5-large": "Xenova/multilingual-e5-large",
 }
-ARQUIVO_MODELO = os.environ.get("AHU_ONNX_ARQUIVO", "onnx/model_quantized.onnx")
+ARQUIVO_MODELO = os.environ.get("AHU_ONNX_ARQUIVO", "onnx/model.onnx")
 ARQUIVOS = {"modelo": ARQUIVO_MODELO, "tokenizador": "tokenizer.json"}
 
 

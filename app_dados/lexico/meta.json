@@ -1,0 +1,34 @@
+{
+  "versao": "2",
+  "campos": [
+    "pessoas",
+    "destinatario",
+    "tipologia",
+    "descricao",
+    "pasta"
+  ],
+  "pesos": {
+    "pessoas": 2.0,
+    "destinatario": 1.5,
+    "tipologia": 1.5,
+    "descricao": 1.0,
+    "pasta": 0.5
+  },
+  "k1": 1.5,
+  "b": 0.75,
+  "documentos": 167344,
+  "avgdl": {
+    "pessoas": 1.2754923988909073,
+    "destinatario": 1.1267688115498613,
+    "tipologia": 1.0155249067788508,
+    "descricao": 29.08810593747012,
+    "pasta": 1.4190230901615832
+  },
+  "documentos_sem_token": {
+    "pessoas": 160294,
+    "destinatario": 160293,
+    "tipologia": 4676,
+    "descricao": 31,
+    "pasta": 12687
+  }
+}

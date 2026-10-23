@@ -175,7 +175,7 @@ def test_app_v2_preservado_no_legado():
 
 
 # ---------------------------------------------------------------------------
-# A1 sobre o corpus de verdade: todas as 7.051 fichas
+# A1 sobre o corpus de verdade: todas as 167.344 fichas
 # ---------------------------------------------------------------------------
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
@@ -203,13 +203,20 @@ def test_a1_em_todas_as_fichas_reais():
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
 def test_fichas_reais_tem_titulo_e_cota():
     dados = carregar_sem_cache(APP_DADOS)
-    sem_titulo, sem_cota, sem_link = 0, 0, 0
-    for uid in dados.documentos["doc_uid"]:
+    sem_titulo, sem_cota, sem_link, sem_link_brasil = 0, 0, 0, 0
+    for uid, pasta in zip(dados.documentos["doc_uid"], dados.documentos["folder"]):
         f = montar(dados, uid)
         sem_titulo += not f.titulo
         sem_cota += not f.cotas
-        sem_link += f.links.get("digitarq") is None
+        if f.links.get("digitarq") is None:
+            if uid.startswith("ahu-sul:"):
+                sem_link += 1
+            elif pasta not in ("Reino", "Códices"):
+                sem_link_brasil += 1
     assert sem_titulo == 0 and sem_cota == 0
+    # No ahu-brasil, a Série Reino e os Códices não têm cota por série, caixa e documento, e
+    # por isso nenhum link do DigitArq. Fora deles, sobram as cotas com erro de digitação.
+    assert sem_link_brasil <= 200
     # Só **um** documento fica sem link do DigitArq, e isso é correto: a sua única cota é antiga
     # e por região ("AHU-São Paulo-MGouveia, cx. 2, doc. 224"), sem número de série, e daí não
     # sai código CRAV nenhum. Os outros 12 que tinham `UNFORMATTED_CODE` no `reference_code`
