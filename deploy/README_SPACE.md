@@ -8,7 +8,7 @@ python_version: "3.11"
 app_file: space_app.py
 pinned: false
 license: mit
-short_description: Triagem documental do catálogo do Arquivo Histórico Ultramarino
+short_description: Triagem do catálogo do Arquivo Histórico Ultramarino
 ---
 
 Código, dados e documentação: https://github.com/saulorrp/catalogo-ahu-cone-sul
