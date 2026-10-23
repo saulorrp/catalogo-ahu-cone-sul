@@ -57,13 +57,18 @@ BASE = os.environ.get("AHU_ONNX_BASE_URL", "https://huggingface.co/{repositorio}
 # lista densa. Para um instrumento de **triagem** isso é aceitável; para um teste de ranqueamento
 # não seria.
 #
-# `AHU_ONNX_ARQUIVO=onnx/model.onnx` volta ao fp32 sem tocar no código.
+# Com os 167 mil documentos da coleção ahu-brasil (23/10/2026) o app já não cabe nos 690 MiB
+# (956 MiB medidos com o int8) e vai para uma hospedagem com mais memória. A lista ficou tão
+# densa que o int8 dava o mesmo primeiro colocado em só 70 % das consultas; o fp32 passa nos
+# limites do teste de equivalência. O padrão voltou a ser o fp32.
+#
+# `AHU_ONNX_ARQUIVO=onnx/model_quantized.onnx` volta ao int8 sem tocar no código.
 ESPELHOS = {
     "intfloat/multilingual-e5-small": "Xenova/multilingual-e5-small",
     "intfloat/multilingual-e5-base": "Xenova/multilingual-e5-base",
     "intfloat/multilingual-e5-large": "Xenova/multilingual-e5-large",
 }
-ARQUIVO_MODELO = os.environ.get("AHU_ONNX_ARQUIVO", "onnx/model_quantized.onnx")
+ARQUIVO_MODELO = os.environ.get("AHU_ONNX_ARQUIVO", "onnx/model.onnx")
 ARQUIVOS = {"modelo": ARQUIVO_MODELO, "tokenizador": "tokenizer.json"}
 
 
