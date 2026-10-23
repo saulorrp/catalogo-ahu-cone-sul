@@ -16,9 +16,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from ahu.texto import chave_nome  # noqa: E402
 
 
+SEM_ANOTACAO = {"", "unknown", "desconhecido", "n/a", "none"}
+
+
 def confere(extraido, anotado):
-    if not isinstance(anotado, str) or not anotado.strip():
+    """True, False, ou None quando não há anotação para comparar. "Unknown" na anotação e
+    nenhum nome no Gemini contam como acordo: os dois dizem que o resumo não traz o campo."""
+    if not isinstance(anotado, str):
         return None
+    if anotado.strip().lower() in SEM_ANOTACAO:
+        return not extraido
     if not extraido:
         return False
     a = chave_nome(anotado)
