@@ -263,3 +263,42 @@ def test_a2_lavradio_tem_163_documentos_na_camada_de_pessoas():
     assert int(pd.Series(lavradio.iloc[0]["n_documentos"]).iloc[0]) == 163
 
 
+
+
+# ---------------------------------------------------------------------------
+# Nota léxica: teto teórico, cobertura e proximidade
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def lexico_ordem(tmp_path):
+    """O caso de 23/10/2026: ORDENS régias e pessoas Francisco contra a Ordem Terceira."""
+    from types import SimpleNamespace
+
+    from ahu import lexico as lx
+    from ahu.texto import tokenizar
+    linhas = [
+        ("ORDEM", "", "ORDEM régia para pagar ao capitão Domingos Francisco"),
+        ("CARTA", "Francisco de Sousa", "CARTA de Francisco de Sousa sobre a terceira companhia"),
+        ("REQUERIMENTO", "", "REQUERIMENTO dos irmãos da Ordem Terceira de São Francisco"),
+        ("OFÍCIO", "", "OFÍCIO sobre a ordem do dia e a festa de São Francisco"),
+    ]
+    campos = {"tipologia": [tokenizar(t) for t, _, _ in linhas],
+              "pessoas": [tokenizar(p) for _, p, _ in linhas],
+              "descricao": [tokenizar(d) for _, _, d in linhas]}
+    lx.gravar(tmp_path, campos, {"tipologia": 1.5, "pessoas": 2.0, "descricao": 1.0}, {})
+    return SimpleNamespace(lexico=lx.Lexico(tmp_path, [f"d{i}" for i in range(len(linhas))]))
+
+
+def test_frase_inteira_vence_termo_solto_em_campo_curto(lexico_ordem):
+    notas = busca._notas_lexico(lexico_ordem, ["ordem", "terceira", "sao", "francisco"])
+    assert int(notas.argmax()) == 2
+
+
+def test_termos_em_sequencia_valem_mais_que_espalhados(lexico_ordem):
+    juntos = busca._fator_de_proximidade(lexico_ordem.lexico, ["sao", "francisco"])
+    assert juntos[2] == juntos[3] == 2.0 and juntos[0] == 1.0
+
+
+def test_frases_por_linha_marca_cada_frase(lexico_ordem):
+    achou = lexico_ordem.lexico.frases_por_linha(["ordem terceira", "sao francisco"])
+    assert achou.tolist() == [[False, False], [False, False], [True, True], [False, True]]

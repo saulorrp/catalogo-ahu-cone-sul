@@ -177,6 +177,31 @@ class Lexico:
                   for col, _ in self._vocab(campo, [termo]).values()]
         return np.unique(np.concatenate(partes)) if partes else np.zeros(0, dtype=np.int32)
 
+    def idf_maximo(self, tokens: Iterable[str]) -> dict[str, float]:
+        """O maior IDF de cada termo entre os campos (o termo raro pesa mais na cobertura)."""
+        tokens = list(dict.fromkeys(tokens))
+        idf: dict[str, float] = {}
+        for campo in self.campos:
+            for t, (_, valor) in self._vocab(campo, tokens).items():
+                idf[t] = max(idf.get(t, 0.0), valor)
+        return idf
+
+    def frases_por_linha(self, frases: list[str]) -> np.ndarray:
+        """Matriz linhas × frases: 1 onde a linha tem a frase literal em algum campo.
+
+        Uma só passada pelos textos do SQLite, qualquer que seja o número de frases.
+        """
+        achou = np.zeros((len(self), len(frases)), dtype=bool)
+        if not frases:
+            return achou
+        colunas = ", ".join("MAX(instr(norm, ?) > 0)" for _ in frases)
+        onde = " OR ".join("instr(norm, ?) > 0" for _ in frases)
+        for linha, *marcas in self._sql(
+                f"SELECT linha, {colunas} FROM texto WHERE {onde} GROUP BY linha",
+                [*frases, *frases]):
+            achou[linha] = marcas
+        return achou
+
     def mascara_de_frase(self, frase: str) -> np.ndarray:
         """Quem tem a sequência literal `frase` em algum campo normalizado."""
         mascara = np.zeros(len(self), dtype=bool)
