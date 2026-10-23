@@ -42,7 +42,7 @@ from datetime import date
 import pandas as pd
 
 from ahu import pdf as mod_pdf
-from ahu.links import digitarq, referencia_crav
+from ahu.links import digitarq, digitarq_do_documento, referencia_crav
 from ahu.links import limpar_cota as _limpar_cota
 
 TITULO = "Lista para consulta no AHU"
@@ -245,8 +245,10 @@ def relatorio(grupos: list[Grupo]) -> dict:
 def _dados_da_linha(dados, item: Item, numero: int) -> dict:
     """O que vai na linha do PDF: número, ano, cota, referência, resumo e link."""
     ano, resumo = "", ""
+    link = digitarq(item.referencia) if item.referencia else None
     if item.linhas:
         linha = dados.documentos.iloc[item.linhas[0]]
+        link = digitarq_do_documento(linha)[0] or link
 
         def valor(campo):
             v = linha.get(campo)
@@ -267,7 +269,7 @@ def _dados_da_linha(dados, item: Item, numero: int) -> dict:
         "cota": _limpar_cota(item.cota_digitada),
         "referencia": item.referencia or "",
         "resumo": resumo,
-        "digitarq": digitarq(item.referencia) if item.referencia else None,
+        "digitarq": link,
         "resgate": item.link_resgate,
     }
 

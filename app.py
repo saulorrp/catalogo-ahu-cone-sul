@@ -440,7 +440,7 @@ def desenhar_ficha(dados, doc_uid: str, termos: list[str], resultado=None) -> No
         help="Selecionar este documento. A seleção atravessa buscas.")
 
     with titulo.expander(f.titulo, expanded=False):
-        st.markdown(f.resumo_marcado)
+        st.markdown(f.resumo_marcado, unsafe_allow_html=True)
         if f.tipologia_a_revisar:
             st.caption("Tipologia fora do vocabulário canônico: a revisar.")
 
@@ -449,7 +449,8 @@ def desenhar_ficha(dados, doc_uid: str, termos: list[str], resultado=None) -> No
             colunas = st.columns([3, 9])
             colunas[0].markdown(f"<span class='rotulo'>{etiqueta}</span>", unsafe_allow_html=True)
             colunas[1].code(valor, language=None)
-        destinos = [f"[Ficha no DigitArq]({f.links['digitarq']})"] if f.links.get("digitarq") else []
+        destinos = ([f"[{f.links['digitarq_rotulo']}]({f.links['digitarq']})"]
+                    if f.links.get("digitarq") else [])
         destinos.append(f"[Portal do Projeto Resgate]({f.links['resgate']})")
         st.markdown(" · ".join(destinos))
 
@@ -1277,9 +1278,11 @@ def mostrar_conversao(dados, conversoes) -> None:
 
     for aviso in escolhida.avisos:
         st.caption(aviso)
-    links = mod_links.do_documento({"reference_code": escolhida.referencia,
-                                    "new_code": escolhida.resgate})
-    destinos = [f"[Ficha no DigitArq]({links['digitarq']})"] if links.get("digitarq") else []
+    links = mod_links.do_documento(
+        dados.documentos.iloc[escolhida.linha] if escolhida.linha is not None
+        else {"reference_code": escolhida.referencia, "new_code": escolhida.resgate})
+    destinos = ([f"[{links['digitarq_rotulo']}]({links['digitarq']})"]
+                if links.get("digitarq") else [])
     destinos.append(f"[Portal do Projeto Resgate]({links['resgate']})")
     st.markdown(" · ".join(destinos))
     if escolhida.linha is not None:
@@ -1301,7 +1304,7 @@ def conversor_em_lote(dados) -> None:
     convertidas = sum(c.convertida for c in conversoes)
     st.info(f"{len(conversoes)} linha(s) · {convertidas} convertida(s) · "
             f"{len(conversoes) - convertidas} sem conversão.")
-    tabela = mod_conversor.tabela(conversoes)
+    tabela = mod_conversor.tabela(conversoes, dados)
     # Os avisos vão abaixo da tabela, não numa coluna: oito colunas não cabem ao lado da barra
     # lateral, e um aviso escondido à direita é um aviso que ninguém lê.
     st.dataframe(

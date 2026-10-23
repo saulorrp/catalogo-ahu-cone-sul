@@ -164,9 +164,12 @@ def _sul(docs: pd.DataFrame) -> pd.DataFrame:
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
 def test_formatacao_reproduz_todos_os_pares_da_base(corpus_real):
-    """Resgate -> referência e referência -> Resgate -> referência, nos 7.038 pares."""
+    """Resgate -> referência e referência -> Resgate -> referência, nos 7.050 pares.
+
+    Eram 7.038; desde o build/cotas.py, os 12 documentos com `UNFORMATTED_CODE` ganham a
+    referência pelo `new_code` e entram aqui."""
     pares = _validos(_sul(corpus_real.documentos))
-    assert len(pares) == 7038
+    assert len(pares) == 7050
     erradas = []
     for referencia, resgate in zip(pares["reference_code"], pares["new_code"]):
         ida = cv.para_referencia(cv.reconhecer(resgate))

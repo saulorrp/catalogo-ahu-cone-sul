@@ -19,6 +19,7 @@ O que a ficha **nunca** tem:
 """
 from __future__ import annotations
 
+import html
 import re
 from dataclasses import dataclass, field
 
@@ -100,6 +101,23 @@ def marcar_termos(texto: str, termos: list[str], abre: str = "**", fecha: str = 
         return f"{abre}{palavra}{fecha}" if fonetica(normalizar_busca(palavra)) in alvos else palavra
 
     return re.sub(r"\w+", troca, texto)
+
+
+# Erros que já vêm da fonte (o texto do Projeto Resgate ou do ACTD, copiado como veio). O app não
+# os corrige: marca cada um com um [sic], para que se veja que o erro é da fonte e não do sistema.
+ERROS_DA_FONTE = [
+    re.compile(r"\bSão ?São\b"),                        # SS. (Santíssima) desdobrado duas vezes
+    re.compile(r"\b\w*([a-zà-ú])\1\1\w*"),                 # letra triplicada: Barrreto, possse
+    re.compile(r"\b(?:de|da|do|dos|das|ao|aos|par)(?=[A-ZÁÉÍÓÚÂÊÔÃÕ][a-zà-ú])\w+"),  # deTávora
+]
+SIC = '<span class="sic">[sic]</span>'
+
+
+def marcar_sic(texto: str) -> str:
+    """Põe um [sic] depois de cada erro conhecido da fonte, sem mudar o texto."""
+    for padrao in ERROS_DA_FONTE:
+        texto = padrao.sub(lambda m: m.group(0) + " " + SIC, texto)
+    return texto
 
 
 # ---------------------------------------------------------------------------
@@ -222,9 +240,9 @@ def montar(dados, doc_uid: str, termos: list[str] | None = None) -> Ficha:
         tipologia_a_revisar=not bool(_valor(linha, "typology_status")),
         pasta=str(pasta) if pasta is not None else None,
         resumo=resumo,
-        resumo_marcado=marcar_termos(resumo, termos or []),
+        resumo_marcado=marcar_sic(marcar_termos(html.escape(resumo, quote=False), termos or [])),
         cotas=cotas,
-        links=links.do_documento({c: _valor(linha, c) for c in ("reference_code", "new_code")}),
+        links=links.do_documento(linha),
         pessoas=pessoas,
         destinatario=str(_valor(linha, "recipient_name")) if _valor(
             linha, "recipient_name") is not None else None,

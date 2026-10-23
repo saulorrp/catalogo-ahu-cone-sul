@@ -118,6 +118,36 @@ deixá-los como estão na fonte, com uma marca de controle de qualidade visível
 A Série Reino e os Códices não têm cota no formato série/caixa/documento e ficam fora do
 conversor.
 
+### Conferência com o DigitArq e acertos na construção
+
+Em outubro de 2026 os links do app foram conferidos contra o DigitArq. Uma amostra de 400
+documentos achou 96% das referências; quase todas as falhas eram da série 017-01 (Rio de Janeiro,
+Castro e Almeida), onde o DigitArq descreve os documentos em intervalos
+(`PT/AHU/CU/017-001/0016/03426.03433`) que nem sempre começam onde começa o intervalo do catálogo.
+A busca pela referência do documento (`…/03429`) voltava vazia.
+
+Para resolver sem adivinhar, `coleta/scripts/varrer_digitarq.py` lista, pela API pública do
+DigitArq, todos os registros de todas as caixas citadas no corpus, e grava o índice em
+`corpus/digitarq_referencias.tsv.gz`. Na construção do app, `build/cotas.py` dá a cada documento o
+registro do DigitArq que tem o seu número: o mesmo início, ou um intervalo que o contém, de
+preferência na mesma caixa. Quando o DigitArq não tem registro com aquele número, o link do app
+leva à caixa ("Caixa no DigitArq"), e não a uma busca vazia.
+
+A mesma etapa faz dois acertos mecânicos nas cotas, contados em `app_dados/manifest.json`
+(`acertos`):
+
+- o `reference_code` é refeito pelo conversor atual a partir do `new_code`, o que corrige as
+  referências que uma versão antiga do conversor montara com a série errada (`000-501` em vez de
+  `005-001`, `001-003` em vez de `013`);
+- o cabeçalho de página que grudou em cerca de 3 mil cotas na extração (`… pasta 10. INSTRUMENTO DE
+  PESQUISA DOS DOCUMENTOS…`, `… D. 412. ARQUIVO HISTÓRICO ULTRAMARINO`) sai da cota.
+
+**Os resumos não são corrigidos.** Erros que já vêm da fonte ficam como estão, e o app os marca
+com um *[sic]* em vermelho escuro, para que se veja que vieram assim. São três tipos: a abreviatura
+`SS.` desdobrada duas vezes (`Ordem da SãoSão Trindade`, `nau São São Sacramento`, já assim nas
+páginas do Projeto Resgate no gov.br, catálogo de irmandades e ordens religiosas do Rio de Janeiro),
+letras triplicadas (`Barrreto`, `possse`) e preposição colada ao nome (`deTávora`, `daMatriz`).
+
 ## 7. Controle de qualidade
 
 Um script de conferência marca cada documento suspeito, sem alterar o texto. As marcas ficam no

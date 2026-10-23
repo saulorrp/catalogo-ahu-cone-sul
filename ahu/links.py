@@ -113,17 +113,44 @@ def issue_de_pessoa(pessoa_uid: str, nome: str, dado: str | None = None,
     return f"https://github.com/{repositorio or REPOSITORIO}/issues/new?{parametros}"
 
 
-def do_documento(documento) -> dict[str, str | None]:
-    """Os links de uma linha de `documentos.parquet`."""
+def _valor(documento, campo):
     import pandas as pd
 
-    def valor(campo):
-        v = documento.get(campo) if hasattr(documento, "get") else None
-        return None if v is None or pd.isna(v) else str(v)
+    v = documento.get(campo) if hasattr(documento, "get") else None
+    return None if v is None or (not isinstance(v, str) and pd.isna(v)) else str(v)
 
+
+def digitarq_do_documento(documento) -> tuple[str | None, bool]:
+    """(link do DigitArq, se o link é só da caixa) para uma linha de `documentos.parquet`.
+
+    O DigitArq descreve muitos documentos em intervalo, e o intervalo dele nem sempre começa onde
+    começa o do catálogo; aí a busca pela referência do documento volta vazia. Por isso o link vai,
+    nesta ordem, ao `referencia_digitarq` (o registro do DigitArq que contém o documento, posto
+    pelo `build/cotas.py`); à busca pela caixa, quando o índice foi consultado e não achou registro;
+    e à busca pela referência, quando a base não traz a coluna. A cota do Resgate entra como
+    reserva: há documentos com `UNFORMATTED_CODE` no `reference_code` e um `new_code` inteiro.
+    """
+    registro = _valor(documento, "referencia_digitarq")
+    if registro:
+        return DIGITARQ.format(cota=quote(registro, safe="")), False
+    referencia = None
+    for campo in ("reference_code", "new_code", "old_code"):
+        referencia = referencia_crav(_valor(documento, campo))
+        if referencia:
+            break
+    if referencia is None:
+        return None, False
+    consultado = hasattr(documento, "get") and "referencia_digitarq" in documento
+    if consultado:
+        return DIGITARQ.format(cota=quote(referencia.rsplit("/", 1)[0], safe="")), True
+    return DIGITARQ.format(cota=quote(referencia, safe="")), False
+
+
+def do_documento(documento) -> dict[str, str | None]:
+    """Os links de uma linha de `documentos.parquet`, e o rótulo do link do DigitArq."""
+    link, so_caixa = digitarq_do_documento(documento)
     return {
-        # A cota do Resgate entra como reserva: 13 documentos têm `UNFORMATTED_CODE` no
-        # `reference_code` e um `new_code` inteiro, e eles também merecem link (WP 3.3a).
-        "digitarq": digitarq(valor("reference_code")) or digitarq(valor("new_code")),
-        "resgate": resgate(valor("new_code")),
+        "digitarq": link,
+        "digitarq_rotulo": "Caixa no DigitArq" if so_caixa else "Ficha no DigitArq",
+        "resgate": resgate(_valor(documento, "new_code")),
     }

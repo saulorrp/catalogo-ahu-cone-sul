@@ -459,11 +459,17 @@ def converter_lista(texto: str, dados=None) -> list[Conversao]:
     return saida
 
 
-def tabela(conversoes: list[Conversao]):
-    """A tabela que a aba mostra. O link do DigitArq sai do código de referência."""
+def tabela(conversoes: list[Conversao], dados=None):
+    """A tabela que a aba mostra. O link do DigitArq sai do registro do documento, quando ele está
+    na base (`links.digitarq_do_documento`), e do código de referência quando não está."""
     import pandas as pd
 
-    from ahu.links import digitarq
+    from ahu.links import digitarq, digitarq_do_documento
+
+    def link(c):
+        if dados is not None and c.linha is not None:
+            return digitarq_do_documento(dados.documentos.iloc[c.linha])[0]
+        return digitarq(c.referencia) if c.referencia else None
 
     return pd.DataFrame([{
         "Entrada": c.entrada,
@@ -472,7 +478,7 @@ def tabela(conversoes: list[Conversao]):
         "Código de referência": c.referencia or "—",
         "Código atual": c.resgate or "—",
         "Código antigo": c.antiga or "—",
-        "DigitArq": digitarq(c.referencia) if c.referencia else None,
+        "DigitArq": link(c),
         "Avisos": " ".join(c.avisos),
     } for c in conversoes])
 

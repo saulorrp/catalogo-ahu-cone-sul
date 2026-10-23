@@ -219,11 +219,11 @@ def test_fichas_reais_tem_titulo_e_cota():
     # No ahu-brasil, a Série Reino e os Códices não têm cota por série, caixa e documento, e
     # por isso nenhum link do DigitArq. Fora deles, sobram as cotas com erro de digitação.
     assert sem_link_brasil <= 200
-    # Só **um** documento fica sem link do DigitArq, e isso é correto: a sua única cota é antiga
-    # e por região ("AHU-São Paulo-MGouveia, cx. 2, doc. 224"), sem número de série, e daí não
-    # sai código CRAV nenhum. Os outros 12 que tinham `UNFORMATTED_CODE` no `reference_code`
-    # passaram a ter link pelo `new_code` do Resgate, desde o WP 3.3a.
-    assert sem_link == 1
+    # Todo documento do ahu-sul tem link. Os 12 que tinham `UNFORMATTED_CODE` no `reference_code`
+    # o têm pelo `new_code` do Resgate (WP 3.3a), e o último, cuja única cota é a antiga
+    # "AHU-São Paulo-MGouveia, cx. 2, doc. 224", pelo `old_code`: na série 023-01 a numeração antiga
+    # é a atual, e o DigitArq tem `PT/AHU/CU/023-001/0002/00224` (conferido em 23/10/2026).
+    assert sem_link == 0
 
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
