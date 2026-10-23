@@ -39,7 +39,11 @@ from ahu.dados import ErroDados, carregar
 TITULO = "Catálogo AHU-Brasil"
 SUBTITULO = ("Busca e triagem nos resumos do Arquivo Histórico Ultramarino sobre o Brasil "
              "colonial, com as cotas para chegar ao documento no Projeto Resgate e no DigitArq")
-ABAS = ("Busca", "Pessoas", "Amostras", "Painel", "Conversor", "Sobre e método", "Referências")
+# Duas seções: o catálogo geral, simples, e a coleção enriquecida, com tudo o que depende das
+# camadas dela (pessoas, DeepSeek, biografias).
+SECOES = ("Catálogo", "AHU-Sul enriquecido")
+ABAS_CATALOGO = ("Busca", "Conversor", "Referências", "Sobre e método")
+ABAS_ENRIQUECIDAS = ("Busca enriquecida", "Pessoas", "Amostras", "Painel")
 
 # O que a caixa da lista de consulta mostra vazia (WP 3.3a).
 # O `display_text` do `LinkColumn` aceita uma expressão regular: o que estiver no grupo de
@@ -89,9 +93,9 @@ def tamanho_do_banco(dados) -> None:
         "e o Prata, a maioria na série Rio de Janeiro) traz metadados enriquecidos: pessoas "
         "identificadas, tipologia revisada e variáveis sociolinguísticas. A coleção "
         f"**ahu-brasil** ({milhar(len(docs) - sul)} documentos) é o catálogo do AHU como "
-        "publicado: resumo, data, série e cota. A aba Pessoas e os dados sociolinguísticos "
-        "valem só para a ahu-sul; "
-        "o filtro Coleção, na Busca, separa as duas."
+        "publicado: resumo, data, série e cota. A busca por pessoas, pelas inferências "
+        "sociolinguísticas e pela origem do remetente, as amostras e o painel ficam na seção "
+        "**AHU-Sul enriquecido**, logo abaixo."
     )
 
 def milhar(n: int) -> str:
@@ -289,14 +293,17 @@ def encoder_preguicoso(dados):
 # Controles
 # ---------------------------------------------------------------------------
 
-def barra_lateral(dados, consulta: Consulta) -> Consulta:
-    """A tabela de filtros da §6.1. Devolve a consulta com o que o usuário mexeu."""
+def barra_lateral(dados, consulta: Consulta, enriquecida: bool) -> Consulta:
+    """A tabela de filtros da §6.1. Devolve a consulta com o que o usuário mexeu.
+
+    No catálogo geral, só os filtros que valem para todo documento. Na seção enriquecida, a
+    coleção é fixa e entram os filtros de pessoas, do DeepSeek e de origem."""
     opcoes = mod_filtros.opcoes(dados)
     f = consulta.filtros
 
     with st.sidebar:
         st.markdown("### Filtros")
-        if opcoes["mostrar_colecao"]:
+        if opcoes["mostrar_colecao"] and not enriquecida:
             f.colecoes = st.multiselect("Coleção", opcoes["colecoes"], default=f.colecoes)
 
         if opcoes["ano_minimo"] is not None:
@@ -313,68 +320,76 @@ def barra_lateral(dados, consulta: Consulta) -> Consulta:
             "Tipologia", [t for t, _ in opcoes["tipologias"]], default=f.tipologias,
             format_func=lambda t: f"{t} ({dict(opcoes['tipologias'])[t]})")
 
-        pessoas = opcoes["pessoas"]
-        rotulo_de = {p["pessoa_uid"]: f"{p['nome']} ({p['n_documentos']})" for p in pessoas}
-        f.pessoas = st.multiselect(
-            "Remetentes", [p["pessoa_uid"] for p in pessoas], default=f.pessoas,
-            format_func=lambda u: rotulo_de.get(u, u),
-            help="Nome principal, variantes e títulos.")
-        f.destinatario = st.text_input("Destinatário contém", value=f.destinatario or "") or None
-
-        with gaveta("Inferências do DeepSeek (começam desligadas)", "deepseek"):
-            f.categorias = st.multiselect("Categoria social",
-                                          [c for c, _ in opcoes["categorias"]], default=f.categorias)
-            f.vetores = st.multiselect("Vetor", [v for v, _ in opcoes["vetores"]],
-                                       default=f.vetores)
-            escala = opcoes["escala_srsp"]
-            usar_srsp = st.checkbox("Filtrar por SRSP",
-                                    value=f.srsp_de is not None or f.srsp_ate is not None)
-            if usar_srsp:
-                de, ate = st.slider("SRSP", escala[0], escala[1],
-                                    (f.srsp_de or escala[0], f.srsp_ate or escala[1]), step=1)
-                f.srsp_de, f.srsp_ate = de, ate
-            else:
-                f.srsp_de = f.srsp_ate = None
-            faixas = opcoes["faixas_srsp"]
-            st.caption(f"Faixas: {faixas['baixo'][0]}–{faixas['baixo'][1]} · "
-                       f"{faixas['medio'][0]}–{faixas['medio'][1]} · "
-                       f"{faixas['alto'][0]}–{faixas['alto'][1]}.")
-            with st.popover("? Saiba mais", width="stretch"):
-                st.markdown(
-                    "**O que são as inferências:**\n\n"
-                    "Estimativas do modelo DeepSeek v3 em regime *zero-shot*, aplicadas ao resumo "
-                    "do catálogo (e não ao manuscrito original). Elas produzem a categoria social "
-                    "do remetente, o vetor de comunicação, o impacto da tipologia e a pontuação "
-                    "SRSP de 1 a 9.\n\n"
-                    "**Auditoria do SRSP (preprint §2.1):**\n\n"
-                    "MAE 1,13 · r = 0,48 · viés +0,59 · N = 705 · avaliador único. "
-                    "Diferenças de ±1 ponto não são distinguíveis.\n\n"
-                    "**Mediação notarial:**\n\n"
-                    "> \"Essa inferência, contudo, é metodologicamente delicada, por mais que seja uma "
-                    "informação fundamental para a linguística diacrônica (uma vez que a escolaridade "
-                    "variável desses notários coloniais atuava como um filtro permeável, ora favorecendo "
-                    "a hipercorreção, ora permitindo o escape indeliberado da sintaxe local), a sua "
-                    "classificação de forma puramente heurística é perigosa. Não é possível atestar tal "
-                    "mediação de forma categórica sem um extenso estudo paleográfico e diplomático do "
-                    "manuscrito original.\"\n\n"
-                    "[Preprint no SciELO Preprints](https://doi.org/10.1590/SciELOPreprints.16461)"
-                )
-
-        with gaveta("Origem do remetente", "origem"):
-            f.paises_origem = st.multiselect("País (atual)", opcoes["paises_origem"],
-                                             default=f.paises_origem)
-            f.cidades_origem = st.multiselect("Cidade de nascimento", opcoes["cidades_origem"],
-                                              default=f.cidades_origem)
-            f.so_confianca_alta = st.checkbox(
-                "Só confiança ALTA", value=f.so_confianca_alta,
-                help="Desmarcada: ALTA e MÉDIA. Nunca BAIXA nem rejeitada.")
+        if enriquecida:
+            filtros_enriquecidos(opcoes, f)
 
         if st.button("Limpar filtros", width="stretch"):
-            guardar(Consulta(texto=consulta.texto, modo=consulta.modo, rigor=consulta.rigor))
+            limpos = Consulta(texto=consulta.texto, modo=consulta.modo, rigor=consulta.rigor)
+            limpos.filtros = limpos.filtros.para_secao(enriquecida)
+            guardar(limpos)
             st.rerun()
 
     consulta.filtros = f
     return consulta
+
+def filtros_enriquecidos(opcoes, f) -> None:
+    """Os filtros que só a coleção enriquecida responde: remetente, destinatário, as inferências
+    do DeepSeek e a origem do remetente."""
+    pessoas = opcoes["pessoas"]
+    rotulo_de = {p["pessoa_uid"]: f"{p['nome']} ({p['n_documentos']})" for p in pessoas}
+    f.pessoas = st.multiselect(
+        "Remetentes", [p["pessoa_uid"] for p in pessoas], default=f.pessoas,
+        format_func=lambda u: rotulo_de.get(u, u),
+        help="Nome principal, variantes e títulos.")
+    f.destinatario = st.text_input("Destinatário contém", value=f.destinatario or "") or None
+
+    with gaveta("Inferências do DeepSeek (começam desligadas)", "deepseek"):
+        f.categorias = st.multiselect("Categoria social",
+                                      [c for c, _ in opcoes["categorias"]], default=f.categorias)
+        f.vetores = st.multiselect("Vetor", [v for v, _ in opcoes["vetores"]],
+                                   default=f.vetores)
+        escala = opcoes["escala_srsp"]
+        usar_srsp = st.checkbox("Filtrar por SRSP",
+                                value=f.srsp_de is not None or f.srsp_ate is not None)
+        if usar_srsp:
+            de, ate = st.slider("SRSP", escala[0], escala[1],
+                                (f.srsp_de or escala[0], f.srsp_ate or escala[1]), step=1)
+            f.srsp_de, f.srsp_ate = de, ate
+        else:
+            f.srsp_de = f.srsp_ate = None
+        faixas = opcoes["faixas_srsp"]
+        st.caption(f"Faixas: {faixas['baixo'][0]}–{faixas['baixo'][1]} · "
+                   f"{faixas['medio'][0]}–{faixas['medio'][1]} · "
+                   f"{faixas['alto'][0]}–{faixas['alto'][1]}.")
+        with st.popover("? Saiba mais", width="stretch"):
+            st.markdown(
+                "**O que são as inferências:**\n\n"
+                "Estimativas do modelo DeepSeek v3 em regime *zero-shot*, aplicadas ao resumo "
+                "do catálogo (e não ao manuscrito original). Elas produzem a categoria social "
+                "do remetente, o vetor de comunicação, o impacto da tipologia e a pontuação "
+                "SRSP de 1 a 9.\n\n"
+                "**Auditoria do SRSP (preprint §2.1):**\n\n"
+                "MAE 1,13 · r = 0,48 · viés +0,59 · N = 705 · avaliador único. "
+                "Diferenças de ±1 ponto não são distinguíveis.\n\n"
+                "**Mediação notarial:**\n\n"
+                "> \"Essa inferência, contudo, é metodologicamente delicada, por mais que seja uma "
+                "informação fundamental para a linguística diacrônica (uma vez que a escolaridade "
+                "variável desses notários coloniais atuava como um filtro permeável, ora favorecendo "
+                "a hipercorreção, ora permitindo o escape indeliberado da sintaxe local), a sua "
+                "classificação de forma puramente heurística é perigosa. Não é possível atestar tal "
+                "mediação de forma categórica sem um extenso estudo paleográfico e diplomático do "
+                "manuscrito original.\"\n\n"
+                "[Preprint no SciELO Preprints](https://doi.org/10.1590/SciELOPreprints.16461)"
+            )
+
+    with gaveta("Origem do remetente", "origem"):
+        f.paises_origem = st.multiselect("País (atual)", opcoes["paises_origem"],
+                                         default=f.paises_origem)
+        f.cidades_origem = st.multiselect("Cidade de nascimento", opcoes["cidades_origem"],
+                                          default=f.cidades_origem)
+        f.so_confianca_alta = st.checkbox(
+            "Só confiança ALTA", value=f.so_confianca_alta,
+            help="Desmarcada: ALTA e MÉDIA. Nunca BAIXA nem rejeitada.")
 
 def barra_de_busca(consulta: Consulta) -> Consulta:
     """§9: a busca no topo."""
@@ -501,9 +516,12 @@ def secao_de_resultados(dados, consulta: Consulta, resposta) -> None:
                "\"Barão do Rio Branco\".")
 
 
-def aba_busca(dados, consulta: Consulta) -> None:
+def aba_busca(dados, consulta: Consulta, enriquecida: bool = False) -> None:
+    if enriquecida:
+        st.caption("Busca só nos documentos da coleção ahu-sul, com os filtros de pessoas, "
+                   "das inferências do DeepSeek e da origem do remetente na barra lateral.")
     consulta = barra_de_busca(consulta)
-    consulta = barra_lateral(dados, consulta)
+    consulta = barra_lateral(dados, consulta, enriquecida)
     guardar(consulta)
 
     resposta = resposta_da_consulta(dados, consulta)
@@ -826,7 +844,7 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
 
     acoes = st.columns([2, 3, 2])
     acoes[0].link_button("Ver documentos", pagina.url_documentos, width="stretch",
-                         help="Abre a aba Busca com o filtro desta pessoa aplicado.")
+                         help="Abre a Busca enriquecida com o filtro desta pessoa aplicado.")
     if acoes[1].button("Gerar amostra diacrônica", width="stretch",
                        help="Ordem cronológica, em lotes de 10, com espaçamento por ano (§7.2)."):
         st.session_state.amostra_pessoa = p.pessoa_uid
@@ -861,7 +879,7 @@ def pagina_da_pessoa(dados, pessoa_uid: str) -> None:
                 "ano": "Ano", "tipologia": "Tipologia", "destinatario": "Destinatário",
                 "autoria_verificada": "Autoria verificada"}),
             width="stretch", hide_index=True)
-        st.caption("A ficha completa de cada documento está na aba Busca, pelo botão "
+        st.caption("A ficha completa de cada documento está na Busca enriquecida, pelo botão "
                    "\"Ver documentos\".")
 
 
@@ -948,7 +966,7 @@ def amostra_diacronica_na_tela(dados, consulta: Consulta) -> None:
 
 def amostra_estratificada_na_tela(dados, consulta: Consulta) -> None:
     st.caption(
-        "Sorteio sobre o **resultado atual da busca** (busca + filtros da aba Busca), com 1 ou 2 "
+        "Sorteio sobre o **resultado atual da busca** (busca + filtros da Busca enriquecida), com 1 ou 2 "
         "estratos e N documentos por estrato. A semente fica visível e editável: a mesma semente "
         "dá a mesma amostra (§7.3, A7).")
 
@@ -1334,9 +1352,9 @@ def aba_sobre(dados) -> None:
         "aparece no meio de uma frase, o documento vem primeiro, e o resto da frase segue a "
         "busca normal.\n"
         "- **Palavras.** Procura as palavras da consulta no resumo e nos campos do documento e "
-        "ordena os resultados pela frequência e pela raridade de cada termo. Os campos têm pesos: pessoas 2,0, "
-        "destinatário 1,5, tipologia 1,5, resumo "
-        "1,0 e pasta 0,5. Grafias antigas e acentos são normalizados (`ph`→`f`, `y`→`i`). "
+        "ordena os resultados pela frequência e pela raridade de cada termo. Os campos têm "
+        "pesos: pessoas 2,0, destinatário 1,5, tipologia 1,5, resumo 1,0 e pasta 0,5. "
+        "Grafias antigas e acentos são normalizados (`ph`→`f`, `y`→`i`). "
         "Aspas pedem a frase exata.\n"
         "- **Sentido (semântica).** Compara o significado da consulta com o de cada resumo, com o "
         "modelo multilíngue `multilingual-e5-small`. Acha documentos que tratam do assunto com "
@@ -1479,6 +1497,22 @@ def aba_referencias() -> None:
 # Principal
 # ---------------------------------------------------------------------------
 
+def seletor_de_secao(consulta: Consulta) -> str:
+    """Catálogo geral ou coleção enriquecida. Um link com filtros da coleção enriquecida abre
+    direto nela. Ao trocar de seção, os filtros passam a ser os que a nova seção entende."""
+    if "secao" not in st.session_state:
+        st.session_state.secao = SECOES[1] if consulta.filtros.enriquecidos() else SECOES[0]
+    secao = st.radio("Seção", SECOES, key="secao", horizontal=True,
+                     label_visibility="collapsed")
+    enriquecida = secao == SECOES[1]
+    filtros = consulta.filtros.para_secao(enriquecida)
+    if filtros != consulta.filtros:
+        from ahu.consulta import asdict_raso
+        nova = Consulta(**{**asdict_raso(consulta), "pagina": 1})
+        nova.filtros = filtros
+        guardar(nova)
+    return secao
+
 def main() -> None:
     st.set_page_config(page_title=TITULO, page_icon=":material/history_edu:", layout="wide")
     st.markdown(mod_estilo.CSS, unsafe_allow_html=True)
@@ -1494,21 +1528,29 @@ def main() -> None:
     tamanho_do_banco(dados)
     consulta = consulta_atual(dados)
 
-    busca_, pessoas_, amostras_, painel_, conversor_, sobre_, referencias_ = st.tabs(ABAS)
-    with busca_:
-        aba_busca(dados, consulta)
-    with pessoas_:
-        aba_pessoas(dados)
-    with amostras_:
-        aba_amostras(dados, consulta)
-    with painel_:
-        aba_painel(dados)
-    with conversor_:
-        aba_conversor(dados)
-    with sobre_:
-        aba_sobre(dados)
-    with referencias_:
-        aba_referencias()
+    enriquecida = seletor_de_secao(consulta) == SECOES[1]
+    consulta = st.session_state.consulta
+
+    if not enriquecida:
+        busca_, conversor_, referencias_, sobre_ = st.tabs(ABAS_CATALOGO)
+        with busca_:
+            aba_busca(dados, consulta)
+        with conversor_:
+            aba_conversor(dados)
+        with referencias_:
+            aba_referencias()
+        with sobre_:
+            aba_sobre(dados)
+    else:
+        busca_, pessoas_, amostras_, painel_ = st.tabs(ABAS_ENRIQUECIDAS)
+        with busca_:
+            aba_busca(dados, consulta, enriquecida=True)
+        with pessoas_:
+            aba_pessoas(dados)
+        with amostras_:
+            aba_amostras(dados, consulta)
+        with painel_:
+            aba_painel(dados)
 
 if __name__ == "__main__":
     main()

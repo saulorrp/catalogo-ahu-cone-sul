@@ -144,8 +144,9 @@ def test_app_py_existe_e_e_python_valido():
 def test_app_tem_as_abas_da_spec_e_o_conversor():
     import app
 
-    assert app.ABAS == ("Busca", "Pessoas", "Amostras", "Painel", "Conversor", "Sobre e método",
-                         "Referências")
+    assert app.SECOES == ("Catálogo", "AHU-Sul enriquecido")
+    assert app.ABAS_CATALOGO == ("Busca", "Conversor", "Referências", "Sobre e método")
+    assert app.ABAS_ENRIQUECIDAS == ("Busca enriquecida", "Pessoas", "Amostras", "Painel")
 
 
 def test_app_nao_tem_logica_de_negocio():
@@ -309,11 +310,19 @@ def test_app_sobe_sem_excecao_e_tem_as_abas():
     at.run()
     assert not at.exception, [e.value for e in at.exception]
     assert at.title[0].value == "Catálogo AHU-Brasil"
-    assert [t.label for t in at.tabs] == list(__import__("app").ABAS)
+    app = __import__("app")
+    assert [t.label for t in at.tabs] == list(app.ABAS_CATALOGO)
     # A aba Sobre mostra as camadas lidas do manifesto, não escritas no código.
     textos = " ".join(m.value for m in at.markdown)
     assert "Camadas e versões ativas" in textos
     assert "MAE 1.13" in textos or "MAE 1,13" in textos
+    # O catálogo geral não mostra os filtros da coleção enriquecida.
+    assert "O que são as inferências" not in textos
+
+    at.radio(key="secao").set_value(app.SECOES[1]).run()
+    assert not at.exception, [e.value for e in at.exception]
+    assert [t.label for t in at.tabs] == list(app.ABAS_ENRIQUECIDAS)
+    textos = " ".join(m.value for m in at.markdown)
     # R5: popover de saiba mais com explicação e ressalva metodológica do preprint
     assert "O que são as inferências" in textos
     assert "Essa inferência, contudo, é metodologicamente delicada" in textos
