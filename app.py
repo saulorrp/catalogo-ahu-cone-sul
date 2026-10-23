@@ -39,13 +39,16 @@ from ahu.dados import ErroDados, carregar
 TITULO = "Catálogo AHU-Brasil"
 SUBTITULO = ("Busca e triagem nos resumos do Arquivo Histórico Ultramarino sobre o Brasil "
              "colonial, com as cotas para chegar ao documento no Projeto Resgate e no DigitArq")
-ABAS = ("Busca", "Pessoas", "Amostras", "Painel", "Conversor", "Sobre e método")
+ABAS = ("Busca", "Pessoas", "Amostras", "Painel", "Conversor", "Sobre e método", "Referências")
 
 # O que a caixa da lista de consulta mostra vazia (WP 3.3a).
 # O `display_text` do `LinkColumn` aceita uma expressão regular: o que estiver no grupo de
 # captura vira o texto do link. Assim a coluna mostra `PT/AHU/CU/021/0006/00390` e **leva** à
 # busca do DigitArq, sem a URL crua aparecer.
 RE_REFERENCIA = r"query=(.*?)&"
+
+URL_REPOSITORIO = "https://github.com/saulorrp/catalogo-ahu-cone-sul"
+URL_METODO = URL_REPOSITORIO + "/blob/main/docs/METODO_COLETA.md"
 
 EXEMPLO_DE_CONVERSAO = "AHU_ACL_CU_019, Cx. 3, D. 246"
 EXEMPLO_DE_LOTE = """PT/AHU/CU/017/0069/06420
@@ -1342,6 +1345,32 @@ def aba_sobre(dados) -> None:
             f"{auditoria.get('avaliadores')} avaliador. {auditoria.get('nota', '')}"
         )
 
+    st.markdown("#### De onde vêm os dados")
+    st.markdown(
+        "**Coleta.** Os resumos e as cotas da coleção ahu-brasil vêm dos catálogos que o próprio "
+        "AHU publica em PDF de texto no ACTD (35 séries relativas ao Brasil), lidos por programa. "
+        "As páginas do Projeto Resgate no gov.br foram rastreadas e salvas como vieram. Elas dão o "
+        "link de cada documento no Resgate, conferem o texto do ACTD e cobrem o que ele não tem "
+        "(Códices, parte da Série Reino, Sergipe).\n\n"
+        "**Catálogos só escaneados.** Bahia, São Paulo, Minas Gerais e Pará só existiam no "
+        "Resgate como imagens do catálogo impresso, e Pernambuco, Maranhão e Colônia como PDFs "
+        "com OCR pouco confiável. Essas páginas foram transcritas automaticamente pelo Gemini "
+        "Flash, com regras de transcrição literal. As páginas que o modelo recusou passaram pelo "
+        "Tesseract e foram corrigidas pelo Gemini olhando a imagem. Quando se achou o texto nativo "
+        "do AHU no ACTD, ele virou a fonte, e a transcrição passou a servir de conferência.\n\n"
+        "**Cura das cotas.** As cotas vêm escritas de muitos jeitos (`AHU_CU_` sem `ACL`, "
+        "`0005-01`, `D. 20.836`). O conversor do app normaliza todas numa chave "
+        "série/caixa/documento e calcula daí a cota do Resgate e o código de referência do AHU. "
+        "Cerca de 849 cotas repetidas e 310 verbetes sem cota ficaram como estão na fonte, com "
+        "aviso, em vez de receberem um número adivinhado.\n\n"
+        "**Controle de qualidade.** Cada documento suspeito recebe uma marca, sem alteração do "
+        "texto: sem data, cota repetida, fora de sequência, texto que diverge entre ACTD e "
+        "Resgate. São 4.424 de 167.324 verbetes (2,6%). Nos 49.173 pares em que as duas fontes "
+        "descrevem a mesma cota, 97,2% dos textos têm similaridade acima de 0,9.\n\n"
+        "Nenhum resumo foi escrito ou reescrito por IA. O passo a passo completo, com números e "
+        f"decisões, está em [METODO_COLETA.md]({URL_METODO}). Fontes e links na aba Referências."
+    )
+
     st.markdown("#### O que sai daqui")
     st.markdown(
         "Uma coisa só: a **lista para consulta no AHU**, em PDF, montada da seleção ou de uma "
@@ -1355,6 +1384,69 @@ def aba_sobre(dados) -> None:
     st.markdown("#### Licença")
     st.markdown("Código: MIT. Dados derivados: CC BY 4.0 (provisório). "
                 "Resumos e cotas: AHU e Projeto Resgate \"Barão do Rio Branco\".")
+
+REFERENCIAS = """
+#### Arquivo Histórico Ultramarino (AHU)
+Arquivo em Lisboa, criado em 1931, que guarda a documentação da administração ultramarina
+portuguesa. O núcleo usado aqui é o fundo do **Conselho Ultramarino** (1642–1833), o órgão que
+despachava os assuntos das colônias: requerimentos, ofícios, consultas, cartas de governadores e
+de câmaras. Os documentos avulsos estão organizados por **série** (em geral, uma capitania),
+**caixa** e **documento**, e é isso que a cota registra. Hoje o AHU faz parte da Direção-Geral do
+Livro, dos Arquivos e das Bibliotecas (DGLAB).
+- Site do AHU: <https://ahu.dglab.gov.pt/>
+- Catálogo do AHU no DigitArq, onde se busca pelo código de referência (`PT/AHU/CU/…`):
+  <https://digitarq.ahu.arquivos.pt/>
+
+#### Catálogos do AHU no ACTD
+O **Arquivo Científico Tropical Digital** (ACTD), do antigo Instituto de Investigação Científica
+Tropical (IICT, hoje Universidade de Lisboa), publica os catálogos dos documentos avulsos do
+Conselho Ultramarino, série por série, em PDF com texto. É a **fonte principal** dos resumos e das
+cotas da coleção ahu-brasil.
+- ACTD: <https://actd.iict.pt/>
+- Ficha de uma série: `https://actd.iict.pt/view/actd:CUc<série>` (ex.: `actd:CUc015`, Pernambuco)
+
+#### Projeto Resgate "Barão do Rio Branco"
+Projeto brasileiro, criado nos anos 1990, que localizou, catalogou e **microfilmou** a
+documentação sobre o Brasil colonial guardada em arquivos estrangeiros, sobretudo no AHU. Os
+catálogos, um por capitania, dão a cada documento a cota `AHU_ACL_CU_…`, usada neste app. As
+imagens dos microfilmes foram digitalizadas e estão na internet.
+- Página do projeto: <https://www.gov.br/bn/pt-br/central-de-conteudos/projeto-resgate>
+- Instrumentos de pesquisa (catálogos por capitania):
+  <https://www.gov.br/bn/pt-br/central-de-conteudos/projeto-resgate/novos-instrumentos-de-pesquisa>
+- Códices, avulsos e séries:
+  <https://www.gov.br/bn/pt-br/central-de-conteudos/projeto-resgate/catalogo-de-verbetes-codices-avulsos-e-series>
+- Catálogos temáticos (mulheres, escravidão, irmandades, povos indígenas, semiárido, Rio da Prata):
+  <https://www.gov.br/bn/pt-br/central-de-conteudos/projeto-resgate/catalogos-tematicos>
+- **Documentos digitalizados (microfilmes):**
+  <https://resgate.bn.gov.br/docreader/docmulti.aspx?bib=resgate>. O servidor costuma recusar
+  acessos de fora do Brasil.
+
+#### Biblioteca Nacional (BN)
+A Fundação Biblioteca Nacional, no Rio de Janeiro, mantém o portal do Projeto Resgate e as imagens
+digitalizadas. Na sua Hemeroteca Digital estão os *Anais da Biblioteca Nacional*, onde saiu o
+inventário de Castro e Almeida dos documentos sobre o Brasil no antigo Arquivo de Marinha e
+Ultramar, base das séries "Castro e Almeida" da Bahia e do Rio de Janeiro.
+- Biblioteca Nacional: <https://www.gov.br/bn/pt-br>
+- BN Digital: <https://bndigital.bn.gov.br/>
+- Hemeroteca Digital: <https://memoria.bn.gov.br/>
+
+#### As três formas de cota
+- **Cota do Resgate:** `AHU_ACL_CU_017, Cx. 69, D. 6420`. Série 017 (Rio de Janeiro), caixa 69,
+  documento 6420.
+- **Código de referência:** `PT/AHU/CU/017/0069/06420`. O mesmo documento, no padrão do DigitArq.
+- **Cota antiga:** `AHU-Rio de Janeiro, cx. 76, doc. 41`. A numeração anterior ao Resgate, que
+  aparece em trabalhos mais antigos. Só se converte pela base, porque a numeração mudou.
+
+#### Este projeto
+- Rocha, S. R. P. *Desenvolvimento de um Classificador do Catálogo do AHU…* SciELO Preprints, 2026.
+  <https://doi.org/10.1590/SciELOPreprints.16461>
+- Código e dados: <{repositorio}>
+- Método de coleta, transcrição e cura das cotas: <{metodo}>
+"""
+
+def aba_referencias() -> None:
+    st.subheader("Referências")
+    st.markdown(REFERENCIAS.format(repositorio=URL_REPOSITORIO, metodo=URL_METODO))
 
 # ---------------------------------------------------------------------------
 # Principal
@@ -1375,7 +1467,7 @@ def main() -> None:
     tamanho_do_banco(dados)
     consulta = consulta_atual(dados)
 
-    busca_, pessoas_, amostras_, painel_, conversor_, sobre_ = st.tabs(ABAS)
+    busca_, pessoas_, amostras_, painel_, conversor_, sobre_, referencias_ = st.tabs(ABAS)
     with busca_:
         aba_busca(dados, consulta)
     with pessoas_:
@@ -1388,6 +1480,8 @@ def main() -> None:
         aba_conversor(dados)
     with sobre_:
         aba_sobre(dados)
+    with referencias_:
+        aba_referencias()
 
 if __name__ == "__main__":
     main()
