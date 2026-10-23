@@ -1,10 +1,10 @@
 name: Hugging Face Space
 
-# A cada mudança no main, envia o app ao Space. Precisa do segredo HF_TOKEN (token de escrita)
-# e da variável HF_SPACE (ex.: saulorrp/catalogo-ahu). Sem eles, o job não faz nada.
+# A cada mudança no main, envia o app ao Space. Precisa do segredo HF_TOKEN (token de escrita);
+# sem ele, o job não faz nada. A variável HF_SPACE troca o Space de destino.
 on:
   push:
-    branches: [ main ]
+    branches: [ main, claude/busca-em-disco ]
   workflow_dispatch:
 
 jobs:
@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      HF_SPACE: ${{ vars.HF_SPACE }}
+      HF_SPACE: ${{ vars.HF_SPACE || 'saulorrp/ahu_classificador' }}
     steps:
       - uses: actions/checkout@v4
         if: env.HF_TOKEN != '' && env.HF_SPACE != ''
