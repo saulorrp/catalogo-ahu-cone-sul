@@ -26,7 +26,8 @@ O banco tem duas camadas:
   confiável. Essas páginas foram transcritas automaticamente (Gemini Flash, transcrição literal;
   páginas recusadas passaram pelo Tesseract e foram corrigidas pelo Gemini olhando a imagem).
   Quando se achou o texto nativo do AHU no ACTD, ele virou a fonte, e a transcrição passou a
-  servir de conferência.
+  servir de conferência: em 61 mil verbetes comparados pela cota, o texto confere em 97%
+  ([relatório](coleta/qc/RELATORIO_CONFERENCIA_OCR.md)).
 - **Cura das cotas.** O conversor ([`ahu/conversor.py`](ahu/conversor.py)) reconhece as variantes
   das fontes (`AHU_CU_` sem `ACL`, `0005-01`, `D. 20.836`), normaliza numa chave
   série/caixa/documento e calcula a cota do Resgate e o código de referência. Cerca de 849 cotas
@@ -39,7 +40,8 @@ O banco tem duas camadas:
   Resgate. Nenhum resumo foi escrito ou reescrito por IA.
 
 O passo a passo completo, com números e decisões, está em
-[`docs/METODO_COLETA.md`](docs/METODO_COLETA.md). Fontes e links também na aba **Referências** do
+[`docs/METODO_COLETA.md`](docs/METODO_COLETA.md), e os scripts da coleta, publicados como rodaram,
+em [`coleta/`](coleta/). Fontes e links também na aba **Referências** do
 app.
 
 ## O que o app faz

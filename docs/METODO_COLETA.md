@@ -64,8 +64,19 @@ Para esses volumes montou-se uma esteira de **transcrição automatizada**:
 **Como isso entrou no banco.** No meio do trabalho achou-se que o próprio AHU publica o texto
 desses catálogos no ACTD. Como o texto nativo do arquivo é mais confiável que qualquer OCR, ele
 virou a fonte do resumo e da cota, e a transcrição automatizada passou a servir de
-**conferência**: ela não alimenta o texto da coleção. O OCR gratuito dos Códices do Conselho
-Ultramarino segue em andamento, e a parte paga foi interrompida por decisão de custo.
+**conferência**: ela não alimenta o texto da coleção. A parte paga foi interrompida por decisão de
+custo. O OCR gratuito dos Códices do Conselho Ultramarino, que não estão no ACTD, segue em
+andamento: para eles o OCR é a única fonte de texto.
+
+**Resultado da conferência (23/10/2026).** O script `coleta/scripts/conferir_ocr.py` comparou,
+pela cota, 74.696 verbetes transcritos com o verbete do mesmo documento no banco. Fora o Maranhão,
+cujo catálogo impresso abrevia o texto (REQ., cap.) e por isso não se compara palavra a palavra,
+são 61.478 pares, e o texto confere (similaridade ≥ 0,9) em 97,1% deles. Nos volumes da Bahia,
+de Pernambuco e de São Paulo a mediana fica entre 0,99 e 1,000; no Pará e na Colônia, perto de
+0,96. O ano confere em 99,9% dos verbetes da Bahia e entre 81% e 100% nos outros volumes. É uma
+estimativa por baixo, porque o número do verbete às vezes é lido como ano. Os 232 verbetes marcados pelo
+QC que o OCR alcança confirmam, em geral, o texto do ACTD, e o OCR traz o ano de 49 dos 102 marcados
+"sem data". O relatório completo está em `coleta/qc/RELATORIO_CONFERENCIA_OCR.md`.
 
 ## 5. Junção e identificadores
 
@@ -139,9 +150,10 @@ Nos 49.173 pares em que ACTD e Resgate descrevem a mesma cota, a similaridade me
 
 - **No repositório:** o código do app, o conversor de cotas, a importação, os índices, os testes e
   os dados derivados (`corpus/`, `app_dados/`, CC BY 4.0).
-- **Ainda fora do repositório:** os scripts de coleta, os leitores dos catálogos, o script de
-  controle de qualidade e o kit de OCR. Eles estão na pasta de trabalho do projeto e devem ser
-  publicados aqui, numa pasta `coleta/`.
+- **Coleta:** os scripts de coleta, os leitores dos catálogos, o controle de qualidade, a
+  conferência do OCR e os scripts de OCR estão em [`coleta/`](../coleta/), publicados como rodaram.
+- **Ainda fora do repositório:** as páginas baixadas, as imagens e o texto do OCR, por tamanho.
+  Podem ser refeitos com os scripts.
 - **Direitos:** resumos e cotas pertencem ao Arquivo Histórico Ultramarino e ao Projeto Resgate,
   que são creditados em cada documento. O que este projeto acrescenta é a organização, a
   normalização das cotas, as marcas de qualidade e, na ahu-sul, as camadas de análise.
