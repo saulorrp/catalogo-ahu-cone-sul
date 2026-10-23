@@ -416,3 +416,15 @@ def test_filtro_de_srsp_alto_nos_dados_reais():
     alto = Filtros(srsp_de=7, srsp_ate=9).mascara(d)
     srsp = d.documentos["vernacular_score"]
     assert int(alto.sum()) == int(((srsp >= 7) & (srsp <= 9)).sum()) == 141
+
+
+def test_filtros_por_secao():
+    """O catálogo geral desliga os filtros da coleção enriquecida; a seção dela fixa a coleção."""
+    from ahu.filtros import Filtros
+
+    f = Filtros(ano_de=1750, pessoas=["pes:1"], srsp_de=7, srsp_ate=9, colecoes=["ahu-sul"])
+    assert f.enriquecidos()
+    geral = f.para_secao(False)
+    assert geral.ano_de == 1750 and geral.pessoas == [] and geral.srsp_de is None
+    assert geral.colecoes == [] and not geral.enriquecidos()
+    assert Filtros(ano_de=1750).para_secao(True).colecoes == ["ahu-sul"]

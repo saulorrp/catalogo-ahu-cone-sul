@@ -392,6 +392,7 @@ def test_app_tem_a_aba_amostras_funcionando():
     at.query_params["q"] = "AHU_ACL_CU_017, Cx. 5, D. 487"
     at.query_params["m"] = "exata"
     at.run()
+    at.radio(key="secao").set_value(__import__("app").SECOES[1]).run()
     assert not at.exception, [e.value for e in at.exception]
 
     # A aba de amostras não é mais "em breve": há um radio com os dois tipos.

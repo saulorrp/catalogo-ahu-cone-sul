@@ -32,6 +32,11 @@ NOTA_SRSP = ("SRSP do DeepSeek v3, auditado no preprint §2.1: MAE 1,13 · r = 0
 
 # Filtros que vêm de inferência de IA: começam desligados (preprint §4).
 CAMPOS_DEEPSEEK = ("categorias", "vetores", "impactos", "srsp_de", "srsp_ate")
+# Filtros que só a coleção enriquecida (pessoas, DeepSeek, biografias) sabe responder. Ficam na
+# seção própria dela, e a busca do catálogo geral os ignora.
+COLECAO_ENRIQUECIDA = "ahu-sul"
+CAMPOS_ENRIQUECIDOS = ("pessoas", "destinatario", *CAMPOS_DEEPSEEK,
+                       "paises_origem", "cidades_origem", "so_confianca_alta")
 
 
 @dataclass
@@ -65,6 +70,26 @@ class Filtros:
     def usa_deepseek(self) -> bool:
         padrao = Filtros()
         return any(getattr(self, c) != getattr(padrao, c) for c in CAMPOS_DEEPSEEK)
+
+    def enriquecidos(self) -> bool:
+        """Algum filtro da coleção enriquecida está ligado, ou a busca já está restrita a ela."""
+        padrao = Filtros()
+        return (self.colecoes == [COLECAO_ENRIQUECIDA]
+                or any(getattr(self, c) != getattr(padrao, c) for c in CAMPOS_ENRIQUECIDOS))
+
+    def para_secao(self, enriquecida: bool) -> "Filtros":
+        """Os filtros como cada seção os entende. A enriquecida busca só na sua coleção; o
+        catálogo geral desliga os filtros que dependem das camadas dela."""
+        padrao = Filtros()
+        novos = Filtros(**{f.name: getattr(self, f.name) for f in fields(self)})
+        if enriquecida:
+            novos.colecoes = [COLECAO_ENRIQUECIDA]
+        else:
+            for campo in CAMPOS_ENRIQUECIDOS:
+                setattr(novos, campo, getattr(padrao, campo))
+            if novos.colecoes == [COLECAO_ENRIQUECIDA]:
+                novos.colecoes = []
+        return novos
 
     def ativos(self) -> dict:
         """Só o que está diferente do padrão — é o que vai para a URL e para a proveniência."""

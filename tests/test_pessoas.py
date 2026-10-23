@@ -336,15 +336,17 @@ def test_grafico_vazio_nao_quebra():
 def test_app_abre_a_aba_pessoas_e_o_painel_sem_excecao():
     from streamlit.testing.v1 import AppTest
 
+    import app as modulo
+
     at = AppTest.from_file(str(APP_DADOS.parent / "app.py"), default_timeout=180)
     at.run()
+    at.radio(key="secao").set_value(modulo.SECOES[1]).run()
     assert not at.exception, [e.value for e in at.exception]
     textos = " ".join(m.value for m in at.markdown) + " ".join(c.value for c in at.caption)
     assert "Coletivos e instituições" in " ".join(
         str(r.options) for r in at.radio) or "Painel diatópico" in textos
-    # As abas continuam sendo as da §9, mais o Conversor: a aba Pessoas não criou aba no topo.
-    import app as modulo
-    assert [t.label for t in at.tabs] == list(modulo.ABAS)
+    # Pessoas e Painel ficam na seção da coleção enriquecida, sem abas a mais.
+    assert [t.label for t in at.tabs] == list(modulo.ABAS_ENRIQUECIDAS)
 
 
 # ---------------------------------------------------------------------------
