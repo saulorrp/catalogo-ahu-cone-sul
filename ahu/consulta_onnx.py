@@ -4,7 +4,7 @@ Em execução o app não pode importar `torch` nem `sentence_transformers`: junt
 ~312 MiB de RSS antes de qualquer peso de modelo, e o Streamlit Community Cloud garante 690 MiB.
 Aqui a consulta é codificada com `onnxruntime` + `tokenizers`, que é tudo o que ela precisa.
 
-**Os documentos não são reindexados.** Os vetores de `app_dados/embeddings.f16.npy` continuam os
+**Os documentos não são reindexados.** Os vetores de `app_dados/embeddings/` continuam os
 que o `sentence-transformers` produziu na máquina do autor; o que muda é só quem codifica a
 *consulta*. Por isso a equivalência é cobrada por teste: cosseno ≥ 0,99 contra o
 `sentence-transformers` em ~30 consultas reais, e o mesmo top-10 em ≥ 90 % delas

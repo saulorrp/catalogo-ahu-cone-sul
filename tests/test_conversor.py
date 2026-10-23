@@ -13,7 +13,8 @@ from tests.conftest import APP_DADOS, tem_artefatos
 
 # Erro de catálogo conhecido: `AHU_ACL_CU_0-21,Cx. 2, D. 90.` está na pasta Santa Catarina com a
 # série 000-021. O conversor o trata como dado, sem regra própria.
-SERIES_COM_ERRO_NA_BASE = {"000-21"}
+# Erros de digitação dos catálogos (ex.: `017-00` por `017-01`): 11 documentos em 167 mil.
+SERIES_COM_ERRO_NA_BASE = {"000", "000-01", "000-21", "017-00", "023-21"}
 # A pasta da base escreve "Montividéu"; a cifra usa a grafia corrente.
 GRAFIA_DA_PASTA = {"Montividéu": "Montevidéu"}
 
@@ -155,10 +156,16 @@ def _validos(docs: pd.DataFrame) -> pd.DataFrame:
     return docs[(docs["reference_code"] != "UNFORMATTED_CODE") & docs["new_code"].notna()]
 
 
+def _sul(docs: pd.DataFrame) -> pd.DataFrame:
+    """Os testes de pares conferem a base do ahu-sul, cujas cotas vêm do DigitArq. As do
+    ahu-brasil foram geradas por este mesmo conversor, e conferi-las seria circular."""
+    return docs[docs["colecao"] == "ahu-sul"]
+
+
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
 def test_formatacao_reproduz_todos_os_pares_da_base(corpus_real):
     """Resgate -> referência e referência -> Resgate -> referência, nos 7.038 pares."""
-    pares = _validos(corpus_real.documentos)
+    pares = _validos(_sul(corpus_real.documentos))
     assert len(pares) == 7038
     erradas = []
     for referencia, resgate in zip(pares["reference_code"], pares["new_code"]):
@@ -171,7 +178,7 @@ def test_formatacao_reproduz_todos_os_pares_da_base(corpus_real):
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
 def test_nivel_2_reproduz_calmeida_e_mgouveia_da_base(corpus_real):
-    docs = corpus_real.documentos
+    docs = _sul(corpus_real.documentos)
     antigas = docs[docs["old_code"].fillna("").str.contains("Calmeida|gouveia", case=False)]
     assert len(antigas) == 98
     for antiga, referencia in zip(antigas["old_code"], antigas["reference_code"]):
@@ -191,7 +198,10 @@ def test_a_cifra_confere_com_as_pastas_da_base(corpus_real):
     """
     docs = _validos(corpus_real.documentos)
     for resgate, pasta in zip(docs["new_code"], docs["folder"]):
-        codigo = cv.reconhecer(resgate).codigo_serie
+        cota = cv.reconhecer(resgate)
+        if cota is None or cota.codigo_serie is None:  # cota com erro de digitação
+            continue
+        codigo = cota.codigo_serie
         if codigo in SERIES_COM_ERRO_NA_BASE:
             continue
         assert codigo in cv.POR_CODIGO, (codigo, pasta)
@@ -212,10 +222,11 @@ def test_nivel_3_concordancia_da_base(corpus_real):
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
 def test_nivel_3_uma_cota_antiga_pode_levar_a_varios_documentos(corpus_real):
     conversoes = cv.converter("AHU-Rio de Janeiro, cx. 76, doc. 41.", corpus_real)
-    assert len(conversoes) == 12
+    # 12 no ahu-sul; a coleção ahu-brasil traz outros 4 do Rio de Janeiro com a mesma cota.
+    assert len(conversoes) == 16
     assert conversoes[0].referencia == "PT/AHU/CU/017/0066/06200"
-    assert conversoes[-1].referencia == "PT/AHU/CU/017/0069/06420"
-    assert conversoes[0].avisos == ["1 de 12 documentos atuais com esta cota antiga."]
+    assert "PT/AHU/CU/017/0069/06420" in [c.referencia for c in conversoes]
+    assert conversoes[0].avisos == ["1 de 16 documentos atuais com esta cota antiga."]
 
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
@@ -286,7 +297,7 @@ def test_aba_escolhe_entre_varios_documentos_de_uma_cota_antiga():
         "AHU-Rio de Janeiro, cx. 76, doc. 41.").run()
     assert not at.exception, [e.value for e in at.exception]
     escolha = next(s for s in at.selectbox if s.key == "escolha_conversor")
-    assert len(escolha.options) == 12
+    assert len(escolha.options) == 16
     assert "PT/AHU/CU/017/0066/06200" in [c.value for c in at.code]
 
 

@@ -94,7 +94,7 @@ def artefatos(tmp_path, corpus):
 
 def test_constroi_os_sete_artefatos(artefatos):
     esperados = ("manifest.json", "documentos.parquet", "pessoas.parquet", "doc_pessoa.parquet",
-                 "pdf_extra.parquet", "embeddings.f16.npy", "lexico.pkl")
+                 "pdf_extra.parquet", "embeddings", "lexico")
     assert sorted(p.name for p in artefatos.iterdir()) == sorted(esperados)
 
 
@@ -149,7 +149,7 @@ def test_doc_pessoa_liga_documentos_e_pessoas(artefatos):
 
 def test_embeddings_na_ordem_de_documentos(artefatos, corpus):
     docs = pd.read_parquet(artefatos / "documentos.parquet")
-    emb = np.load(artefatos / "embeddings.f16.npy")
+    emb = np.concatenate([np.load(p) for p in sorted((artefatos / "embeddings").glob("*.npy"))])
     camada = pd.read_parquet(corpus / "camadas" / "embeddings_modelo_falso_v1" / "indice.parquet")
     vetores = np.load(corpus / "camadas" / "embeddings_modelo_falso_v1" / "embeddings.f16.npy")
 
@@ -160,19 +160,42 @@ def test_embeddings_na_ordem_de_documentos(artefatos, corpus):
 
 
 def test_lexico_tem_os_campos_e_pesos_da_5_2(artefatos):
-    import pickle
+    from ahu.lexico import Lexico
 
-    with open(artefatos / "lexico.pkl", "rb") as f:
-        lexico = pickle.load(f)
-    assert lexico["campos"] == ["pessoas", "destinatario", "tipologia", "descricao", "pasta"]
-    assert lexico["pesos"] == {"pessoas": 2.0, "destinatario": 1.5, "tipologia": 1.5,
-                               "descricao": 1.0, "pasta": 0.5}
     docs = pd.read_parquet(artefatos / "documentos.parquet")
-    assert lexico["doc_uids"] == docs["doc_uid"].tolist()
+    lexico = Lexico(artefatos, docs["doc_uid"].tolist())
+    assert lexico.campos == ["pessoas", "destinatario", "tipologia", "descricao", "pasta"]
+    assert lexico.pesos == {"pessoas": 2.0, "destinatario": 1.5, "tipologia": 1.5,
+                            "descricao": 1.0, "pasta": 0.5}
+    assert len(lexico) == len(docs)
 
     # O campo de pessoas traz nome da entidade, nome principal, variantes e títulos.
-    pontos = lexico["indices"]["pessoas"].get_scores(["baran", "laguna"])
+    pontos = lexico.notas_do_campo("pessoas", ["baran", "laguna"])
     assert pontos[1] > 0 and pontos[0] == 0
+
+
+def test_lexico_em_disco_da_a_mesma_nota_do_rank_bm25(tmp_path):
+    """O índice em disco reproduz o `BM25Okapi` com o IDF do Lucene (antigo lexico.pkl)."""
+    import math
+
+    from rank_bm25 import BM25Okapi
+
+    from ahu import lexico as mod_lexico
+
+    linhas = [["carta", "rei", "carta"], [], ["oficio", "rei"], ["rei"], ["carta", "governador"]]
+    mod_lexico.gravar(tmp_path, {"descricao": linhas}, {"descricao": 1.0}, {"descricao": 1})
+    lexico = mod_lexico.Lexico(tmp_path, [str(i) for i in range(len(linhas))])
+    bm25 = BM25Okapi([t or [mod_lexico.SENTINELA] for t in linhas])
+    df: dict[str, int] = {}
+    for doc in bm25.doc_freqs:
+        for termo in doc:
+            df[termo] = df.get(termo, 0) + 1
+    bm25.idf = {t: math.log(1 + (len(linhas) - d + 0.5) / (d + 0.5)) for t, d in df.items()}
+    for consulta in (["carta"], ["rei", "carta"], ["rei", "rei"], ["inexistente"]):
+        assert np.allclose(lexico.notas_do_campo("descricao", consulta), bm25.get_scores(consulta))
+    assert lexico.termos_existentes(["rei", "nada"]) == ["rei"]
+    assert lexico.linhas_com_termo("carta").tolist() == [0, 4]
+    assert lexico.mascara_de_frase("oficio rei").tolist() == [False, False, True, False, False]
 
 
 def test_manifesto_registra_camadas_usadas_e_hashes(artefatos):
@@ -181,7 +204,7 @@ def test_manifesto_registra_camadas_usadas_e_hashes(artefatos):
     assert manifesto["corpus"]["camadas"]["biografias"] == ib.CAMADA_BIOGRAFIAS
     assert manifesto["contagens"]["documentos"] == 3
     assert manifesto["contagens"]["nascimento_exibivel"] == 1
-    assert len(manifesto["artefatos"]) == 6
+    assert len(manifesto["artefatos"]) == 4 + 1 + 2 + 4 * 5  # parquets, 1 parte, léxico
     for nome, hash_esperado in manifesto["artefatos"].items():
         obtido = hashlib.sha256((artefatos / nome).read_bytes()).hexdigest()
         assert obtido == hash_esperado, nome
@@ -226,9 +249,9 @@ def test_a4_hash_diferente_do_manifesto_recusa(artefatos):
 
 
 def test_a4_numero_de_vetores_diferente_recusa(artefatos):
-    emb = np.load(artefatos / "embeddings.f16.npy")
-    np.save(artefatos / "embeddings.f16.npy", emb[:2])
-    _reassinar(artefatos, "embeddings.f16.npy")
+    emb = np.concatenate([np.load(p) for p in sorted((artefatos / "embeddings").glob("*.npy"))])
+    np.save(artefatos / "embeddings" / "parte_000.f16.npy", emb[:2])
+    _reassinar(artefatos, "embeddings/parte_000.f16.npy")
     with pytest.raises(ErroDados, match="2 vetores e 3 documentos"):
         carregar_sem_cache(artefatos)
 
@@ -282,7 +305,7 @@ def test_a4_d2_nascimento_escondido_com_dado_recusa(artefatos):
 
 
 def test_mensagem_de_erro_diz_o_que_rodar(artefatos):
-    (artefatos / "lexico.pkl").unlink()
+    (artefatos / "lexico" / "meta.json").unlink()
     with pytest.raises(ErroDados, match="construir_app.py"):
         carregar_sem_cache(artefatos)
 
@@ -379,7 +402,7 @@ def test_artefatos_reais_carregam_e_respeitam_a1_e_d1():
     assert "scribe_mediation_likely" not in d.documentos.columns
     assert set(d.pessoas["nivel"].dropna()) <= {"ALTA", "MEDIA"}
     assert int(d.pessoas["nascimento_exibivel"].sum()) == 253
-    assert d.colecoes == ["ahu-sul"]
+    assert d.colecoes == ["ahu-brasil", "ahu-sul"]
 
 
 @pytest.mark.skipif(not (APP_DADOS / "manifest.json").exists(),

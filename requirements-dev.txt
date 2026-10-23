@@ -2,3 +2,5 @@ pytest==9.1.1
 ruff==0.16.10
 jsonschema==4.26.0
 pypdf==6.7.3
+# Só para a avaliação (avaliacao/) e o teste de paridade do léxico em disco.
+rank-bm25==0.2.2

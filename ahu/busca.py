@@ -7,8 +7,9 @@ Três motores, nesta ordem:
      consulta *inteira* é uma cota, a resposta é a tabela de lookup e mais nada — nunca um
      `str.contains` solto, que era o C5. Se a cota está dentro de uma frase, esses documentos vêm
      primeiro e o resto da frase segue a busca normal.
-  2. **Léxico (§5.2).** BM25 por campo, com os pesos do `lexico.pkl`: pessoas 2,0 · destinatário 1,5
-     · tipologia 1,5 · descrição 1,0 · pasta 0,5.
+  2. **Léxico (§5.2).** BM25 por campo (índice em disco, `ahu/lexico.py`), com os pesos de
+     `app_dados/lexico/meta.json`: pessoas 2,0 · destinatário 1,5 · tipologia 1,5 · descrição 1,0
+     · pasta 0,5.
   3. **Semântico (§5.7).** Cosseno entre a consulta (prefixo `query: `) e os vetores normalizados.
      O `rigor` aplica um limiar ao cosseno **bruto**.
 
@@ -226,13 +227,12 @@ class Resposta:
 
 def _notas_lexico(dados, tokens: list[str]) -> np.ndarray:
     lexico = dados.lexico
-    pesos = lexico["pesos"]
-    total = np.zeros(len(lexico["doc_uids"]), dtype=np.float64)
-    for campo in lexico["campos"]:
-        peso = float(pesos.get(campo, 0.0))
+    total = np.zeros(len(lexico), dtype=np.float64)
+    for campo in lexico.campos:
+        peso = float(lexico.pesos.get(campo, 0.0))
         if not peso:
             continue
-        notas = np.asarray(lexico["indices"][campo].get_scores(tokens), dtype=np.float64)
+        notas = lexico.notas_do_campo(campo, tokens)
         maximo = notas.max()
         if maximo > 0:
             # Min-max por campo antes de somar: sem isso o campo com mais texto manda sempre,
@@ -245,12 +245,10 @@ def _notas_lexico(dados, tokens: list[str]) -> np.ndarray:
 def termos_no_corpus(dados, tokens: Iterable[str]) -> list[str]:
     """Quais termos da consulta existem em algum campo do léxico.
 
-    Lê o vocabulário dos índices BM25, e por isso vale em qualquer modo — inclusive no Conceitual,
-    em que o motor léxico não roda. É a condição (a) do aviso da §5.5.
+    Lê o vocabulário do índice, e por isso vale em qualquer modo — inclusive no Conceitual, em
+    que o motor léxico não roda. É a condição (a) do aviso da §5.5.
     """
-    lexico = dados.lexico
-    vocabularios = [lexico["indices"][campo].idf for campo in lexico["campos"]]
-    return [t for t in dict.fromkeys(tokens) if any(t in v for v in vocabularios)]
+    return dados.lexico.termos_existentes(tokens)
 
 
 def _frases_exigidas(texto: str) -> list[str]:
@@ -262,19 +260,9 @@ def _mascara_de_frases(dados, frases: list[str]) -> np.ndarray | None:
     """Quem contém todas as frases exigidas, na sequência literal."""
     if not frases:
         return None
-    normalizados = dados.lexico.get("normalizados") or {}
-    if not normalizados:
-        return None
-    n = len(dados.lexico["doc_uids"])
-    mascara = np.ones(n, dtype=bool)
+    mascara = np.ones(len(dados.lexico), dtype=bool)
     for frase in frases:
-        tem = np.zeros(n, dtype=bool)
-        for campo, textos in normalizados.items():
-            del campo
-            for i, texto in enumerate(textos):
-                if not tem[i] and frase in texto:
-                    tem[i] = True
-        mascara &= tem
+        mascara &= dados.lexico.mascara_de_frase(frase)
     return mascara
 
 
@@ -334,7 +322,10 @@ def cossenos(dados, texto: str, encoder: Encoder) -> np.ndarray:
     norma = float(np.linalg.norm(vetor))
     if norma and abs(norma - 1.0) > 1e-3:
         vetor = vetor / norma
-    return np.asarray(dados.embeddings, dtype=np.float32) @ vetor
+    emb = dados.embeddings
+    if hasattr(emb, "produto"):
+        return emb.produto(vetor)
+    return np.asarray(emb, dtype=np.float32) @ vetor
 
 
 # ---------------------------------------------------------------------------
@@ -392,7 +383,7 @@ def buscar(
     if rigor not in RIGORES:
         raise ValueError(f"Rigor desconhecido: {rigor!r}. Use um de {', '.join(RIGORES)}.")
 
-    uids = dados.lexico["doc_uids"]
+    uids = dados.lexico.doc_uids
     chave, resto = _trecho_da_cota(texto)
     linhas_da_cota = tabela_de_cotas(dados).get(chave, []) if chave else []
     if filtro is not None:
@@ -449,18 +440,16 @@ def buscar(
             da_cota.append(r)
         ordem = da_cota + [r for r in ordem if r.linha in fundidos]
 
-    normalizados = dados.lexico.get("normalizados") or {}
-    conjunto = set(tokens)
+    # A evidência de termos: em que linhas cada termo da consulta aparece (listas do índice).
+    linhas_do_termo = {t: set(dados.lexico.linhas_com_termo(t).tolist())
+                       for t in dict.fromkeys(tokens)} if ordem else {}
     for posicao, r in enumerate(ordem, start=1):
         r.doc_uid = uids[r.linha]
         r.posicao = posicao
         if cos is not None:
             r.cosseno = round(float(cos[r.linha]), 4)
-        if conjunto:
-            achados = set()
-            for textos in normalizados.values():
-                achados |= conjunto & set(textos[r.linha].split())
-            r.termos = sorted(achados)
+        if linhas_do_termo:
+            r.termos = sorted(t for t, linhas in linhas_do_termo.items() if r.linha in linhas)
 
     maximo = None if cos is None else round(float(cos.max()), 4)
     destaque = None if cos is None else round(destaque_do_topo(cos), 2)

@@ -7,8 +7,8 @@ Saídas  : app_dados/
               pessoas.parquet      pessoas com o nascimento exibível (D2) e o nível
               doc_pessoa.parquet   doc_uid x pessoa_uid x posicao x tipo
               pdf_extra.parquet    só o que vai para o PDF (D1): scribe_mediation_likely
-              embeddings.f16.npy   linha i = documentos.parquet linha i
-              lexico.pkl           índice BM25 por campos (§5.2), pronto para consulta
+              embeddings/          parte_000.f16.npy, ...: linha i = documentos.parquet linha i
+              lexico/              índice BM25 por campos (§5.2) em disco (ahu/lexico.py)
 
 O que este script garante, para que o app não precise lembrar (A1, D1, D2):
   * `scribe_mediation_likely` sai de `documentos.parquet` e vive só em `pdf_extra.parquet`;
@@ -26,8 +26,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
-import pickle
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,6 +37,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
+from ahu import lexico as mod_lexico  # noqa: E402
 from ahu.texto import tokenizar  # noqa: E402
 from build.importar_base import ErroImportacao, commit_atual, sha256_arquivo  # noqa: E402
 
@@ -132,7 +131,11 @@ def montar_documentos(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Devolve (documentos, pdf_extra). O `scribe_mediation_likely` só vai no segundo (D1)."""
     for nome, camada in (("tipologia", tipologia), ("sociolinguística", socio)):
-        faltam = set(base["doc_uid"]) - set(camada["doc_uid"])
+        # Uma camada cobre coleções inteiras; a coleção que ela não cobre entra com o campo vazio
+        # (a sociolinguística só existe para o ahu-sul).
+        cobertas = set(camada["doc_uid"].astype(str).str.split(":").str[0])
+        da_camada = base["doc_uid"][base["doc_uid"].astype(str).str.split(":").str[0].isin(cobertas)]
+        faltam = set(da_camada) - set(camada["doc_uid"])
         if faltam:
             raise ErroImportacao(
                 f"{len(faltam)} documentos da base não estão na camada de {nome} "
@@ -233,56 +236,13 @@ def textos_por_campo(docs: pd.DataFrame, doc_pessoa: pd.DataFrame,
     }
 
 
-def _corrigir_idf(bm25, n_documentos: int) -> None:
-    """Troca o IDF do `rank_bm25` pelo do Lucene, que nunca é negativo.
-
-    O `BM25Okapi` usa `log((N - df + 0,5) / (df + 0,5))`, que fica **negativo** para um termo que
-    está em mais da metade do corpus, e então o substitui por `epsilon * idf_médio` — um valor que
-    pode ser negativo e não depende do termo. Com isto, 'OFÍCIO' (47% dos documentos) e 'carta'
-    teriam nota arbitrária, às vezes abaixo de zero. A fórmula do Lucene,
-    `log(1 + (N - df + 0,5) / (df + 0,5))`, é sempre positiva e cai junto com a frequência: um
-    termo em todos os documentos quase não pesa, mas também não atrapalha.
-    """
-    frequencia: dict[str, int] = {}
-    for doc in bm25.doc_freqs:
-        for termo in doc:
-            frequencia[termo] = frequencia.get(termo, 0) + 1
-    bm25.idf = {
-        termo: math.log(1 + (n_documentos - df + 0.5) / (df + 0.5))
-        for termo, df in frequencia.items()
-    }
-    bm25.average_idf = (sum(bm25.idf.values()) / len(bm25.idf)) if bm25.idf else 0.0
-
-
 def construir_lexico(docs: pd.DataFrame, doc_pessoa: pd.DataFrame,
-                     pessoas: pd.DataFrame) -> dict:
-    """Índice BM25 por campo, pronto para o app (§3.4: o único pickle, gerado por nós)."""
-    from importlib import metadata
-
-    from rank_bm25 import BM25Okapi
-
+                     pessoas: pd.DataFrame, saida: Path) -> dict:
+    """Índice BM25 por campo, gravado em disco para o app (ahu/lexico.py)."""
     textos = textos_por_campo(docs, doc_pessoa, pessoas)
-    indices, normalizados, vazios = {}, {}, {}
-    for campo, valores in textos.items():
-        tokens = [tokenizar(v) for v in valores]
-        vazios[campo] = int(sum(1 for t in tokens if not t))
-        # Os tokens já normalizados, juntos num texto: é neles que a busca por frase entre aspas
-        # procura a sequência literal (§5.5) e de onde sai a evidência de termos (ahu/busca.py).
-        normalizados[campo] = [" ".join(t) for t in tokens]
-        # BM25Okapi divide por zero se o corpus for todo vazio; um token-sentinela evita isso.
-        bm25 = BM25Okapi([t or ["\x00"] for t in tokens])
-        _corrigir_idf(bm25, len(tokens))
-        indices[campo] = bm25
-    return {
-        "versao": VERSAO_ARTEFATOS,
-        "rank_bm25": metadata.version("rank-bm25"),
-        "pesos": dict(PESOS_CAMPOS),
-        "campos": list(textos),
-        "doc_uids": docs["doc_uid"].astype(str).tolist(),
-        "indices": indices,
-        "normalizados": normalizados,
-        "documentos_sem_token": vazios,
-    }
+    tokens = {campo: [tokenizar(v) for v in valores] for campo, valores in textos.items()}
+    vazios = {campo: int(sum(1 for t in linhas if not t)) for campo, linhas in tokens.items()}
+    return mod_lexico.gravar(saida, tokens, PESOS_CAMPOS, vazios)
 
 
 # ---------------------------------------------------------------------------
@@ -312,6 +272,25 @@ def alinhar_embeddings(pasta_camada: Path, docs: pd.DataFrame) -> tuple[np.ndarr
     with open(pasta_camada / "camada.json", encoding="utf-8") as f:
         camada = json.load(f)
     return emb[ordem], camada
+
+
+LINHAS_POR_PARTE = 100_000  # 100 mil x 384 x 2 bytes = 77 MB, abaixo do limite do GitHub
+
+
+def gravar_embeddings(saida: Path, emb: np.ndarray) -> list[str]:
+    """Grava os vetores em partes e devolve os nomes, relativos a `saida`."""
+    pasta = saida / "embeddings"
+    if pasta.exists():
+        for velho in pasta.glob("*.npy"):
+            velho.unlink()
+    pasta.mkdir(parents=True, exist_ok=True)
+    (saida / "embeddings.f16.npy").unlink(missing_ok=True)  # o formato de antes, num arquivo só
+    nomes = []
+    for k, a in enumerate(range(0, max(len(emb), 1), LINHAS_POR_PARTE)):
+        nome = f"embeddings/parte_{k:03d}.f16.npy"
+        np.save(saida / nome, emb[a:a + LINHAS_POR_PARTE])
+        nomes.append(nome)
+    return nomes
 
 
 # ---------------------------------------------------------------------------
@@ -358,20 +337,17 @@ def construir(corpus: Path, saida: Path) -> dict:
     doc_pessoa = montar_doc_pessoa(entidades, pessoas)
     doc_pessoa = doc_pessoa[doc_pessoa["doc_uid"].isin(set(docs["doc_uid"]))].reset_index(drop=True)
     embeddings, camada_emb = alinhar_embeddings(pasta / usadas["embeddings"], docs)
-    lexico = construir_lexico(docs, doc_pessoa, pessoas)
-
     saida.mkdir(parents=True, exist_ok=True)
+    lexico = construir_lexico(docs, doc_pessoa, pessoas, saida)
     docs.to_parquet(saida / "documentos.parquet", index=False)
     pessoas.to_parquet(saida / "pessoas.parquet", index=False)
     doc_pessoa.to_parquet(saida / "doc_pessoa.parquet", index=False)
     pdf_extra.to_parquet(saida / "pdf_extra.parquet", index=False)
-    np.save(saida / "embeddings.f16.npy", embeddings.astype(np.float16))
-    with open(saida / "lexico.pkl", "wb") as f:
-        pickle.dump(lexico, f, protocol=pickle.HIGHEST_PROTOCOL)
+    partes = gravar_embeddings(saida, embeddings.astype(np.float16))
 
     agora = datetime.now(timezone.utc).isoformat(timespec="seconds")
     artefatos = ["documentos.parquet", "pessoas.parquet", "doc_pessoa.parquet", "pdf_extra.parquet",
-                 "embeddings.f16.npy", "lexico.pkl"]
+                 *partes, *mod_lexico.arquivos(lexico["campos"])]
     app_manifesto = {
         "versao_artefatos": VERSAO_ARTEFATOS,
         "gerado_em": agora,
@@ -387,8 +363,8 @@ def construir(corpus: Path, saida: Path) -> dict:
             "prefixo_consulta": camada_emb.get("prefixo_consulta"),
             "normalizado_l2": camada_emb.get("normalizado_l2"),
         },
-        "lexico": {"rank_bm25": lexico["rank_bm25"], "pesos": lexico["pesos"],
-                   "campos": lexico["campos"]},
+        "lexico": {"versao": lexico["versao"], "pesos": lexico["pesos"],
+                   "campos": lexico["campos"], "k1": lexico["k1"], "b": lexico["b"]},
         "srsp": srsp,
         "contagens": {
             "documentos": int(len(docs)), "pessoas": int(len(pessoas)),

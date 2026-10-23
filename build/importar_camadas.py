@@ -388,15 +388,33 @@ def importar_camadas(
     entrada, corpus = Path(entrada), Path(corpus)
     if not entrada.exists():
         raise ErroImportacao(f"Arquivo de entrada não encontrado: {entrada}")
-    try:
-        with open(entrada, encoding="utf-8") as f:
-            docs = json.load(f)
-    except json.JSONDecodeError as e:
-        raise ErroImportacao(f"JSON inválido ou truncado em {entrada}: {e}") from e
-    if not isinstance(docs, list):
-        raise ErroImportacao("O catálogo de entrada deve ser uma lista de documentos.")
-
-    uids = uids_da_entrada(docs, corpus / "colecoes" / colecao)
+    if entrada.suffix == ".parquet":
+        # Uma base já com doc_uid (ex.: corpus/colecoes/ahu-brasil/documentos.parquet). Só a
+        # tipologia sai dela: a sociolinguística precisa dos campos do DeepSeek.
+        if so != "tipologia":
+            raise ErroImportacao("Com uma entrada .parquet, use --so tipologia.")
+        tabela = pd.read_parquet(entrada)
+        uids = tabela["doc_uid"].astype(str).tolist()
+        docs = tabela.drop(columns=["doc_uid"]).astype(object).where(tabela.notna(), None
+                                                                   ).to_dict("records")
+        # Sem `typology_status` no catálogo: é canônica a tipologia que já é canônica na camada.
+        existente = corpus / "camadas" / CAMADA_TIPOLOGIA / "tipologia.parquet"
+        canonicas = set()
+        if existente.exists():
+            t = pd.read_parquet(existente, columns=["tipologia", "typology_status"])
+            canonicas = set(t.loc[t["typology_status"], "tipologia"].dropna())
+        for d in docs:
+            if d.get("typology_status") is None:
+                d["typology_status"] = normalizar_tipologia(d.get("extracted_typology")) in canonicas
+    else:
+        try:
+            with open(entrada, encoding="utf-8") as f:
+                docs = json.load(f)
+        except json.JSONDecodeError as e:
+            raise ErroImportacao(f"JSON inválido ou truncado em {entrada}: {e}") from e
+        if not isinstance(docs, list):
+            raise ErroImportacao("O catálogo de entrada deve ser uma lista de documentos.")
+        uids = uids_da_entrada(docs, corpus / "colecoes" / colecao)
     processo = {"script": "build/importar_camadas.py", "versao_script": VERSAO_SCRIPT,
                 "commit": commit_atual()}
     proveniencia_entrada = {"arquivo": entrada.name, "sha256": sha256_arquivo(entrada)}

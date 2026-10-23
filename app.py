@@ -15,6 +15,7 @@ Rodar:
 from __future__ import annotations
 
 import contextlib
+import os
 
 import pandas as pd
 import streamlit as st
@@ -1324,6 +1325,11 @@ def main() -> None:
     st.markdown(mod_estilo.CSS, unsafe_allow_html=True)
     st.title(TITULO)
     st.caption(SUBTITULO)
+    # No endereço antigo (streamlit.app), o segredo AHU_ENDERECO_NOVO aponta para o novo.
+    novo = os.environ.get("AHU_ENDERECO_NOVO")
+    if novo:
+        st.info(f"O catálogo mudou de endereço e agora cobre o Brasil todo: [{novo}]({novo})",
+                icon=":material/open_in_new:")
 
     dados = carregar_dados()
     consulta = consulta_atual(dados)

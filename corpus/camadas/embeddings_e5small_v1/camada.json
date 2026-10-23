@@ -4,7 +4,8 @@
   "versao": "1",
   "amostra": false,
   "colecoes": [
-    "ahu-sul"
+    "ahu-sul",
+    "ahu-brasil"
   ],
   "modelo": "intfloat/multilingual-e5-small",
   "prefixo_documento": "passage: ",
@@ -12,10 +13,10 @@
   "normalizado_l2": true,
   "dtype": "float16",
   "dimensao": 384,
-  "documentos": 7051,
+  "documentos": 167344,
   "max_tokens": 512,
   "receita_texto": "passage: <extracted_typology>. <sender_name>. <folder>. <description> (partes vazias são omitidas; separador '. ')",
-  "texto_global_sha1": "c62e86aed5faf52773edf6b1f5836b024878f287",
+  "texto_global_sha1": "acaa4f636bdc5d323da9165935830bde7b102bc4",
   "esquema": {
     "embeddings.f16.npy": "float16[n, dimensao], linha i = indice.parquet linha i",
     "indice.parquet": "doc_uid, texto_sha1"
@@ -23,16 +24,16 @@
   "processo": {
     "script": "build/construir_indice.py",
     "versao_script": "1.0.0",
-    "commit": "2045d0c",
+    "commit": "fe76256",
     "dispositivo": "cpu (padrão; usa GPU se disponível)"
   },
   "bibliotecas": {
     "numpy": "2.4.3",
     "pandas": "2.3.3",
     "sentence-transformers": "5.2.3",
-    "torch": "2.8.0"
+    "torch": "2.8.0+cpu"
   },
-  "data": "2026-10-08T23:10:35+00:00",
+  "data": "2026-10-23T00:00:08+00:00",
   "sanidade": [
     {
       "doc_uid": "ahu-sul:e7fd41bfb3",
@@ -42,32 +43,32 @@
       "cosseno_proprio": 0.9504
     },
     {
-      "doc_uid": "ahu-sul:6c8b91ad83",
-      "linha": 1762,
+      "doc_uid": "ahu-brasil:d6ee36745f",
+      "linha": 41835,
       "primeiro": true,
       "aceito": true,
-      "cosseno_proprio": 0.9312
+      "cosseno_proprio": 0.9479
     },
     {
-      "doc_uid": "ahu-sul:ecb88608af",
-      "linha": 3525,
+      "doc_uid": "ahu-brasil:72403fbe19",
+      "linha": 83671,
       "primeiro": true,
       "aceito": true,
-      "cosseno_proprio": 0.9401
+      "cosseno_proprio": 0.951
     },
     {
-      "doc_uid": "ahu-sul:2db15bd914",
-      "linha": 5287,
+      "doc_uid": "ahu-brasil:f0292ab666",
+      "linha": 125507,
       "primeiro": true,
       "aceito": true,
-      "cosseno_proprio": 0.9336
+      "cosseno_proprio": 0.9521
     },
     {
-      "doc_uid": "ahu-sul:b3b0f0b1c2",
-      "linha": 7050,
-      "primeiro": true,
+      "doc_uid": "ahu-brasil:87092cc42e",
+      "linha": 167343,
+      "primeiro": false,
       "aceito": true,
-      "cosseno_proprio": 0.9334
+      "cosseno_proprio": 0.9282
     }
   ],
   "sanidade_aprovada": true
