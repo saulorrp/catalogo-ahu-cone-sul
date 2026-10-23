@@ -1,11 +1,46 @@
 # Catálogo AHU-Brasil
 
-Ferramenta de **triagem documental** sobre o catálogo do Arquivo Histórico Ultramarino (coleção
-AHU-Sul, **7.051 documentos**). Leva o pesquisador de uma pergunta a um conjunto de cotas que ele
-possa justificar, citar e levar ao arquivo.
+Ferramenta de **triagem documental** sobre o catálogo do Arquivo Histórico Ultramarino (AHU) para
+o Brasil colonial: **167.344 documentos** de 34 séries. Leva o pesquisador de uma pergunta a um
+conjunto de cotas que ele possa justificar, citar e levar ao arquivo.
 
 **Ela não contém as imagens dos manuscritos.** O que ela tem são os resumos do catálogo, as cotas,
 e camadas de análise sobre eles.
+
+O banco tem duas camadas:
+
+| Coleção | Documentos | O que traz |
+|---|---|---|
+| **ahu-sul** | 7.051 | Resumo e cota, mais pessoas identificadas, tipologia revisada e variáveis sociolinguísticas (preprint abaixo) |
+| **ahu-brasil** | 160.293 | O catálogo do AHU como publicado: resumo, data, série, cota e links para as fontes |
+
+## De onde vêm os dados
+
+- **Coleta.** Os resumos e as cotas da ahu-brasil vêm dos catálogos que o próprio AHU publica em
+  PDF de texto no [ACTD](https://actd.iict.pt/) (35 séries relativas ao Brasil). As páginas do
+  [Projeto Resgate](https://www.gov.br/bn/pt-br/central-de-conteudos/projeto-resgate) no gov.br
+  foram rastreadas e salvas como vieram: dão o link de cada documento, conferem o texto do ACTD e
+  cobrem Códices, parte da Série Reino e Sergipe.
+- **Catálogos só escaneados.** Bahia, São Paulo, Minas Gerais e Pará só existiam no Resgate como
+  imagens do catálogo impresso, e Pernambuco, Maranhão e Colônia como PDFs com OCR pouco
+  confiável. Essas páginas foram transcritas automaticamente (Gemini Flash, transcrição literal;
+  páginas recusadas passaram pelo Tesseract e foram corrigidas pelo Gemini olhando a imagem).
+  Quando se achou o texto nativo do AHU no ACTD, ele virou a fonte, e a transcrição passou a
+  servir de conferência.
+- **Cura das cotas.** O conversor ([`ahu/conversor.py`](ahu/conversor.py)) reconhece as variantes
+  das fontes (`AHU_CU_` sem `ACL`, `0005-01`, `D. 20.836`), normaliza numa chave
+  série/caixa/documento e calcula a cota do Resgate e o código de referência. Cerca de 849 cotas
+  repetidas e 310 verbetes sem cota ficaram como na fonte, com aviso, em vez de receberem um número
+  adivinhado.
+- **Controle de qualidade.** 4.424 de 167.324 verbetes (2,6%) têm alguma marca (sem data, cota
+  repetida, fora de sequência, texto divergente entre ACTD e Resgate). O texto nunca é alterado
+  pela marca.
+- **Proveniência.** Cada documento traz a citação da fonte, o PDF e a página do ACTD e a página do
+  Resgate. Nenhum resumo foi escrito ou reescrito por IA.
+
+O passo a passo completo, com números e decisões, está em
+[`docs/METODO_COLETA.md`](docs/METODO_COLETA.md). Fontes e links também na aba **Referências** do
+app.
 
 ## O que o app faz
 
