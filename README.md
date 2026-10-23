@@ -1,4 +1,4 @@
-# Classificador AHU-Sul
+# Catálogo AHU-Brasil
 
 Ferramenta de **triagem documental** sobre o catálogo do Arquivo Histórico Ultramarino (coleção
 AHU-Sul, **7.051 documentos**). Leva o pesquisador de uma pergunta a um conjunto de cotas que ele
