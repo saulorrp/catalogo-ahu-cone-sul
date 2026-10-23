@@ -1357,7 +1357,8 @@ def aba_sobre(dados) -> None:
         "com OCR pouco confiável. Essas páginas foram transcritas automaticamente pelo Gemini "
         "Flash, com regras de transcrição literal. As páginas que o modelo recusou passaram pelo "
         "Tesseract e foram corrigidas pelo Gemini olhando a imagem. Quando se achou o texto nativo "
-        "do AHU no ACTD, ele virou a fonte, e a transcrição passou a servir de conferência.\n\n"
+        "do AHU no ACTD, ele virou a fonte, e a transcrição passou a servir de conferência: em 61 mil "
+        "verbetes comparados pela cota, o texto do OCR confere com o do ACTD em 97%.\n\n"
         "**Cura das cotas.** As cotas vêm escritas de muitos jeitos (`AHU_CU_` sem `ACL`, "
         "`0005-01`, `D. 20.836`). O conversor do app normaliza todas numa chave "
         "série/caixa/documento e calcula daí a cota do Resgate e o código de referência do AHU. "
@@ -1368,7 +1369,8 @@ def aba_sobre(dados) -> None:
         "Resgate. São 4.424 de 167.324 verbetes (2,6%). Nos 49.173 pares em que as duas fontes "
         "descrevem a mesma cota, 97,2% dos textos têm similaridade acima de 0,9.\n\n"
         "Nenhum resumo foi escrito ou reescrito por IA. O passo a passo completo, com números e "
-        f"decisões, está em [METODO_COLETA.md]({URL_METODO}). Fontes e links na aba Referências."
+        f"decisões, está em [METODO_COLETA.md]({URL_METODO}), e os scripts da coleta em "
+        f"[coleta/]({URL_REPOSITORIO}/tree/main/coleta). Fontes e links na aba Referências."
     )
 
     st.markdown("#### O que sai daqui")

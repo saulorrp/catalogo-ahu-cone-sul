@@ -13,7 +13,7 @@ addopts = "-q"
 [tool.ruff]
 line-length = 110
 target-version = "py311"
-extend-exclude = ["legado", "corpus", "app_dados"]
+extend-exclude = ["legado", "corpus", "app_dados", "coleta"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
