@@ -15,3 +15,5 @@ perplexity_api_keys.txt
 /C/
 modelos_onnx/
 *.onnx
+coleta/enriquecimento/entrada/
+coleta/enriquecimento/saida/
