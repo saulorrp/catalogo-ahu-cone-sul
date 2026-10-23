@@ -307,7 +307,7 @@ def test_app_sobe_sem_excecao_e_tem_as_abas():
     at = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=180)
     at.run()
     assert not at.exception, [e.value for e in at.exception]
-    assert at.title[0].value == "Classificador AHU-Sul"
+    assert at.title[0].value == "Catálogo AHU-Brasil"
     assert [t.label for t in at.tabs] == list(__import__("app").ABAS)
     # A aba Sobre mostra as camadas lidas do manifesto, não escritas no código.
     textos = " ".join(m.value for m in at.markdown)

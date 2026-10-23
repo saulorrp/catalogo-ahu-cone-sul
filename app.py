@@ -36,8 +36,9 @@ from ahu import selecao as mod_selecao
 from ahu.consulta import TAMANHO_PAGINA, Consulta, ErroDeLink, executar, url_da_busca
 from ahu.dados import ErroDados, carregar
 
-TITULO = "Classificador AHU-Sul"
-SUBTITULO = "Triagem documental sobre o catálogo do Arquivo Histórico Ultramarino (coleção AHU-Sul)"
+TITULO = "Catálogo AHU-Brasil"
+SUBTITULO = ("Busca e triagem nos resumos do Arquivo Histórico Ultramarino sobre o Brasil "
+             "colonial, com as cotas para chegar ao documento no Projeto Resgate e no DigitArq")
 ABAS = ("Busca", "Pessoas", "Amostras", "Painel", "Conversor", "Sobre e método")
 
 # O que a caixa da lista de consulta mostra vazia (WP 3.3a).
@@ -67,6 +68,31 @@ def carregar_dados():
     except ErroDados as e:
         st.error(f"**Os dados do app não estão prontos.**\n\n{e}")
         st.stop()
+
+def tamanho_do_banco(dados) -> None:
+    """Uma linha de números para dar a medida do banco antes da primeira busca."""
+    docs = dados.documentos
+    anos = docs["ano_isolado"].dropna()
+    por_colecao = docs["colecao"].value_counts()
+    colunas = st.columns(4)
+    colunas[0].metric("Documentos", milhar(len(docs)))
+    colunas[1].metric("Séries (capitanias e afins)", docs["folder"].nunique())
+    if len(anos):
+        colunas[2].metric("Período", f"{int(anos.min())}–{int(anos.max())}")
+    sul = int(por_colecao.get("ahu-sul", 0))
+    colunas[3].metric("Enriquecidos (AHU-Sul)", milhar(sul))
+    st.caption(
+        f"O banco tem duas camadas. A coleção **ahu-sul** ({milhar(sul)} documentos sobre o Sul "
+        "e o Prata, a maioria na série Rio de Janeiro) traz metadados enriquecidos: pessoas "
+        "identificadas, tipologia revisada e variáveis sociolinguísticas. A coleção "
+        f"**ahu-brasil** ({milhar(len(docs) - sul)} documentos) é o catálogo do AHU como "
+        "publicado: resumo, data, série e cota. A aba Pessoas e os dados sociolinguísticos "
+        "valem só para a ahu-sul; "
+        "o filtro Coleção, na Busca, separa as duas."
+    )
+
+def milhar(n: int) -> str:
+    return f"{n:,}".replace(",", ".")
 
 def consulta_atual(dados) -> Consulta:
     """A consulta vem da URL na primeira carga e do estado da sessão depois (§8.3, A6).
@@ -1346,6 +1372,7 @@ def main() -> None:
                 icon=":material/open_in_new:")
 
     dados = carregar_dados()
+    tamanho_do_banco(dados)
     consulta = consulta_atual(dados)
 
     busca_, pessoas_, amostras_, painel_, conversor_, sobre_ = st.tabs(ABAS)
