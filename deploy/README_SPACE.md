@@ -4,7 +4,7 @@ emoji: 📜
 colorFrom: red
 colorTo: yellow
 sdk: gradio
-python_version: "3.11"
+python_version: "3.12"
 app_file: space_app.py
 pinned: false
 license: mit
