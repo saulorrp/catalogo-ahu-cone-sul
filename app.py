@@ -1316,15 +1316,88 @@ def aba_sobre(dados) -> None:
         "de cotas que se possa justificar, citar e levar ao arquivo. Ele **não** contém as imagens "
         "dos manuscritos."
     )
+
+    st.markdown("#### 1. Fontes")
+    st.markdown(
+        "O que são o AHU, o Projeto Resgate, a Biblioteca Nacional e o ACTD, de onde vêm os "
+        "resumos e as cotas, e os links para os catálogos e os microfilmes estão na aba ao lado, "
+        "**Referências**. O passo a passo da coleta do catálogo está em "
+        f"[METODO_COLETA.md]({URL_METODO})."
+    )
+
+    st.markdown("#### 2. Como a busca funciona")
+    st.markdown(
+        "A busca combina três motores e funde os resultados pela **posição** de cada documento "
+        "em cada motor, não por uma nota inventada.\n\n"
+        "- **Cota.** Se a consulta é uma cota, em qualquer das três formas (Resgate, código de "
+        "referência ou cota antiga), a resposta é o documento dessa cota e mais nada. Se a cota "
+        "aparece no meio de uma frase, o documento vem primeiro, e o resto da frase segue a "
+        "busca normal.\n"
+        "- **Palavras.** Procura as palavras da consulta no resumo e nos campos do documento e "
+        "ordena os resultados pela frequência e pela raridade de cada termo. Os campos têm pesos: pessoas 2,0, "
+        "destinatário 1,5, tipologia 1,5, resumo "
+        "1,0 e pasta 0,5. Grafias antigas e acentos são normalizados (`ph`→`f`, `y`→`i`). "
+        "Aspas pedem a frase exata.\n"
+        "- **Sentido (semântica).** Compara o significado da consulta com o de cada resumo, com o "
+        "modelo multilíngue `multilingual-e5-small`. Acha documentos que tratam do assunto com "
+        "outras palavras. O **rigor** define até onde, abaixo do documento mais próximo, um "
+        "resultado ainda entra. Na versão gratuita do app, este motor fica desligado por falta "
+        "de memória.\n\n"
+        "Em consultas curtas (até duas palavras) as palavras pesam mais; em consultas longas, o "
+        "sentido pesa mais. Cada motor contribui com no máximo "
+        f"{busca.LIMITE_MOTOR} documentos, para que uma consulta vaga não devolva o banco "
+        "inteiro. Os pesos e os limiares são provisórios até a avaliação com um conjunto de "
+        "referência."
+    )
+
+    st.markdown("#### 3. A coleção AHU-Sul e as camadas de análise")
     manifesto = dados.manifesto
     contagens = manifesto.get("contagens", {})
-    colunas = st.columns(4)
-    colunas[0].metric("Documentos", f"{contagens.get('documentos', 0):,}".replace(",", "."))
-    colunas[1].metric("Pessoas", f"{contagens.get('pessoas', 0):,}".replace(",", "."))
+    st.markdown(
+        "A **ahu-sul** reúne os documentos do AHU sobre o Sul do Brasil e a região do Prata "
+        "(Rio Grande, Santa Catarina, Colônia do Sacramento, Montevidéu, Buenos Aires, e os "
+        "papéis do Rio de Janeiro e de São Paulo sobre o Sul). Sobre o resumo do catálogo, ela "
+        "tem camadas que o resto do banco não tem:\n\n"
+        "- **Pessoas.** Os remetentes e destinatários de cada resumo foram extraídos e "
+        "consolidados num cadastro de pessoas, coletivos e instituições. Cada pessoa tem um "
+        "identificador estável, e variantes de grafia do mesmo nome contam como a mesma pessoa.\n"
+        "- **Biografias (Perplexity).** Para cada pessoa, o Perplexity buscou na web o local de "
+        "nascimento e a fonte. O resultado foi conferido no Wikidata quando possível e classificado "
+        "por confiança. O app só mostra os níveis **alta** e **média**.\n"
+        "- **Sociolinguística (DeepSeek).** O modelo DeepSeek v3 leu cada resumo, sem exemplos "
+        "prévios (*zero-shot*), e estimou a categoria social do remetente, o vetor da "
+        "comunicação (de baixo para cima, de cima para baixo, horizontal), o grau de formulário "
+        "da tipologia, a mediação provável de um escrivão e o **SRSP**, um índice de 1 a 9 da "
+        "probabilidade de o original trazer sintaxe vernácula. O texto do prompt está registrado "
+        "na camada. São estimativas: os filtros que dependem delas começam desligados.\n"
+        "- **Tipologia.** A espécie documental (carta, ofício, requerimento…), normalizada e "
+        "marcada quando fica fora do vocabulário canônico."
+    )
+    colunas = st.columns(3)
+    colunas[0].metric("Documentos da ahu-sul",
+                      milhar(int((dados.documentos["colecao"] == "ahu-sul").sum())))
+    colunas[1].metric("Pessoas", milhar(contagens.get("pessoas", 0)))
     colunas[2].metric("Nascimento exibível", contagens.get("nascimento_exibivel", 0))
-    colunas[3].metric("Modelo", (dados.modelo_embeddings.get("nome") or "—").split("/")[-1])
 
-    st.markdown("#### Camadas e versões ativas")
+    srsp = manifesto.get("srsp", {})
+    auditoria = srsp.get("auditoria", {})
+    if auditoria:
+        st.markdown(
+            f"**Auditoria do SRSP** (preprint §2.1): escala inteira "
+            f"{srsp.get('escala', [1, 9])[0]}–{srsp.get('escala', [1, 9])[1]} · "
+            f"MAE {auditoria.get('mae')} · r = {auditoria.get('r')} · "
+            f"viés +{auditoria.get('vies')} · N = {auditoria.get('n')} · "
+            f"{auditoria.get('avaliadores')} avaliador. {auditoria.get('nota', '')}"
+        )
+    st.markdown(
+        "Método completo: Rocha, S. R. P. *Desenvolvimento de um Classificador do Catálogo do "
+        "AHU…* SciELO Preprints, 2026. "
+        "[doi:10.1590/SciELOPreprints.16461](https://doi.org/10.1590/SciELOPreprints.16461). "
+        "As chamadas pagas (DeepSeek, Perplexity) foram feitas só na construção do banco; o app "
+        "não chama nenhum serviço pago."
+    )
+
+    st.markdown("##### Camadas e versões ativas")
     st.caption("Lidas do manifesto do corpus, não escritas no código.")
     camadas = manifesto.get("corpus", {}).get("manifesto", {}).get("camadas", {})
     usadas = manifesto.get("corpus", {}).get("camadas", {})
@@ -1333,55 +1406,7 @@ def aba_sobre(dados) -> None:
          "Documentos": camadas.get(nome, {}).get("documentos", "—")}
         for papel, nome in usadas.items()
     ])
-
-    srsp = manifesto.get("srsp", {})
-    auditoria = srsp.get("auditoria", {})
-    if auditoria:
-        st.markdown("#### Auditoria do SRSP (preprint §2.1)")
-        st.markdown(
-            f"Escala inteira {srsp.get('escala', [1, 9])[0]}–{srsp.get('escala', [1, 9])[1]} · "
-            f"MAE {auditoria.get('mae')} · r = {auditoria.get('r')} · "
-            f"viés +{auditoria.get('vies')} · N = {auditoria.get('n')} · "
-            f"{auditoria.get('avaliadores')} avaliador. {auditoria.get('nota', '')}"
-        )
-
-    st.markdown("#### De onde vêm os dados")
-    st.markdown(
-        "**Coleta.** Os resumos e as cotas da coleção ahu-brasil vêm dos catálogos que o próprio "
-        "AHU publica em PDF de texto no ACTD (35 séries relativas ao Brasil), lidos por programa. "
-        "As páginas do Projeto Resgate no gov.br foram rastreadas e salvas como vieram. Elas dão o "
-        "link de cada documento no Resgate, conferem o texto do ACTD e cobrem o que ele não tem "
-        "(Códices, parte da Série Reino, Sergipe).\n\n"
-        "**Catálogos só escaneados.** Bahia, São Paulo, Minas Gerais e Pará só existiam no "
-        "Resgate como imagens do catálogo impresso, e Pernambuco, Maranhão e Colônia como PDFs "
-        "com OCR pouco confiável. Essas páginas foram transcritas automaticamente pelo Gemini "
-        "Flash, com regras de transcrição literal. As páginas que o modelo recusou passaram pelo "
-        "Tesseract e foram corrigidas pelo Gemini olhando a imagem. Quando se achou o texto nativo "
-        "do AHU no ACTD, ele virou a fonte, e a transcrição passou a servir de conferência: em 61 mil "
-        "verbetes comparados pela cota, o texto do OCR confere com o do ACTD em 97%.\n\n"
-        "**Cura das cotas.** As cotas vêm escritas de muitos jeitos (`AHU_CU_` sem `ACL`, "
-        "`0005-01`, `D. 20.836`). O conversor do app normaliza todas numa chave "
-        "série/caixa/documento e calcula daí a cota do Resgate e o código de referência do AHU. "
-        "Cerca de 849 cotas repetidas e 310 verbetes sem cota ficaram como estão na fonte, com "
-        "aviso, em vez de receberem um número adivinhado.\n\n"
-        "**Controle de qualidade.** Cada documento suspeito recebe uma marca, sem alteração do "
-        "texto: sem data, cota repetida, fora de sequência, texto que diverge entre ACTD e "
-        "Resgate. São 4.424 de 167.324 verbetes (2,6%). Nos 49.173 pares em que as duas fontes "
-        "descrevem a mesma cota, 97,2% dos textos têm similaridade acima de 0,9.\n\n"
-        "Nenhum resumo foi escrito ou reescrito por IA. O passo a passo completo, com números e "
-        f"decisões, está em [METODO_COLETA.md]({URL_METODO}), e os scripts da coleta em "
-        f"[coleta/]({URL_REPOSITORIO}/tree/main/coleta). Fontes e links na aba Referências."
-    )
-
-    st.markdown("#### O que sai daqui")
-    st.markdown(
-        "Uma coisa só: a **lista para consulta no AHU**, em PDF, montada da seleção ou de uma "
-        "lista de cotas colada. A aba Amostras entrega também o plano de coleta do EINS Lite. "
-        "As exportações em CSV e JSON e o dossiê em PDF foram retirados em 09/10/2026, por não "
-        "serem usados.")
-
-    st.markdown("#### Avaliação da busca")
-    st.info("Em breve: a tabela v2 × v3 com nDCG@10, Recall@20 e MRR (WP 4.1).")
+    st.caption(f"Modelo de vetores: {dados.modelo_embeddings.get('nome') or '—'}")
 
     st.markdown("#### Licença")
     st.markdown("Código: MIT. Dados derivados: CC BY 4.0 (provisório). "
