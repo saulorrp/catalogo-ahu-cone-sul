@@ -4,8 +4,7 @@ name: Imagem Docker
 # O servidor (deploy/docker-compose.yml) baixa a versão nova sozinho, com o Watchtower.
 on:
   push:
-    # O ramo da coleção ahu-brasil também publica, para o servidor ir ao ar antes do merge.
-    branches: [ main, claude/busca-em-disco ]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
