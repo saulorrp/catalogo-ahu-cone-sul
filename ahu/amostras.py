@@ -333,7 +333,7 @@ def tabela_dos_documentos(dados, doc_uids, excluidos=frozenset()) -> pd.DataFram
     clicável (`LinkColumn` com `display_text`). `Incluir` começa marcada, menos para quem está
     em `excluidos`.
     """
-    from ahu.links import digitarq, referencia_crav
+    from ahu.links import digitarq_do_documento
 
     docs = dados.documentos
     linhas = []
@@ -345,13 +345,11 @@ def tabela_dos_documentos(dados, doc_uids, excluidos=frozenset()) -> pd.DataFram
             return "" if v is None or pd.isna(v) else v
 
         ano = valor("ano_isolado")
-        referencia = (referencia_crav(valor("reference_code"))
-                      or referencia_crav(valor("new_code")) or "")
         linhas.append({
             "Incluir": uid not in excluidos,
             "Nº": posicao,
             "Ano": "" if ano == "" else int(ano),
-            "Código de referência": digitarq(referencia) or "",
+            "Código de referência": digitarq_do_documento(linha)[0] or "",
             "Pasta": valor("folder"),
             "Tipologia": valor("tipologia"),
             "Resumo": str(valor("description") or ""),
@@ -466,7 +464,7 @@ def _documento_do_plano(dados, doc_uid: str, pessoa_uid: str | None) -> dict:
         "autoria_verificada": (autoria_verificada(dados, doc_uid, pessoa_uid)
                                if pessoa_uid else False),
         "pessoas": _pessoas_do_documento(dados, doc_uid),
-        "links": {"digitarq": mod_links.digitarq(referencia),
+        "links": {"digitarq": mod_links.digitarq_do_documento(linha)[0],
                   "resgate": mod_links.resgate()},
     }
 

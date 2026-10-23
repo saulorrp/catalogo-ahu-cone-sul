@@ -80,6 +80,7 @@ CSS = f"""
    --------------------------------------------------------------------------- */
 .cota, .numero {{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }}
 .cota {{ font-size: 0.92rem; }}
+.sic {{ color: #8b1a1a; font-size: 0.8rem; font-weight: 600; }}
 .rotulo {{ color: var(--text-color, #5f6368); opacity: 0.75; font-size: 0.85rem; }}
 .aviso-distante {{ background: rgba(232, 163, 61, 0.14); border-left: 4px solid #e8a33d;
                   padding: 0.6rem 0.8rem; border-radius: 4px; margin: 0.4rem 0 0.8rem; }}

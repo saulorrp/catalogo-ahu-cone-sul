@@ -20,6 +20,7 @@ escrevem numa pasta de trabalho (`R`, o primeiro argumento), fora do repositóri
 | 6b | `conferir_ocr.py` | Compara o OCR dos catálogos escaneados com o texto do ACTD, pela cota |
 | 7 | `exportar_colecao.py` | Gera o parquet da coleção com as cotas calculadas por `ahu/conversor.py` |
 | 8 | `../build/importar_colecao.py` | Importa a coleção no corpus do app |
+| 9 | `varrer_digitarq.py` | Lista os registros do DigitArq caixa a caixa e grava `corpus/digitarq_referencias.tsv.gz`, que dá a cada documento o registro do DigitArq que o contém (`../build/cotas.py`) |
 
 ## OCR dos catálogos escaneados
 

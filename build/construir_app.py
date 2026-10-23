@@ -39,6 +39,7 @@ if str(RAIZ) not in sys.path:
 
 from ahu import lexico as mod_lexico  # noqa: E402
 from ahu.texto import tokenizar  # noqa: E402
+from build import cotas  # noqa: E402
 from build.importar_base import ErroImportacao, commit_atual, sha256_arquivo  # noqa: E402
 
 VERSAO_SCRIPT = "1.0.0"
@@ -52,7 +53,7 @@ CAMPOS_PDF = ["scribe_mediation_likely"]
 
 COLUNAS_BASE = ["doc_uid", "colecao", "folder", "description", "old_code", "new_code",
                 "reference_code", "document_id_and_date", "ano_isolado", "recipient_name",
-                "sender_name"]
+                "sender_name", "referencia_digitarq"]
 COLUNAS_TIPOLOGIA = ["tipologia", "tipologia_chave", "typology_status"]
 COLUNAS_SOCIO = ["sender_category", "vector", "typology_impact", "vernacular_score",
                  "justificativa"]
@@ -310,6 +311,9 @@ def construir(corpus: Path, saida: Path) -> dict:
     pasta = corpus / "camadas"
 
     base = ler_base(corpus, manifesto)
+    # Cotas e textos acertados, e o registro do DigitArq de cada documento (build/cotas.py).
+    indice_digitarq = cotas.IndiceDigitArq.ler(corpus / "digitarq_referencias.tsv.gz")
+    base, acertos = cotas.ajustar(base, indice_digitarq)
     tipologia = _ler_parquet(pasta / usadas["tipologia"] / "tipologia.parquet", "camada de tipologia")
     socio = _ler_parquet(pasta / usadas["sociolinguistica"] / "sociolinguistica.parquet",
                          "camada sociolinguística")
@@ -366,6 +370,7 @@ def construir(corpus: Path, saida: Path) -> dict:
         "lexico": {"versao": lexico["versao"], "pesos": lexico["pesos"],
                    "campos": lexico["campos"], "k1": lexico["k1"], "b": lexico["b"]},
         "srsp": srsp,
+        "acertos": acertos,
         "contagens": {
             "documentos": int(len(docs)), "pessoas": int(len(pessoas)),
             "doc_pessoa": int(len(doc_pessoa)),
