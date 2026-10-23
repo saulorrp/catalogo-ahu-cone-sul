@@ -360,7 +360,8 @@ def cossenos(dados, texto: str, encoder: Encoder) -> np.ndarray:
     norma = float(np.linalg.norm(vetor))
     if norma and abs(norma - 1.0) > 1e-3:
         vetor = vetor / norma
-    emb = dados.embeddings
+    # O codificador estático (ahu/estatico.py) traz os vetores dele; o e5 usa os de `dados`.
+    emb = encoder if hasattr(encoder, "produto") else dados.embeddings
     if hasattr(emb, "produto"):
         return emb.produto(vetor)
     return np.asarray(emb, dtype=np.float32) @ vetor
@@ -383,9 +384,9 @@ def _topo(notas: np.ndarray, limite: int, minimo: float = 0.0,
     return indices[ordem].tolist()
 
 
-def pesos_do_rrf(tokens: Iterable[str]) -> dict[str, float]:
+def pesos_do_rrf(tokens: Iterable[str], tabela: dict | None = None) -> dict[str, float]:
     n = len(list(tokens))
-    return dict(PESOS_RRF["curta" if n <= PALAVRAS_CONSULTA_CURTA else "longa"])
+    return dict((tabela or PESOS_RRF)["curta" if n <= PALAVRAS_CONSULTA_CURTA else "longa"])
 
 
 def _fundir(por_motor: dict[str, list[int]], pesos: dict[str, float]) -> dict[int, Resultado]:
@@ -414,8 +415,11 @@ def buscar(
     """A busca da §5.2–§5.5. `encoder=None` desliga o motor semântico (busca só léxica).
 
     `cosseno_minimo` é o piso absoluto do motor semântico, calibrado para o e5. Outro modelo tem
-    outra escala de cosseno: quem troca o modelo (WP 4.2) passa o piso dele aqui.
+    outra escala de cosseno: quem troca o modelo (WP 4.2) passa o piso dele aqui. Um `encoder`
+    que traga `cosseno_minimo`, `margens_rigor` e `pesos_rrf` (o estático) usa os dele.
     """
+    cosseno_minimo = getattr(encoder, "cosseno_minimo", cosseno_minimo)
+    margens = getattr(encoder, "margens_rigor", MARGENS_RIGOR)
     if modo not in MODOS:
         raise ValueError(f"Modo desconhecido: {modo!r}. Use um de {', '.join(MODOS)}.")
     if rigor not in RIGORES:
@@ -462,10 +466,10 @@ def buscar(
 
     if tokens and modo in ("automatico", "conceitual") and encoder is not None:
         cos = cossenos(dados, texto if not chave else resto, encoder)
-        limiar = max(cosseno_minimo, float(cos.max()) - MARGENS_RIGOR[rigor])
+        limiar = max(cosseno_minimo, float(cos.max()) - margens[rigor])
         por_motor["semantico"] = _topo(cos, limite_motor, minimo=limiar, permitidos=mascara)
 
-    pesos = pesos_do_rrf(tokens)
+    pesos = pesos_do_rrf(tokens, getattr(encoder, "pesos_rrf", None))
     fundidos = _fundir(por_motor, pesos)
 
     # §5.3: a cota dentro da frase -> esses documentos primeiro, o resto da frase segue a busca.
