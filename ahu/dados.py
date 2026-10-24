@@ -263,6 +263,31 @@ def _carregar_cacheado(pasta: str) -> Dados:
     return carregar_sem_cache(Path(pasta))
 
 
+def _carregar_streamlit(pasta: str, versao_codigo: str) -> Dados:
+    # `versao_codigo` só entra na chave do cache: ver `_versao_do_codigo`.
+    return carregar_sem_cache(Path(pasta))
+
+
+# Os módulos cujas classes ficam dentro do objeto em cache (o `Lexico` vive em `Dados`).
+_MODULOS_EM_CACHE = ("dados.py", "lexico.py")
+
+
+def _versao_do_codigo() -> str:
+    """Hash do código das classes guardadas no cache.
+
+    O Streamlit recarrega os módulos alterados a cada atualização do repositório, mas o
+    `st.cache_resource` devolve o objeto antigo, que ainda é da classe antiga: depois do PR #13
+    o `Lexico` em cache não tinha `idf_maximo` e a busca quebrou (24/10/2026). Com o hash do
+    código na chave, código novo carrega os dados de novo. É lido a cada chamada, e não na
+    importação, porque mudar só o `lexico.py` não recarrega este módulo.
+    """
+    pasta = Path(__file__).parent
+    h = hashlib.sha1()
+    for nome in _MODULOS_EM_CACHE:
+        h.update((pasta / nome).read_bytes())
+    return h.hexdigest()
+
+
 _cacheado_streamlit = None
 
 
@@ -279,7 +304,8 @@ def carregar(pasta: Path | str = APP_DADOS) -> Dados:
         return _carregar_cacheado(str(pasta))
     if _cacheado_streamlit is None:
         # Embrulhado uma única vez: embrulhar a cada chamada criaria um cache novo a cada vez.
+        # max_entries=1: a versão antiga sai da memória quando a nova entra (teto de 690 MiB).
         _cacheado_streamlit = st.cache_resource(
-            show_spinner="Carregando o corpus..."
-        )(_carregar_cacheado)
-    return _cacheado_streamlit(str(pasta))
+            show_spinner="Carregando o corpus...", max_entries=1
+        )(_carregar_streamlit)
+    return _cacheado_streamlit(str(pasta), _versao_do_codigo())
