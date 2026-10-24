@@ -24,6 +24,7 @@ from ahu import amostras as mod_amostras
 from ahu import busca
 from ahu import consulta_onnx as mod_onnx
 from ahu import conversor as mod_conversor
+from ahu import estatico as mod_estatico
 from ahu import estilo as mod_estilo
 from ahu import ficha as mod_ficha
 from ahu import filtros as mod_filtros
@@ -34,7 +35,7 @@ from ahu import pdf as mod_pdf
 from ahu import pessoas as mod_pessoas
 from ahu import selecao as mod_selecao
 from ahu.consulta import TAMANHO_PAGINA, Consulta, ErroDeLink, executar, url_da_busca
-from ahu.dados import ErroDados, carregar
+from ahu.dados import APP_DADOS, ErroDados, carregar
 
 TITULO = "Catálogo AHU-Brasil"
 SUBTITULO = ("Busca e triagem nos resumos do Arquivo Histórico Ultramarino sobre o Brasil "
@@ -251,10 +252,19 @@ def tema() -> str:
         return "light"
 
 # A versão leve, para servidores gratuitos com pouca memória, liga isto (segredo do Streamlit
-# Cloud): a busca fica só por palavras e por cota, e o modelo semântico nunca é carregado.
+# Cloud): o e5 nunca é carregado. A busca por sentido usa o modelo estático (`ahu/estatico.py`),
+# se `app_dados/estatico/` existir; sem ele, a busca fica só por palavras e por cota.
 SEM_SEMANTICA = os.environ.get("AHU_SEM_SEMANTICA", "").strip().lower() in ("1", "sim", "true")
 AVISO_SEM_SEMANTICA = ("Esta é a versão leve do catálogo: a busca por sentido (modo Conceitual) "
                        "não está disponível aqui, e a busca é feita por palavras e por cota.")
+AVISO_ESTATICO = ("Esta é a versão leve do catálogo: a busca por sentido usa um modelo mais "
+                  "simples, que aproxima palavras de sentido parecido, mas não lê a frase inteira.")
+
+
+@st.cache_resource(show_spinner=False)
+def encoder_estatico():
+    """O modelo estático da versão leve: ~50 MiB, sem `torch` nem ONNX, um por processo."""
+    return mod_estatico.EncoderEstatico(APP_DADOS) if mod_estatico.existe(APP_DADOS) else None
 
 
 @st.cache_resource(show_spinner="Carregando o modelo semântico (uma vez por sessão)...")
@@ -275,10 +285,11 @@ def encoder_preguicoso(dados):
     conceitual avisa e as outras continuam funcionando.
     """
     if SEM_SEMANTICA:
-        # Versão leve (Streamlit Community Cloud): sem o modelo, o app cabe nos 690 MiB.
+        # Versão leve (Streamlit Community Cloud): sem o e5, o app cabe nos 690 MiB.
+        estatico = encoder_estatico()
         if st.session_state.get("modo_buscado") == "conceitual":
-            st.info(AVISO_SEM_SEMANTICA, icon=":material/info:")
-        return None
+            st.info(AVISO_ESTATICO if estatico else AVISO_SEM_SEMANTICA, icon=":material/info:")
+        return estatico
 
     def encoder(textos):
         try:

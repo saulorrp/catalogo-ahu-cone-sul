@@ -10,6 +10,7 @@ perplexity_api_keys.txt
 *.npy
 !app_dados/embeddings/*.npy
 !app_dados/lexico/*.npy
+!app_dados/estatico/*.npy
 
 # Cache de modelos ONNX, se algum dia cair dentro do repositorio por engano (R7).
 /C/

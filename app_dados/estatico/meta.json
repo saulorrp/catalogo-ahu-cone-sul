@@ -1,0 +1,28 @@
+{
+  "versao": "1",
+  "modelo": "minishlab/potion-multilingual-128M",
+  "revisao": "73908c3438cf03b6a01bcb9611d62b23d0726f08",
+  "dimensao": 256,
+  "pecas": 42571,
+  "pecas_original": 500353,
+  "unk_id": 1,
+  "documentos": 167344,
+  "cosseno_minimo": 0.3,
+  "margens_rigor": {
+    "baixo": 0.15,
+    "medio": 0.1,
+    "alto": 0.06
+  },
+  "pesos_rrf": {
+    "curta": {
+      "lexico": 1.0,
+      "semantico": 0.3
+    },
+    "longa": {
+      "lexico": 1.0,
+      "semantico": 0.6
+    }
+  },
+  "receita": "<tipologia>. <sender_name>. <folder>. <description> (vazias omitidas)",
+  "escala": 0.49121832847595215
+}

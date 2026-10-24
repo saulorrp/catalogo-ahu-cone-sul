@@ -32,6 +32,7 @@ from typing import Callable, Iterable
 
 import numpy as np
 
+from ahu.lexico import K1
 from ahu.texto import tokenizar
 
 MODOS = ("automatico", "exata", "conceitual")
@@ -84,6 +85,12 @@ AVISO_SO_STOPWORDS = ("A consulta só tem palavras muito comuns, que a busca ign
                       "A lista abaixo é o corpus com os filtros aplicados.")
 
 PREFIXO_CONSULTA_PADRAO = "query: "
+
+# Nota léxica (§5.2), ver `_notas_lexico`. Medido em 23/10/2026 com 167 mil documentos: com estes
+# valores, "ordem terceira de são francisco" devolve a Ordem Terceira nos 7 primeiros (antes, o
+# topo era de ORDENS régias e de pessoas chamadas Francisco). Provisórios até o WP 4.2.
+EXPOENTE_COBERTURA = 2
+BONUS_FRASE_INTEIRA = 2.0
 
 
 # ---------------------------------------------------------------------------
@@ -226,20 +233,51 @@ class Resposta:
 # ---------------------------------------------------------------------------
 
 def _notas_lexico(dados, tokens: list[str]) -> np.ndarray:
+    """A nota léxica de cada documento: BM25 por campo, cobertura e proximidade.
+
+    1. **Teto teórico por campo.** Cada campo é dividido pela nota que um documento teria se
+       tivesse todos os termos da consulta naquele campo (Σ idf·(k1+1)), não pelo melhor
+       documento encontrado. Com o máximo observado, um só termo comum num campo curto ("ORDEM"
+       na tipologia, "Francisco" em pessoas) valia o máximo do campo e passava na frente de quem
+       tinha a consulta inteira na descrição.
+    2. **Cobertura.** A nota é multiplicada por (fração dos termos presentes)², com cada termo
+       pesando o seu IDF: faltar "terceira" custa mais que faltar "são".
+    3. **Proximidade.** Quem tem termos vizinhos da consulta em sequência ("ordem terceira",
+       "são francisco") sobe; quem tem a consulta inteira sobe mais.
+    """
     lexico = dados.lexico
     total = np.zeros(len(lexico), dtype=np.float64)
     for campo in lexico.campos:
         peso = float(lexico.pesos.get(campo, 0.0))
         if not peso:
             continue
-        notas = lexico.notas_do_campo(campo, tokens)
-        maximo = notas.max()
-        if maximo > 0:
-            # Min-max por campo antes de somar: sem isso o campo com mais texto manda sempre,
-            # e o peso da §5.2 não significaria nada.
-            notas = notas / maximo
-        total += peso * notas
-    return total
+        vocab = lexico._vocab(campo, list(dict.fromkeys(tokens)))
+        teto = sum(idf for _, idf in vocab.values()) * (K1 + 1)
+        if teto > 0:
+            total += peso * lexico.notas_do_campo(campo, tokens) / teto
+
+    idf = lexico.idf_maximo(tokens)
+    soma = sum(idf.values())
+    if soma > 0:
+        cobertura = np.zeros(len(lexico), dtype=np.float64)
+        for termo, valor in idf.items():
+            cobertura[lexico.linhas_com_termo(termo)] += valor / soma
+        total *= cobertura ** EXPOENTE_COBERTURA
+
+    return total * _fator_de_proximidade(lexico, tokens)
+
+
+def _fator_de_proximidade(lexico, tokens: list[str]) -> np.ndarray | float:
+    """1 + (pares vizinhos achados + BONUS_FRASE_INTEIRA·frase inteira) / número de pares."""
+    pares = [f"{a} {b}" for a, b in zip(tokens, tokens[1:]) if a != b]
+    if not pares:
+        return 1.0
+    frases = pares + ([" ".join(tokens)] if len(tokens) > 2 else [])
+    achou = lexico.frases_por_linha(frases).astype(np.float64)
+    bonus = achou[:, :len(pares)].sum(axis=1)
+    if len(frases) > len(pares):
+        bonus += BONUS_FRASE_INTEIRA * achou[:, -1]
+    return 1.0 + bonus / len(pares)
 
 
 def termos_no_corpus(dados, tokens: Iterable[str]) -> list[str]:
@@ -322,7 +360,8 @@ def cossenos(dados, texto: str, encoder: Encoder) -> np.ndarray:
     norma = float(np.linalg.norm(vetor))
     if norma and abs(norma - 1.0) > 1e-3:
         vetor = vetor / norma
-    emb = dados.embeddings
+    # O codificador estático (ahu/estatico.py) traz os vetores dele; o e5 usa os de `dados`.
+    emb = encoder if hasattr(encoder, "produto") else dados.embeddings
     if hasattr(emb, "produto"):
         return emb.produto(vetor)
     return np.asarray(emb, dtype=np.float32) @ vetor
@@ -345,9 +384,9 @@ def _topo(notas: np.ndarray, limite: int, minimo: float = 0.0,
     return indices[ordem].tolist()
 
 
-def pesos_do_rrf(tokens: Iterable[str]) -> dict[str, float]:
+def pesos_do_rrf(tokens: Iterable[str], tabela: dict | None = None) -> dict[str, float]:
     n = len(list(tokens))
-    return dict(PESOS_RRF["curta" if n <= PALAVRAS_CONSULTA_CURTA else "longa"])
+    return dict((tabela or PESOS_RRF)["curta" if n <= PALAVRAS_CONSULTA_CURTA else "longa"])
 
 
 def _fundir(por_motor: dict[str, list[int]], pesos: dict[str, float]) -> dict[int, Resultado]:
@@ -376,8 +415,11 @@ def buscar(
     """A busca da §5.2–§5.5. `encoder=None` desliga o motor semântico (busca só léxica).
 
     `cosseno_minimo` é o piso absoluto do motor semântico, calibrado para o e5. Outro modelo tem
-    outra escala de cosseno: quem troca o modelo (WP 4.2) passa o piso dele aqui.
+    outra escala de cosseno: quem troca o modelo (WP 4.2) passa o piso dele aqui. Um `encoder`
+    que traga `cosseno_minimo`, `margens_rigor` e `pesos_rrf` (o estático) usa os dele.
     """
+    cosseno_minimo = getattr(encoder, "cosseno_minimo", cosseno_minimo)
+    margens = getattr(encoder, "margens_rigor", MARGENS_RIGOR)
     if modo not in MODOS:
         raise ValueError(f"Modo desconhecido: {modo!r}. Use um de {', '.join(MODOS)}.")
     if rigor not in RIGORES:
@@ -424,10 +466,10 @@ def buscar(
 
     if tokens and modo in ("automatico", "conceitual") and encoder is not None:
         cos = cossenos(dados, texto if not chave else resto, encoder)
-        limiar = max(cosseno_minimo, float(cos.max()) - MARGENS_RIGOR[rigor])
+        limiar = max(cosseno_minimo, float(cos.max()) - margens[rigor])
         por_motor["semantico"] = _topo(cos, limite_motor, minimo=limiar, permitidos=mascara)
 
-    pesos = pesos_do_rrf(tokens)
+    pesos = pesos_do_rrf(tokens, getattr(encoder, "pesos_rrf", None))
     fundidos = _fundir(por_motor, pesos)
 
     # §5.3: a cota dentro da frase -> esses documentos primeiro, o resto da frase segue a busca.
