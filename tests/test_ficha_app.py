@@ -341,3 +341,30 @@ def test_app_busca_por_cota_sem_carregar_o_modelo():
     assert not at.exception, [e.value for e in at.exception]
     textos = " ".join(m.value for m in at.markdown)
     assert "**1** documento(s)" in textos and "pela cota" in textos
+
+
+@pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
+def test_segunda_busca_nao_volta_para_a_anterior():
+    """Apagar a busca, digitar outra e clicar em Buscar faz a busca nova, sempre.
+
+    Sem `key`, o campo de texto tinha o identificador calculado a partir do `value`, isto é, da
+    consulta anterior. Depois de uma busca o identificador mudava, o Streamlit criava um campo
+    novo e jogava fora o que a pessoa tinha digitado: a busca anterior reaparecia.
+    """
+    from streamlit.testing.v1 import AppTest
+
+    at = AppTest.from_file(str(RAIZ / "app.py"), default_timeout=180)
+    at.query_params["v"] = "2"
+    at.query_params["q"] = "AHU_ACL_CU_017, Cx. 5, D. 487"
+    at.query_params["m"] = "exata"
+    at.run()
+    buscar = next(b for b in at.button if b.label == "Buscar")
+    for cota in ("AHU_ACL_CU_017, Cx. 5, D. 488", "AHU_ACL_CU_017, Cx. 5, D. 489",
+                 "AHU_ACL_CU_017, Cx. 5, D. 490"):
+        at.text_input[0].set_value(cota)
+        buscar.click()
+        at.run()
+        assert not at.exception, [e.value for e in at.exception]
+        assert at.session_state.consulta.texto == cota
+        assert at.text_input[0].value == cota
+        buscar = next(b for b in at.button if b.label == "Buscar")
