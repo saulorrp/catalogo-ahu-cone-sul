@@ -403,22 +403,36 @@ def filtros_enriquecidos(opcoes, f) -> None:
             help="Desmarcada: ALTA e MÉDIA. Nunca BAIXA nem rejeitada.")
 
 def barra_de_busca(consulta: Consulta) -> Consulta:
-    """§9: a busca no topo."""
+    """§9: a busca no topo.
+
+    Os campos têm `key` fixa. Sem ela, o Streamlit calcula o identificador do campo a partir do
+    `value`, que é a consulta anterior: depois de cada busca o campo virava outro, e o que a
+    pessoa digitava em seguida era descartado — a busca anterior reaparecia. Com a `key`, o
+    valor dos campos só é reescrito quando a consulta muda por fora do formulário (link,
+    "limpar filtros").
+    """
+    origem = (consulta.texto, consulta.modo, consulta.rigor)
+    if st.session_state.get("busca_origem") != origem:
+        st.session_state.busca_origem = origem
+        st.session_state.busca_texto = consulta.texto
+        st.session_state.busca_modo = consulta.modo
+        st.session_state.busca_rigor = consulta.rigor
     with st.form("busca", clear_on_submit=False):
         colunas = st.columns([6, 2, 2, 1])
         texto = colunas[0].text_input(
-            "Busca", value=consulta.texto, placeholder='deserção de soldados · "obras do porto" '
-                                                       '· AHU_ACL_CU_017, Cx. 5, D. 487',
+            "Busca", key="busca_texto",
+            placeholder='deserção de soldados · "obras do porto" · AHU_ACL_CU_017, Cx. 5, D. 487',
             label_visibility="collapsed")
-        modo = colunas[1].selectbox("Modo", busca.MODOS, index=busca.MODOS.index(consulta.modo),
+        modo = colunas[1].selectbox("Modo", busca.MODOS, key="busca_modo",
                                     format_func=str.capitalize, label_visibility="collapsed")
         rigor = colunas[2].selectbox(
-            "Rigor", busca.RIGORES, index=busca.RIGORES.index(consulta.rigor),
+            "Rigor", busca.RIGORES, key="busca_rigor",
             format_func=lambda r: f"Rigor {r}", label_visibility="collapsed")
         enviado = colunas[3].form_submit_button("Buscar", width="stretch")
 
     if enviado:
         from ahu.consulta import asdict_raso
+        st.session_state.busca_origem = (texto, modo, rigor)
         return Consulta(**{**asdict_raso(consulta), "texto": texto, "modo": modo, "rigor": rigor,
                            "pagina": 1})
     return consulta
