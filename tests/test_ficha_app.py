@@ -36,7 +36,7 @@ def test_sem_cota_nao_ha_link_do_digitarq():
 
 
 def test_link_do_resgate_e_o_portal():
-    assert links.resgate("AHU_ACL_CU_021, Cx. 6, D. 390.") == "https://resgate.bn.gov.br/"
+    assert links.resgate("AHU_ACL_CU_021, Cx. 6, D. 390.") == links.RESGATE
 
 
 # ---------------------------------------------------------------------------

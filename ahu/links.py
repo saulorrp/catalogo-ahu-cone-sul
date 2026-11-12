@@ -32,7 +32,8 @@ import os
 from urllib.parse import quote, urlencode
 
 DIGITARQ = "https://digitarq.arquivos.pt/search?query={cota}&isAdvancedSearch=false"
-RESGATE = "https://resgate.bn.gov.br/"
+# A raiz do domínio não abre nada útil; o portal que a BN divulga é o docmulti do DocReader.
+RESGATE = "https://resgate.bn.gov.br/docreader/docmulti.aspx?bib=resgate"
 # O domínio antigo (resgate.bn.br, que as páginas de verbetes do gov.br ainda usam) hoje resolve
 # num servidor de redirecionamento da BN (redirect-bn-br.bn.br), e o link não abria. O portal já
 # está em resgate.bn.gov.br; o `hf` diz ao DocReader em que host ele está, como nas páginas do gov.br.
