@@ -37,6 +37,7 @@ RAIZ = Path(__file__).resolve().parent.parent
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))
 
+from ahu import consulta_onnx  # noqa: E402
 from ahu import lexico as mod_lexico  # noqa: E402
 from ahu.texto import tokenizar  # noqa: E402
 from build import cotas  # noqa: E402
@@ -376,6 +377,8 @@ def construir(corpus: Path, saida: Path) -> dict:
         "lexico": {"versao": lexico["versao"], "pesos": lexico["pesos"],
                    "campos": lexico["campos"], "k1": lexico["k1"], "b": lexico["b"]},
         "srsp": srsp,
+        # Revisão e SHA-256 dos modelos que o app baixa em execução (ahu/consulta_onnx.py).
+        "modelos": consulta_onnx.manifesto_modelos(),
         "acertos": acertos,
         "contagens": {
             "documentos": int(len(docs)), "pessoas": int(len(pessoas)),
