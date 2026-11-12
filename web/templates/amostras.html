@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Amostras - Catálogo AHU{% endblock %}
+{% block content %}
+<h1>Amostras</h1>
+
+<form method="get" action="{{ url_for('amostras') }}" class="filtros-form">
+    <label><input type="radio" name="tipo" value="diacronica" {% if tipo == 'diacronica' %}checked{% endif %} onchange="this.form.submit()"> Diacrônica por pessoa</label>
+    <label><input type="radio" name="tipo" value="estratificada" {% if tipo == 'estratificada' %}checked{% endif %} onchange="this.form.submit()"> Estratificada sobre o resultado</label>
+    
+    <div style="margin-top: 15px;">
+        {% if tipo == 'diacronica' %}
+        <label>Pessoa: 
+            <select name="pessoa_uid">
+                {% for p in pessoas_opcoes %}
+                <option value="{{ p.id }}" {% if pessoa_uid == p.id %}selected{% endif %}>{{ p.nome }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Máximo por ano: <input type="number" name="max_ano" value="{{ max_ano }}" min="0" style="width: 60px;"></label>
+        {% else %}
+        <label>Estratos (separados por vírgula, ex: decada,tipologia): <input type="text" name="estratos" value="{{ estratos }}"></label>
+        <label>N por estrato: <input type="number" name="por_estrato" value="{{ por_estrato }}" min="1" style="width: 60px;"></label>
+        <label>Semente: <input type="number" name="semente" value="{{ semente }}" style="width: 100px;"></label>
+        {% endif %}
+        <button type="submit">Gerar</button>
+    </div>
+</form>
+
+{% if erro %}
+<p class="aviso">Erro: {{ erro }}</p>
+{% endif %}
+
+{% if amostra %}
+<div style="margin-top: 20px;">
+    <h3>Relatório</h3>
+    <ul>
+        {% if tipo == 'diacronica' %}
+        <li>Na amostra: {{ amostra.relatorio.sorteados }}</li>
+        <li>Anos cobertos: {{ amostra.relatorio.anos|length }}</li>
+        <li>Sem data: {{ amostra.relatorio.sem_data }}</li>
+        {% else %}
+        <li>Sorteados: {{ amostra.relatorio.sorteados }}</li>
+        <li>Estratos: {{ amostra.relatorio.estratos }}</li>
+        <li>Estratos insuficientes: {{ amostra.relatorio.insuficientes|length }}</li>
+        {% endif %}
+    </ul>
+    
+    <a href="{{ url_for('amostras_plano') }}?{{ request.query_params }}" class="btn">Baixar Plano de Coleta (EINS)</a>
+</div>
+{% endif %}
+{% endblock %}

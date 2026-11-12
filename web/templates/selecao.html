@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Seleção - Catálogo AHU{% endblock %}
+{% block content %}
+<h1>Seleção — {{ total }} documento(s)</h1>
+
+<div class="doc-actions" style="margin-bottom: 20px;">
+    <form method="post" action="{{ url_for('limpar_selecao') }}" style="display: inline;">
+        <button type="submit" {% if not total %}disabled{% endif %}>Limpar seleção</button>
+    </form>
+    <a href="{{ url_for('selecao_pdf') }}" class="btn" {% if not total %}style="pointer-events: none; opacity: 0.5;"{% endif %}>Gerar PDF da seleção</a>
+</div>
+
+{% if total %}
+<table class="tabela-resultados">
+    <thead>
+        <tr>
+            <th>Nº</th>
+            <th>Ano</th>
+            <th>Cota</th>
+            <th>Resumo</th>
+            <th>Ação</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for linha in linhas %}
+        <tr id="sel-{{ linha.uid }}">
+            <td>{{ linha.n }}</td>
+            <td>{{ linha.ano or '—' }}</td>
+            <td class="cota">{{ linha.cota or '—' }}</td>
+            <td>{{ linha.resumo }}</td>
+            <td>
+                <button hx-post="{{ url_for('remover_selecao', doc_uid=linha.uid) }}" hx-target="#sel-{{ linha.uid }}" hx-swap="outerHTML">✕</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>Seleção vazia.</p>
+{% endif %}
+{% endblock %}

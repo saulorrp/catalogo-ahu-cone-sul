@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}{{ ficha.titulo }} - Catálogo AHU{% endblock %}
+
+{% block head %}
+<meta name="citation_title" content="{{ ficha.titulo }}">
+{% if ficha.ano %}<meta name="citation_publication_date" content="{{ ficha.ano }}">{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="doc-page">
+    <div class="doc-header">
+        <h1>{{ ficha.titulo }}</h1>
+        <div class="doc-actions">
+            <button onclick="copiarCitar()">Copiar como citar</button>
+            <a href="https://github.com/saulorrp/catalogo-ahu-cone-sul/issues/new?title=Correção+no+documento+{{ ficha.doc_uid }}&labels=correcao-de-dado" target="_blank" class="btn">Reportar erro</a>
+            <button hx-post="{{ url_for('adicionar_selecao', doc_uid=ficha.doc_uid) }}" hx-swap="outerHTML">Pôr na seleção</button>
+        </div>
+    </div>
+    
+    <div class="doc-resumo resumo">
+        {{ ficha.resumo_marcado | safe }}
+    </div>
+    
+    <div class="doc-meta">
+        <div class="meta-section">
+            <h3>Cotas</h3>
+            {% for k, v in ficha.cotas.items() %}
+            <div><span class="rotulo">{{ k }}</span> <span class="cota">{{ v }}</span></div>
+            {% endfor %}
+        </div>
+        
+        <div class="meta-section">
+            <h3>Links</h3>
+            {% if ficha.links.digitarq %}
+            <a href="{{ ficha.links.digitarq }}" target="_blank">{{ ficha.links.digitarq_rotulo }}</a>
+            {% endif %}
+            {% if ficha.links.resgate %}
+            <a href="{{ ficha.links.resgate }}" target="_blank">Portal do Projeto Resgate</a>
+            {% endif %}
+        </div>
+        
+        {% if ficha.pessoas %}
+        <div class="meta-section">
+            <h3>Pessoas</h3>
+            <ul>
+            {% for p in ficha.pessoas %}
+                <li>
+                    {% if p.pessoa_uid %}<a href="{{ url_for('pessoa', pessoa_uid=p.pessoa_uid) }}">{{ p.nome }}</a>{% else %}{{ p.nome }}{% endif %} - {{ p.tipo }}
+                    {% if p.exibe_nascimento %}
+                        {% if p.nascimento %} · nasc. {{ p.nascimento }}{% endif %}
+                        {% if p.pais_epoca %} · à época: {{ p.pais_epoca }}{% endif %}
+                        {% if p.fonte %} · <a href="{{ p.fonte }}" target="_blank">fonte</a>{% endif %}
+                    {% endif %}
+                </li>
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {% if ficha.inferencias %}
+        <details class="gaveta">
+            <summary>Inferências (IA) — DeepSeek v3</summary>
+            <div class="gaveta-content">
+                {% for k, v in ficha.inferencias.items() %}
+                <div><strong>{{ k }}:</strong> {{ v }}</div>
+                {% endfor %}
+            </div>
+        </details>
+        {% endif %}
+    </div>
+</div>
+<script>
+function copiarCitar() {
+    const texto = "{{ ficha.cotas.get('Código de referência', ficha.cotas.get('Código atual', ficha.cotas.get('Código antigo', ''))) }}";
+    navigator.clipboard.writeText(texto);
+    alert("Cota copiada!");
+}
+</script>
+{% endblock %}

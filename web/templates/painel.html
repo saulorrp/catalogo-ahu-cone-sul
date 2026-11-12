@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Painel - Catálogo AHU{% endblock %}
+{% block head %}
+<script src="{{ url_for('static', path='plotly.min.js') }}"></script>
+{% endblock %}
+{% block content %}
+<h1>Painel diatópico</h1>
+
+<form method="get" action="{{ url_for('painel') }}" class="filtros-form">
+    <label><input type="radio" name="por" value="documento" {% if por == 'documento' %}checked{% endif %} onchange="this.form.submit()"> Por documento</label>
+    <label><input type="radio" name="por" value="pessoa" {% if por == 'pessoa' %}checked{% endif %} onchange="this.form.submit()"> Por pessoa</label>
+</form>
+
+<div style="display: flex; gap: 20px; margin-top: 20px;">
+    <div class="metric">Total: {{ painel.total }}</div>
+    <div class="metric">Com origem: {{ painel.total - painel.sem_origem }}</div>
+    <div class="metric">Sem origem: {{ painel.sem_origem }}</div>
+</div>
+<p class="aviso">{{ painel.nota }}</p>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px;">
+    <div style="flex: 1; min-width: 300px;" id="grafico-pais"></div>
+    <div style="flex: 1; min-width: 300px;">
+        <table class="tabela-resultados">
+            <tr><th>País</th><th>{{ 'Documentos' if por == 'documento' else 'Pessoas' }}</th></tr>
+            {% for row in paises_records %}
+            <tr><td>{{ row.pais }}</td><td>{{ row.contagem }}</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<div style="margin-top: 40px;" id="grafico-decada"></div>
+
+<script>
+    const figPais = {{ fig_pais_json | safe }};
+    const figDecada = {{ fig_decada_json | safe }};
+    Plotly.newPlot('grafico-pais', figPais.data, figPais.layout, {responsive: true});
+    Plotly.newPlot('grafico-decada', figDecada.data, figDecada.layout, {responsive: true});
+</script>
+{% endblock %}

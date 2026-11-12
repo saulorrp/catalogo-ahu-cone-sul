@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Sobre - Catálogo AHU{% endblock %}
+{% block content %}
+<h1>Sobre e método</h1>
+<p>Este app é um instrumento de <strong>triagem documental</strong>: leva de uma pergunta a um conjunto de cotas que se possa justificar, citar e levar ao arquivo. Ele <strong>não</strong> contém as imagens dos manuscritos.</p>
+
+<h3>1. Fontes</h3>
+<p>O que são o AHU, o Projeto Resgate, a Biblioteca Nacional e o ACTD, de onde vêm os resumos e as cotas, e os links para os catálogos e os microfilmes estão na aba <a href="{{ url_for('referencias') }}">Referências</a>. O passo a passo da coleta do catálogo está em <a href="https://github.com/saulorrp/catalogo-ahu-cone-sul/blob/main/docs/METODO_COLETA.md" target="_blank">METODO_COLETA.md</a>.</p>
+
+<h3>2. Como a busca funciona</h3>
+<p>A busca combina três motores e funde os resultados pela <strong>posição</strong> de cada documento em cada motor, não por uma nota inventada.</p>
+<ul>
+    <li><strong>Cota.</strong> Se a consulta é uma cota, em qualquer das três formas (Resgate, código de referência ou cota antiga), a resposta é o documento dessa cota e mais nada. Se a cota aparece no meio de uma frase, o documento vem primeiro, e o resto da frase segue a busca normal.</li>
+    <li><strong>Palavras.</strong> Procura as palavras da consulta no resumo e nos campos do documento e ordena os resultados pela frequência e pela raridade de cada termo. Os campos têm pesos: pessoas 2,0, destinatário 1,5, tipologia 1,5, resumo 1,0 e pasta 0,5. Grafias antigas e acentos são normalizados (<code>ph</code>→<code>f</code>, <code>y</code>→<code>i</code>). Aspas pedem a frase exata.</li>
+    <li><strong>Sentido (semântica).</strong> Compara o significado da consulta com o de cada resumo, com o modelo multilíngue <code>multilingual-e5-small</code>. Acha documentos que tratam do assunto com outras palavras. O <strong>rigor</strong> define até onde, abaixo do documento mais próximo, um resultado ainda entra.</li>
+</ul>
+
+<h3>3. A coleção AHU-Sul e as camadas de análise</h3>
+<p>A <strong>ahu-sul</strong> reúne os documentos do AHU sobre o Sul do Brasil e a região do Prata (Rio Grande, Santa Catarina, Colônia do Sacramento, Montevidéu, Buenos Aires, e os papéis do Rio de Janeiro e de São Paulo sobre o Sul). Sobre o resumo do catálogo, ela tem camadas que o resto do banco não tem:</p>
+<ul>
+    <li><strong>Pessoas.</strong> Os remetentes e destinatários de cada resumo foram extraídos e consolidados num cadastro de pessoas, coletivos e instituições. Cada pessoa tem um identificador estável, e variantes de grafia do mesmo nome contam como a mesma pessoa.</li>
+    <li><strong>Biografias (Perplexity).</strong> Para cada pessoa, o Perplexity buscou na web o local de nascimento e a fonte. O resultado foi conferido no Wikidata quando possível e classificado por confiança. O app só mostra os níveis <strong>alta</strong> e <strong>média</strong>.</li>
+    <li><strong>Sociolinguística (DeepSeek).</strong> O modelo DeepSeek v3 leu cada resumo, sem exemplos prévios (<em>zero-shot</em>), e estimou a categoria social do remetente, o vetor da comunicação (de baixo para cima, de cima para baixo, horizontal), o grau de formulário da tipologia, a mediação provável de um escrivão e o <strong>SRSP</strong>, um índice de 1 a 9 da probabilidade de o original trazer sintaxe vernácula. O texto do prompt está registrado na camada. São estimativas: os filtros que dependem delas começam desligados.</li>
+    <li><strong>Tipologia.</strong> A espécie documental (carta, ofício, requerimento…), normalizada e marcada quando fica fora do vocabulário canônico.</li>
+</ul>
+
+<p>Método completo: Rocha, S. R. P. <em>Desenvolvimento de um Classificador do Catálogo do AHU…</em> SciELO Preprints, 2026. <a href="https://doi.org/10.1590/SciELOPreprints.16461" target="_blank">doi:10.1590/SciELOPreprints.16461</a>.</p>
+
+<h3>Licença</h3>
+<p>Código: MIT. Dados derivados: CC BY 4.0 (provisório). Resumos e cotas: AHU e Projeto Resgate "Barão do Rio Branco".</p>
+{% endblock %}

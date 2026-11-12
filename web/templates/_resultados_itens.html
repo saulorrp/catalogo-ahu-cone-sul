@@ -1,0 +1,22 @@
+{% for r, f in fichas %}
+<div class="resultado-card">
+    <div class="resultado-header">
+        <details class="gaveta">
+            <summary>{{ f.titulo }}</summary>
+            <div class="gaveta-content">
+                <div class="resumo">{{ f.resumo_marcado | safe }}</div>
+                <div class="cotas">
+                    {% for k, v in f.cotas.items() %}
+                    <div><span class="rotulo">{{ k }}</span> <span class="cota">{{ v }}</span></div>
+                    {% endfor %}
+                </div>
+                <div class="links">
+                    <a href="{{ url_for('doc', doc_uid=f.doc_uid) }}">Página do documento</a>
+                </div>
+            </div>
+        </details>
+    </div>
+</div>
+{% else %}
+<div class="aviso">Nenhum documento encontrado.</div>
+{% endfor %}

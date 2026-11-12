@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="busca-container">
+    <form id="form-busca" action="{{ url_for('busca') }}" method="GET" hx-get="{{ url_for('resultados') }}" hx-target="#lista-resultados" hx-swap="innerHTML" hx-push-url="true" hx-trigger="submit, change from:select, change from:input[type='checkbox'], change from:input[type='radio']">
+        <input type="hidden" name="v" value="2">
+        <div class="busca-bar">
+            <input type="text" name="q" value="{{ consulta.texto }}" placeholder="Buscar..." id="input-busca" accesskey="/">
+            <select name="m">
+                <option value="automatico" {% if consulta.modo == 'automatico' %}selected{% endif %}>Automático</option>
+                <option value="exata" {% if consulta.modo == 'exata' %}selected{% endif %}>Exata</option>
+                <option value="conceitual" {% if consulta.modo == 'conceitual' %}selected{% endif %}>Conceitual</option>
+            </select>
+            <select name="r">
+                <option value="alto" {% if consulta.rigor == 'alto' %}selected{% endif %}>Rigor alto</option>
+                <option value="medio" {% if consulta.rigor == 'medio' %}selected{% endif %}>Rigor médio</option>
+                <option value="baixo" {% if consulta.rigor == 'baixo' %}selected{% endif %}>Rigor baixo</option>
+            </select>
+            <button type="submit">Buscar</button>
+        </div>
+        
+        <div class="filtros-layout">
+            <aside class="filtros-sidebar">
+                <h3>Filtros</h3>
+                
+                <div class="filtro-grupo">
+                    <label>Período</label>
+                    <div class="periodo-inputs">
+                        <input type="number" name="a1" value="{{ consulta.filtros.ano_de or '' }}" placeholder="De" onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
+                        <input type="number" name="a2" value="{{ consulta.filtros.ano_ate or '' }}" placeholder="Até" onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
+                    </div>
+                    <label><input type="checkbox" name="sd" value="1" {% if consulta.filtros.sem_data %}checked{% endif %}> Incluir sem data</label>
+                </div>
+                
+                {% if facetas.histograma %}
+                <div class="histograma">
+                    {% set max_count = facetas.histograma.values() | max %}
+                    {% for ano, count in facetas.histograma.items() | sort %}
+                    <div class="barra" style="height: {{ (count / max_count) * 100 }}%;" title="{{ ano }}: {{ count }}" onclick="document.querySelector('[name=a1]').value={{ ano // 10 * 10 }}; document.querySelector('[name=a2]').value={{ ano // 10 * 10 + 9 }}; document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));"></div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if opcoes.pessoas %}
+                <div class="filtro-grupo autocomplete-container">
+                    <label>Remetente</label>
+                    <input type="text" id="remetente-input" placeholder="Buscar remetente..." autocomplete="off">
+                    <input type="hidden" name="fu" id="remetente-hidden" value="{{ consulta.filtros.pessoas[0] if consulta.filtros.pessoas else '' }}">
+                    <div id="remetente-input-list" class="autocomplete-list"></div>
+                </div>
+                {% endif %}
+
+                {% if opcoes.tem_destinatario %}
+                <div class="filtro-grupo autocomplete-container">
+                    <label>Destinatário</label>
+                    <input type="text" name="fd" id="destinatario-input" value="{{ consulta.filtros.destinatario or '' }}" placeholder="Buscar destinatário..." autocomplete="off">
+                    <div id="destinatario-input-list" class="autocomplete-list"></div>
+                </div>
+                {% endif %}
+
+                <details class="gaveta">
+                    <summary>Coleção</summary>
+                    <div class="gaveta-content">
+                        {% for col in opcoes.colecoes %}
+                        <label>
+                            <input type="checkbox" name="fc" value="{{ col }}" {% if col in consulta.filtros.colecoes %}checked{% endif %}>
+                            {{ col }} ({{ facetas.colecao.get(col, 0) }})
+                        </label>
+                        {% endfor %}
+                    </div>
+                </details>
+                
+                <details class="gaveta">
+                    <summary>Pasta / Região</summary>
+                    <div class="gaveta-content">
+                        {% for pasta in opcoes.pastas %}
+                        <label>
+                            <input type="checkbox" name="fp" value="{{ pasta }}" {% if pasta in consulta.filtros.pastas %}checked{% endif %}>
+                            {{ pasta }} ({{ facetas.folder.get(pasta, 0) }})
+                        </label>
+                        {% endfor %}
+                    </div>
+                </details>
+                
+                <details class="gaveta">
+                    <summary>Tipologia</summary>
+                    <div class="gaveta-content">
+                        {% for tipo, _ in opcoes.tipologias %}
+                        <label>
+                            <input type="checkbox" name="ft" value="{{ tipo }}" {% if tipo in consulta.filtros.tipologias %}checked{% endif %}>
+                            {{ tipo }} ({{ facetas.tipologia.get(tipo, 0) }})
+                        </label>
+                        {% endfor %}
+                    </div>
+                </details>
+
+                <details class="gaveta">
+                    <summary>Década</summary>
+                    <div class="gaveta-content">
+                        {% for decada, count in facetas.decada.items() | sort %}
+                        <label>
+                            <input type="radio" name="decada_radio" value="{{ decada }}" onclick="document.querySelector('[name=a1]').value={{ decada }}; document.querySelector('[name=a2]').value={{ decada + 9 }}; document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
+                            {{ decada }}s ({{ count }})
+                        </label>
+                        {% endfor %}
+                    </div>
+                </details>
+
+                <details class="gaveta">
+                    <summary>Inferências (DeepSeek)</summary>
+                    <div class="gaveta-content">
+                        <label>SRSP De: <input type="number" name="s1" value="{{ consulta.filtros.srsp_de or '' }}" onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));"></label>
+                        <label>SRSP Até: <input type="number" name="s2" value="{{ consulta.filtros.srsp_ate or '' }}" onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));"></label>
+                        
+                        <label>Categoria social:</label>
+                        {% for cat, _ in opcoes.categorias %}
+                        <label>
+                            <input type="checkbox" name="fg" value="{{ cat }}" {% if cat in consulta.filtros.categorias %}checked{% endif %}>
+                            {{ cat }}
+                        </label>
+                        {% endfor %}
+
+                        <label>Vetor:</label>
+                        {% for vet, _ in opcoes.vetores %}
+                        <label>
+                            <input type="checkbox" name="fv" value="{{ vet }}" {% if vet in consulta.filtros.vetores %}checked{% endif %}>
+                            {{ vet }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </details>
+            </aside>
+            
+            <div class="resultados-area">
+                <div class="resultados-header">
+                    <span>{{ resposta.total }} documento(s)</span>
+                    <select name="o">
+                        <option value="relevancia" {% if consulta.ordenacao == 'relevancia' %}selected{% endif %}>Relevância</option>
+                        <option value="ano_asc" {% if consulta.ordenacao == 'ano_asc' %}selected{% endif %}>Ano (mais antigo)</option>
+                        <option value="ano_desc" {% if consulta.ordenacao == 'ano_desc' %}selected{% endif %}>Ano (mais recente)</option>
+                    </select>
+                </div>
+                
+                <div id="lista-resultados">
+                    {% include "_resultados_itens.html" %}
+                </div>
+                <div id="carregar-mais-container">
+                    {% if pagina_atual < total_paginas %}
+                    <button type="button" class="btn-carregar-mais" hx-get="{{ url_for('resultados') }}" hx-include="#form-busca" hx-vals='{"p": {{ pagina_atual + 1 }}}' hx-target="#lista-resultados" hx-swap="beforeend">Carregar mais</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<script>
+    setupAutocomplete('remetente-input', 'remetente-hidden', 'remetente');
+    setupAutocomplete('destinatario-input', null, 'destinatario');
+</script>
+{% endblock %}
