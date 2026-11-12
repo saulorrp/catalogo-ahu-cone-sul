@@ -165,10 +165,15 @@ def main() -> int:
             classes_doc.append("nao_encontrado_pela_referencia")
 
         # Busca pelo new_code original
-        resp_resgate = busca.buscar(dados, new_code, encoder=None)
-        uids_resgate = [r.doc_uid for r in resp_resgate.resultados]
-        if doc_uid not in uids_resgate:
-            classes_doc.append("nao_encontrado_pelo_resgate")
+        # Se a busca não lê a cota, ela cairia na busca textual do corpus inteiro (~0,7 s por
+        # documento, horas no total) e o resultado não diria nada sobre a rota de cotas.
+        if busca.chave_cota(new_code) is None:
+            classes_doc.append("busca_nao_reconhece_cota")
+        else:
+            resp_resgate = busca.buscar(dados, new_code, encoder=None)
+            uids_resgate = [r.doc_uid for r in resp_resgate.resultados]
+            if doc_uid not in uids_resgate:
+                classes_doc.append("nao_encontrado_pelo_resgate")
 
         # Contabilidade por coleção e agregada
         eh_estrito = len(classes_doc) == 0
