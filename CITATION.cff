@@ -1,11 +1,42 @@
 cff-version: 1.2.0
-message: "Se você utilizar este software ou os dados derivados, por favor cite conforme abaixo."
-title: "Classificador AHU-Sul v3: Triagem Documental sobre o Catálogo do Arquivo Histórico Ultramarino"
-version: 3.0.0
-date-released: 2026-10-11
+message: "Se você usar este software ou os dados derivados, cite conforme abaixo. As licenças variam por camada: ver LICENSE-DATA.md."
+type: software
+title: "Catálogo AHU-Brasil: busca e camadas de análise sobre o catálogo do Arquivo Histórico Ultramarino"
+version: 3.1.0
+date-released: 2026-11-12
 authors:
   - family-names: Rocha
     given-names: "Saulo R. P."
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.18772666
+    description: "DOI de conceito do depósito no Zenodo (todas as versões)"
 repository-code: "https://github.com/saulorrp/catalogo-ahu-cone-sul"
 url: "https://catalogo-ahu-sul.streamlit.app"
 license: MIT
+keywords:
+  - Arquivo Histórico Ultramarino
+  - Conselho Ultramarino
+  - Brasil colonial
+  - catálogo arquivístico
+  - busca híbrida
+  - sociolinguística histórica
+references:
+  - type: article
+    title: "Desenvolvimento de um Classificador do Catálogo do AHU"
+    authors:
+      - family-names: Rocha
+        given-names: "Saulo R. P."
+    year: 2026
+    journal: "SciELO Preprints"
+    doi: 10.1590/SciELOPreprints.16461
+  - type: data
+    title: "Catálogos do Arquivo Histórico Ultramarino (Conselho Ultramarino, Brasil)"
+    authors:
+      - name: "Arquivo Histórico Ultramarino"
+    notes: "Resumos obtidos do Arquivo Científico Tropical Digital (ACTD/IICT); uso para pesquisa e educação, com crédito"
+  - type: data
+    title: "Projeto Resgate Barão do Rio Branco"
+    authors:
+      - name: "Biblioteca Nacional"
+    notes: "Textos do portal gov.br sob CC BY-ND 3.0"
