@@ -33,6 +33,7 @@ from typing import Callable, Iterable
 
 import numpy as np
 
+from ahu import conversor
 from ahu.lexico import K1
 from ahu.texto import tokenizar
 
@@ -162,6 +163,23 @@ def _chave_do_match(motivo: str, m) -> str:
     return _chave_cu(m.group(1), m.group(2), m.group(3), int(m.group(4)))
 
 
+def _pelo_conversor(texto: str):
+    """Plano B da rota de cotas: (chaves, início, fim) pela leitura do conversor, ou None.
+
+    O conversor foi escrito para as grafias tortas dos catálogos (`017Cx. 48`, `C x. 1`,
+    `017, 8, D. 818`, `D. 245A`), que os padrões acima não leem; sem isto, 82 documentos da base
+    não voltavam pela própria cota. Só vale quando os padrões de cima não acham nada.
+    """
+    achado = conversor.localizar(texto)
+    if achado is None:
+        return None
+    cota, inicio, fim = achado
+    fim_doc = str(cota.documento_fim) if cota.documento_fim else None
+    chaves = [_chave_cu(str(cota.serie), None if cota.subserie is None else str(cota.subserie),
+                        str(cota.caixa), d) for d in _intervalo(cota.documento, fim_doc)]
+    return chaves, inicio, fim
+
+
 def chave_cota(texto: str) -> str | None:
     """Chave canônica de uma cota, ou None se o texto não contiver uma.
 
@@ -169,7 +187,10 @@ def chave_cota(texto: str) -> str | None:
     a subsérie `01`/`001` vira `-1` (`cu|17-1|57|13257`). De um intervalo vale o primeiro documento.
     """
     motivo, m = _casar(_achatar(texto))
-    return _chave_do_match(motivo, m) if m else None
+    if m:
+        return _chave_do_match(motivo, m)
+    plano_b = _pelo_conversor(texto)
+    return plano_b[0][0] if plano_b else None
 
 
 def chaves_do_campo(texto: str) -> list[str]:
@@ -182,7 +203,8 @@ def chaves_do_campo(texto: str) -> list[str]:
     achatado = _achatar(texto)
     motivo, m = _casar(achatado)
     if not m:
-        return []
+        plano_b = _pelo_conversor(texto)
+        return plano_b[0] if plano_b else []
     if motivo == "cu_cx":
         return [_chave_cu(m.group(1), m.group(2), m.group(3), d)
                 for d in _intervalo(int(m.group(4)), m.group(5))]
@@ -203,13 +225,18 @@ def _trecho_da_cota(texto: str) -> tuple[str | None, str]:
     achatado = _achatar(texto)
     motivo, m = _casar(achatado)
     if not m:
-        return None, achatado
+        plano_b = _pelo_conversor(texto)
+        if plano_b is None:
+            return None, achatado
+        chaves, inicio, fim = plano_b
+        return chaves[0], _achatar(texto[:inicio] + " " + texto[fim:])
     resto = re.sub(r"\s+", " ", achatado[: m.start()] + " " + achatado[m.end():]).strip()
     return _chave_do_match(motivo, m), resto
 
 
 # v2: subsérie na chave (`cu|17-1|...`), intervalos e cotas antigas com vários pares.
-_ATRIBUTO_TABELA = "_tabela_cotas_v2"
+# v3: as grafias tortas lidas pelo conversor (plano B).
+_ATRIBUTO_TABELA = "_tabela_cotas_v3"
 
 
 def tabela_de_cotas(dados) -> dict[str, list[int]]:

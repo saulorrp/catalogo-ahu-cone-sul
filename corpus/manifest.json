@@ -5,8 +5,8 @@
       "atualizado_em": "2026-10-07T22:26:41+00:00",
       "arquivos": {
         "colecoes/ahu-sul/documentos.parquet": "3cbf27c555bfef0861ead298ce63dca2f3d73c86f85c9e883a1445a578adcb10",
-        "colecoes/ahu-sul/registro_ids.json": "866a227f9b05ac7a9c31709d1b0b4df45aa64417aed342a5fce42d6b216f3d03",
-        "colecoes/ahu-sul/camada.json": "cea0602ef0e80924b133d7b585d93f9926596e1fbbeb823230b8205fb1ee06ae"
+        "colecoes/ahu-sul/registro_ids.json": "976edbaae990e6c56c116faed944b07cb4bc37e228418135b8030e461bed31c9",
+        "colecoes/ahu-sul/camada.json": "33a293e3ab2db480b3240d5db04f6f25179a98ca6a13d5a74d0c7690d3d6df10"
       }
     },
     "ahu-brasil": {
@@ -35,7 +35,7 @@
       "documentos": 7051,
       "arquivos": {
         "camadas/sociolinguistica_deepseek_v3/sociolinguistica.parquet": "836164036eac56a8fae83d23918785796936360917ddce6e92b520ec48b64643",
-        "camadas/sociolinguistica_deepseek_v3/camada.json": "202c5144368e229155d06feb5dce166dc3e4b9acdd8c04f60cbfd4aa6a612d6e"
+        "camadas/sociolinguistica_deepseek_v3/camada.json": "486ba49cc9a85bc3256b0cebc3bd9e1fd937a49d64b9e6d8311d785588e60456"
       },
       "ativa": true
     },
@@ -46,8 +46,8 @@
       "arquivos": {
         "camadas/entidades_v2/entidades.parquet": "2e6dc27cf45d9a93e72676ef86582bde1bad3c67ffa8bcde89988518e8d003dd",
         "camadas/entidades_v2/pessoas.parquet": "2d1dcd965c8fad9f6ba10ee762bb439afcc9e438bb243db4e93d9a31ee067ec9",
-        "camadas/entidades_v2/registro_pessoas.json": "f74284bfc8cd460515fcc5155cc59aa11ba622da2b9044f96516cdff57fa5394",
-        "camadas/entidades_v2/camada.json": "9d4346a32cb3e764ebebb31a1e31221022fb97eaf287cae314adc13eb1b16880"
+        "camadas/entidades_v2/registro_pessoas.json": "8d73659d3a0bc79b9c6253a8e26cbd9fee849b4ac6e0c22a4494c6d5ae26b64e",
+        "camadas/entidades_v2/camada.json": "17cbf905242890ec44942b5037ceace2e79c745859d44ee162272b856523d70d"
       },
       "ativa": true
     },
@@ -57,7 +57,7 @@
       "documentos": 7050,
       "arquivos": {
         "camadas/biografias_v2/biografias.parquet": "86d23564f5aedfa416a1e212a9c2254c3241faaa2dba33a108c939feded3db02",
-        "camadas/biografias_v2/camada.json": "2a86a567df46b83b654854e2424c6f25874fd9a0ba8cb5c4ababdfd9a74b3f58"
+        "camadas/biografias_v2/camada.json": "575fb7dc40adbd08d4f324df2c3cc437f7dea04e8bd9aed3f0feddb97761c581"
       },
       "ativa": true
     },
@@ -69,7 +69,7 @@
       "arquivos": {
         "camadas/embeddings_e5_v1_amostra/embeddings.f16.npy": "7105a2ef4957e6be25d812aa135d2741a43b06e7c7effbcef231c6b4032cf5a9",
         "camadas/embeddings_e5_v1_amostra/indice.parquet": "d0b7847144f19660ec583a9f12c4d06434d2802b75a35910ec94794026114b36",
-        "camadas/embeddings_e5_v1_amostra/camada.json": "bf0bde9b94793188ab79373336843b4c4d12b847237ece4cfd65442ed93d0e9e"
+        "camadas/embeddings_e5_v1_amostra/camada.json": "06d31aaabb090679e750f09b1a4ff5de612d820b89dbf6194d4f20131c191fcf"
       },
       "ativa": false
     },
@@ -81,7 +81,7 @@
       "arquivos": {
         "camadas/embeddings_e5_v1/embeddings.f16.npy": "a8d3d6566b24656f3625dc5d5dfd353e064757247184440cfac12d15235f6035",
         "camadas/embeddings_e5_v1/indice.parquet": "312ec342d6bd77b3e7090877903a1a6dd7e0662fe8c922aa50f03fd233480a57",
-        "camadas/embeddings_e5_v1/camada.json": "c004105daf39b81a2c3a05f519a505114e7619ce72c8be6c51cd55ac6614d7ed"
+        "camadas/embeddings_e5_v1/camada.json": "d7ef786b873451b225120499551d7658cea7f4dc0659e53c17dea27f737cb6e2"
       },
       "ativa": false
     },
