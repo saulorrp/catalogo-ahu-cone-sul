@@ -13,6 +13,7 @@ Os catálogos dos documentos avulsos do fundo Conselho Ultramarino (AHU, Lisboa)
 - **PDF de cada série:** `https://actd.iict.pt/eserv/actd:CUc<série>/CU-<Nome>.pdf`.
 - **Lista completa usada:** `actd/series_actd.tsv`, com 35 séries. São as capitanias do Brasil (003–023), Bahia Castro e Almeida (005-01) e Luísa da Fonseca (005-02), Rio de Janeiro Castro e Almeida (017-01) e São Paulo Mendes Gouveia (023-01). Entram também Serviço de Partes (030), Ultramar (035), Contratos do Sal (050), Brasil-Limites (059), Montevidéu (065), Buenos Aires (066), Paraguai (071), Reino (076), Visita do Ouro (084) e Conselho Ultramarino (089).
 - **Cópias locais:** `actd/*.pdf`. Parser: `scripts/parse_actd.py`.
+- **Conferência das cópias:** [`fontes_checksums.tsv`](fontes_checksums.tsv) traz a URL, a data de acesso, o tamanho e o SHA-256 de cada PDF (baixados de novo em 12/11/2026). Quem baixar os PDFs confere se são os mesmos; `scripts/reidratar_resumos.py --checksums` avisa quando não forem.
 
 ## 2. Biblioteca Nacional, Projeto Resgate Barão do Rio Branco (gov.br)
 - **Instrumentos de pesquisa (HTML):** https://www.gov.br/bn/pt-br/central-de-conteudos/projeto-resgate/novos-instrumentos-de-pesquisa. Cobre 13 capitanias, a Série Reino e os Códices 235, 255, 267, 277 e 586.

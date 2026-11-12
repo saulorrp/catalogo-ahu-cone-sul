@@ -21,6 +21,8 @@ escrevem numa pasta de trabalho (`R`, o primeiro argumento), fora do repositóri
 | 7 | `exportar_colecao.py` | Gera o parquet da coleção com as cotas calculadas por `ahu/conversor.py` |
 | 8 | `../build/importar_colecao.py` | Importa a coleção no corpus do app |
 | 9 | `varrer_digitarq.py` | Lista os registros do DigitArq caixa a caixa e grava `corpus/digitarq_referencias.tsv.gz`, que dá a cada documento o registro do DigitArq que o contém (`../build/cotas.py`) |
+| 10 | `checksums_fontes.py` | Grava `fontes_checksums.tsv`: URL, data de acesso, tamanho e SHA-256 de cada PDF do ACTD |
+| 11 | `reidratar_resumos.py`, `conferir_reidratacao.py` | Reconstituem os resumos a partir dos PDFs do ACTD (`url_actd` + `pagina_actd`), conferindo cada um pelo `sha1_resumo`; servem para publicar os dados sem os resumos |
 
 ## OCR dos catálogos escaneados
 
