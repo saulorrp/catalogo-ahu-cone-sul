@@ -392,7 +392,7 @@ def test_filtros_nos_dados_reais():
     d = carregar_sem_cache(APP_DADOS)
     o = opcoes(d)
     assert o["mostrar_colecao"] is True and o["colecoes"] == ["ahu-brasil", "ahu-sul"]
-    assert o["documentos_sem_data"] == 2343
+    assert o["documentos_sem_data"] == 2390
     sul = d.documentos[d.documentos["colecao"] == "ahu-sul"]
     assert int(sul["ano_isolado"].isna().sum()) == 186          # §6.1 cita este número
     # No ahu-sul: 3.348 no dado bruto + 1 que a tabela de correções consertou ('OFICÍO').
@@ -428,3 +428,18 @@ def test_filtros_por_secao():
     assert geral.ano_de == 1750 and geral.pessoas == [] and geral.srsp_de is None
     assert geral.colecoes == [] and not geral.enriquecidos()
     assert Filtros(ano_de=1750).para_secao(True).colecoes == ["ahu-sul"]
+
+
+def test_busca_ignora_duplicatas_marcadas():
+    from types import SimpleNamespace
+
+    import pandas as pd
+
+    from ahu.consulta import sem_duplicatas
+
+    docs = pd.DataFrame({"duplicata_de": [None, "ahu-sul:a", None]})
+    dados = SimpleNamespace(documentos=docs)
+    assert sem_duplicatas(dados, None).tolist() == [True, False, True]
+    assert sem_duplicatas(dados, np.array([False, True, True])).tolist() == [False, False, True]
+    # sem a coluna (dados antigos), o filtro passa como veio
+    assert sem_duplicatas(SimpleNamespace(documentos=pd.DataFrame({"x": [1]})), None) is None

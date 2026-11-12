@@ -61,3 +61,58 @@ def test_sic_marca_o_erro_da_fonte_sem_corrigir():
     assert marcado.count("[sic]") == 3
     assert "SãoSão" in marcado and "Barrreto" in marcado and "III [sic]" not in marcado
     assert marcar_sic("carro de Lisboa, 1717") == "carro de Lisboa, 1717"
+
+
+def test_ajustar_acertos_da_auditoria():
+    base = pd.DataFrame({
+        "doc_uid": ["ahu-sul:a", "ahu-brasil:b", "ahu-brasil:c", "ahu-brasil:d", "ahu-brasil:e",
+                    "ahu-brasil:f"],
+        "colecao": ["ahu-sul", "ahu-brasil", "ahu-brasil", "ahu-brasil", "ahu-brasil", "ahu-brasil"],
+        "folder": ["Montividéu", "Nova Colônia do Sacramento", "Bahia", "Bahia", "Rio de Janeiro",
+                   "Bahia"],
+        "new_code": ["AHU_ACL_CU_012, Cx. 1, D. 36.", "AHU_CU_012, Cx. 1, D. .36.",
+                     "AHU_CU_005-02, Cx. 12, D. 1399 - 1401.", "AHU_CU_005-02, Cx. 12, D. 1402.",
+                     "AHU_CU_017-01, Cx. 14, D. 2950.", "AHU_CU_005-02, Cx. 15, D. 1784 - 1785."],
+        "reference_code": [None] * 6,
+        "document_id_and_date": ["36. 1722", "36. 1722", "1399. 1401", "1402. 1660", "2950. 1701",
+                                 "1784. 1785 [ant. 1660, Novembro, 18]"],
+        "ano_isolado": pd.array([1722, 1722, 1401, 1660, 1701, 1785], dtype="Int64"),
+        "description": ["PROVISÃO (minuta) do rei.", "Provisão (minuta) do rei", "Carta.",
+                        "Carta.", "Ofício.", "Consulta."],
+    })
+    saida, contagem = cotas.ajustar(base, None)
+    # nada sai da base: o par repetido só é apontado por duplicatas()
+    assert len(saida) == len(base)
+    assert cotas.duplicatas(saida).tolist() == [None, "ahu-sul:a", None, None, None, None]
+    assert saida["folder"].tolist()[0] == "Montevidéu"
+    # "1399. 1401" é intervalo de documentos, não data; "1402. 1660" e "2950. 1701" têm ano
+    # e o ano entre colchetes, quando há, é o que vale
+    assert saida["ano_isolado"].tolist()[1] == 1722
+    assert pd.isna(saida["ano_isolado"][2])
+    assert saida["ano_isolado"].tolist()[3:] == [1660, 1701, 1660]
+    assert contagem["ano_falso_corrigido"] == 2
+
+
+def test_bloco_de_cota_repetida_curado_pelo_digitarq():
+    indice = cotas.IndiceDigitArq([f"PT/AHU/CU/011/0013/{n:05d}" for n in range(1066, 1070)])
+    base = pd.DataFrame({
+        "colecao": ["ahu-brasil"] * 4 + ["ahu-brasil"] * 3,
+        "new_code": ["AHU_CU_011, Cx. 13, D. 1065."] * 4 + ["AHU_CU_022, Cx. 1, D. 3."] * 3,
+        "reference_code": [None] * 7,
+        "document_id_and_date": ["1066. 1728", "1067. 1728", "1068. 1728", "1069. 1728",
+                                 "3. 1700", "4. 1700", "5. 1700"],
+    })
+    saida, contagem = cotas.ajustar(base, indice)
+    assert contagem["cota_em_bloco_curada"] == 4
+    assert saida["new_code"].tolist()[:4] == [f"AHU_CU_011, Cx. 13, D. {n}." for n in range(1066, 1070)]
+    assert saida["reference_code"].tolist()[0] == "PT/AHU/CU/011/0013/01066"
+    # sem prova no DigitArq, o bloco fica como veio
+    assert saida["new_code"].tolist()[4:] == ["AHU_CU_022, Cx. 1, D. 3."] * 3
+
+
+def test_lista_ignore(tmp_path):
+    arq = tmp_path / "duplicatas.ignore"
+    arq.write_text("# cabeçalho\nahu-brasil:b  # repete ahu-sul:a | AHU_CU_012, Cx. 1, D. 36.\n"
+                   "ahu-brasil:x\n\n", encoding="utf-8")
+    assert cotas.ler_ignorados(arq) == {"ahu-brasil:b": "ahu-sul:a", "ahu-brasil:x": ""}
+    assert cotas.ler_ignorados(tmp_path / "nao_existe.ignore") == {}

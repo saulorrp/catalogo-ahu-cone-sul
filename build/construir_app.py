@@ -53,7 +53,7 @@ CAMPOS_PDF = ["scribe_mediation_likely"]
 
 COLUNAS_BASE = ["doc_uid", "colecao", "folder", "description", "old_code", "new_code",
                 "reference_code", "document_id_and_date", "ano_isolado", "recipient_name",
-                "sender_name", "referencia_digitarq", "resgate_docreader"]
+                "sender_name", "referencia_digitarq", "resgate_docreader", "duplicata_de"]
 COLUNAS_TIPOLOGIA = ["tipologia", "tipologia_chave", "typology_status"]
 COLUNAS_SOCIO = ["sender_category", "vector", "typology_impact", "vernacular_score",
                  "justificativa"]
@@ -315,6 +315,11 @@ def construir(corpus: Path, saida: Path) -> dict:
     indice_digitarq = cotas.IndiceDigitArq.ler(corpus / "digitarq_referencias.tsv.gz")
     docreader = cotas.ler_docreader(corpus / "resgate_docreader.tsv.gz")
     base, acertos = cotas.ajustar(base, indice_digitarq, docreader)
+    # Verbetes repetidos ficam nos dados, marcados; só a busca os ignora (corpus/duplicatas.ignore).
+    ignorados = cotas.ler_ignorados(corpus / "duplicatas.ignore")
+    base["duplicata_de"] = base["doc_uid"].map(lambda u: ignorados.get(u) or None
+                                               if u in ignorados else None)
+    acertos["duplicatas_ignoradas_na_busca"] = int(base["duplicata_de"].notna().sum())
     tipologia = _ler_parquet(pasta / usadas["tipologia"] / "tipologia.parquet", "camada de tipologia")
     socio = _ler_parquet(pasta / usadas["sociolinguistica"] / "sociolinguistica.parquet",
                          "camada sociolinguística")

@@ -1,10 +1,10 @@
 {
   "versao_artefatos": "1",
-  "gerado_em": "2026-10-23T22:17:23+00:00",
+  "gerado_em": "2026-11-12T09:30:00+00:00",
   "processo": {
     "script": "build/construir_app.py",
     "versao_script": "1.0.0",
-    "commit": "f465c85"
+    "commit": "e26f037"
   },
   "corpus": {
     "versao_corpus": "0.1.0",
@@ -167,9 +167,13 @@
   "acertos": {
     "new_code_sem_cabecalho": 3059,
     "referencia_refeita": 130,
+    "cota_em_bloco_curada": 45,
+    "pasta_grafia_unificada": 169,
+    "ano_falso_corrigido": 48,
     "digitarq_com_registro": 157353,
     "digitarq_sem_registro": 221,
-    "digitarq_registro_diferente": 17124,
+    "digitarq_registro_diferente": 17079,
+    "duplicatas_ignoradas_na_busca": 207,
     "resgate_com_quadro": 15783
   },
   "contagens": {
@@ -185,14 +189,14 @@
   "doc_uids_sha256": "5be37bc6892c62310b2920d65771e4c3a666e81642b806bd6c4d6011ba364ac0",
   "pessoa_uids_sha256": "2dd49951f9c52450ce669f21e83d50781dd6517ba345c0192950125e054fc752",
   "artefatos": {
-    "documentos.parquet": "c1d6c7a4560cea7afcb022e463a4c5b69403292e96c805608bd2d7b2f3467f39",
+    "documentos.parquet": "efc45bc346155aa35bb86cca5329a159bcf38b26d14a3f984b07edc29d76e790",
     "pessoas.parquet": "2657543cf15c3968a676dc9c71bd2146af513070f885742fa4f730be92c0011e",
     "doc_pessoa.parquet": "424a7387ddb0af7d3c1d91e36b9e43fbed9f77d177fe83bf305e230b783da22b",
     "pdf_extra.parquet": "b6f30e776ec1675df02e55785e1bb412b7a2f9c9234656166bb748fed8481e86",
     "embeddings/parte_000.f16.npy": "b22be9ecd33805e30628aa1b321a86ad024edf9a03c7af4b3ff31e3ef0322a3a",
     "embeddings/parte_001.f16.npy": "e5acc13af25279054d7748bd39bd72283d6873f0819b339e4e5dedd2c042b7b4",
     "lexico/meta.json": "14f928fe79ec0f357e9aa812e5642f99897b96125625f6708c0f0d1bfff1ec8f",
-    "lexico/lexico.sqlite": "de03a04fc1990079602d777d9142178297f989dc0eb5efad67aa99f087af2819",
+    "lexico/lexico.sqlite": "f8837d2974549551e3a59fc382ec470a0a8ed8214b82b7c6ed9f48cecaed5762",
     "lexico/pessoas.ptr.npy": "f5f714cef903fc8ef226323900ba066a715592d9e74420a355d09934955dc2ba",
     "lexico/pessoas.doc.npy": "97978b52519e6d3273766b1c4bb5d10a7b8137d36b4a7608f2fadde383ec8e93",
     "lexico/pessoas.tf.npy": "42e46ed7efa94da7b1a4e1cc95d952bdd894aec4c5068ab0ebcaacda64c922de",
@@ -209,8 +213,8 @@
     "lexico/descricao.doc.npy": "e1d676da97ebee887fc447e7e82ee3011a514bd84800f6a6a740f22d4e6b83b7",
     "lexico/descricao.tf.npy": "98f909cab6f879dcf694e4b11db5832630fe813f4132903c24cb2a849299a9d2",
     "lexico/descricao.len.npy": "23817a1b420907dacb87677b189839aa98a7f3fa3508a4885b58250eb77f0576",
-    "lexico/pasta.ptr.npy": "32c05bfb04fe93a375289ba41def4927e9daa5f44084cf9bbac8ff5da592479d",
-    "lexico/pasta.doc.npy": "7381fa7d33ce452db98d2808277601c95ede309313513acc6231ab4e2034f8ce",
+    "lexico/pasta.ptr.npy": "7aa6b389b32847f18a01cdbb61f37de6326d09d0800fcc262822627d30dd2443",
+    "lexico/pasta.doc.npy": "ad0972e89bcd9eac1d4106b6add62c68416df4b1a455ab8e85957a887c8f640b",
     "lexico/pasta.tf.npy": "ae07192a7a8ab259a75b973539587476972fd4ab116e82c509c68f6c46c8a400",
     "lexico/pasta.len.npy": "7cac5de4a5e12f91bfdaad664007f1ad13112cfa2c9a6c083a7a96685f5aa6c0"
   }
