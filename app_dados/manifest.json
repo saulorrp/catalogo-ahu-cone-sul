@@ -169,7 +169,8 @@
     "referencia_refeita": 130,
     "digitarq_com_registro": 157353,
     "digitarq_sem_registro": 221,
-    "digitarq_registro_diferente": 17124
+    "digitarq_registro_diferente": 17124,
+    "resgate_com_quadro": 15783
   },
   "contagens": {
     "documentos": 167344,
@@ -184,7 +185,7 @@
   "doc_uids_sha256": "5be37bc6892c62310b2920d65771e4c3a666e81642b806bd6c4d6011ba364ac0",
   "pessoa_uids_sha256": "2dd49951f9c52450ce669f21e83d50781dd6517ba345c0192950125e054fc752",
   "artefatos": {
-    "documentos.parquet": "c28db1e66b53ba4532a5f2f36eeb250f26c39e219d59175c487f794c92527f3d",
+    "documentos.parquet": "c1d6c7a4560cea7afcb022e463a4c5b69403292e96c805608bd2d7b2f3467f39",
     "pessoas.parquet": "2657543cf15c3968a676dc9c71bd2146af513070f885742fa4f730be92c0011e",
     "doc_pessoa.parquet": "424a7387ddb0af7d3c1d91e36b9e43fbed9f77d177fe83bf305e230b783da22b",
     "pdf_extra.parquet": "b6f30e776ec1675df02e55785e1bb412b7a2f9c9234656166bb748fed8481e86",

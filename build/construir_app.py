@@ -53,7 +53,7 @@ CAMPOS_PDF = ["scribe_mediation_likely"]
 
 COLUNAS_BASE = ["doc_uid", "colecao", "folder", "description", "old_code", "new_code",
                 "reference_code", "document_id_and_date", "ano_isolado", "recipient_name",
-                "sender_name", "referencia_digitarq"]
+                "sender_name", "referencia_digitarq", "resgate_docreader"]
 COLUNAS_TIPOLOGIA = ["tipologia", "tipologia_chave", "typology_status"]
 COLUNAS_SOCIO = ["sender_category", "vector", "typology_impact", "vernacular_score",
                  "justificativa"]
@@ -313,7 +313,8 @@ def construir(corpus: Path, saida: Path) -> dict:
     base = ler_base(corpus, manifesto)
     # Cotas e textos acertados, e o registro do DigitArq de cada documento (build/cotas.py).
     indice_digitarq = cotas.IndiceDigitArq.ler(corpus / "digitarq_referencias.tsv.gz")
-    base, acertos = cotas.ajustar(base, indice_digitarq)
+    docreader = cotas.ler_docreader(corpus / "resgate_docreader.tsv.gz")
+    base, acertos = cotas.ajustar(base, indice_digitarq, docreader)
     tipologia = _ler_parquet(pasta / usadas["tipologia"] / "tipologia.parquet", "camada de tipologia")
     socio = _ler_parquet(pasta / usadas["sociolinguistica"] / "sociolinguistica.parquet",
                          "camada sociolinguística")

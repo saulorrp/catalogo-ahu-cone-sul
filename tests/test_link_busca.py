@@ -130,3 +130,36 @@ def test_app_mostra_o_link_e_ele_reproduz_a_busca():
     assert links, [c.value for c in at.code]
     volta = _de_url(links[0])
     assert volta.texto == "AHU_ACL_CU_017, Cx. 5, D. 487" and volta.modo == "exata"
+
+
+# --- Projeto Resgate: link por documento (quadro do DocReader) ---------------------------------
+
+def test_resgate_com_quadro_abre_a_imagem_do_documento():
+    from ahu import links
+
+    doc = {"new_code": "AHU_ACL_CU_021, Cx. 1, D. 4.", "resgate_docreader": "021_SC#37"}
+    destino = links.do_documento(doc)
+    assert destino["resgate"] == ("https://resgate.bn.br/docreader/DocReader.aspx"
+                                  "?bib=021_SC&pagfis=37")
+    assert destino["resgate_rotulo"] == "Imagem no Projeto Resgate"
+
+
+def test_resgate_sem_quadro_vai_ao_portal():
+    from ahu import links
+
+    destino = links.do_documento({"new_code": "AHU_ACL_CU_017, Cx. 69, D. 6420."})
+    assert destino["resgate"] == links.RESGATE
+    assert destino["resgate_rotulo"] == "Portal do Projeto Resgate"
+    assert links.resgate("lixo") == links.RESGATE
+
+
+def test_ajustar_encaixa_o_quadro_pela_referencia():
+    import pandas as pd
+
+    from build import cotas
+
+    base = pd.DataFrame({"new_code": ["AHU_ACL_CU_021, Cx. 1, D. 4.", "AHU_ACL_CU_017, Cx. 1, D. 1."],
+                         "reference_code": [None, None]})
+    saida, contagem = cotas.ajustar(base, None, {"PT/AHU/CU/021/0001/00004": "021_SC#37"})
+    assert saida["resgate_docreader"].tolist() == ["021_SC#37", None]
+    assert contagem["resgate_com_quadro"] == 1

@@ -4,8 +4,13 @@ Dois destinos:
 
 * **DigitArq** (Arquivo Nacional da Torre do Tombo / ANTT): a busca aceita o `reference_code`
   (`PT/AHU/CU/021/0006/00390`) e leva à ficha de controle arquivístico.
-* **Projeto Resgate** (Biblioteca Nacional): não há link por documento (Q8 da spec, extensão 5.3),
-  por isso o link vai ao portal e o `new_code` é oferecido para copiar.
+* **Projeto Resgate** (Biblioteca Nacional): o DocReader da BN não tem busca por cota (os
+  documentos são imagens de manuscrito, sem texto), mas abre num quadro dado:
+  `DocReader.aspx?bib=<rolo>&pagfis=<quadro>`. As páginas de verbetes do gov.br ligam cada número a
+  esse quadro, e a coluna `resgate_docreader` (`021_SC#37`, do `build/cotas.py`) o guarda. Com
+  ela o link abre a imagem do documento; sem ela (catálogos em PDF, como o do Rio de Janeiro), o
+  link vai ao portal e o `new_code` é oferecido para copiar. O servidor da BN recusa acessos de
+  fora do Brasil.
 
 E, desde o WP 2.4, um terceiro: o **"Reportar erro"** da §7.1, uma *issue* do GitHub já preenchida
 com o `pessoa_uid`, o dado e a fonte. Custo zero, e a correção volta ao pipeline pela coluna
@@ -28,6 +33,7 @@ from urllib.parse import quote, urlencode
 
 DIGITARQ = "https://digitarq.arquivos.pt/search?query={cota}&isAdvancedSearch=false"
 RESGATE = "https://resgate.bn.gov.br/"
+DOCREADER = "https://resgate.bn.br/docreader/DocReader.aspx?bib={bib}&pagfis={pagfis}"
 
 
 def limpar_cota(texto) -> str:
@@ -78,9 +84,12 @@ def digitarq(cota: str | None) -> str | None:
     return DIGITARQ.format(cota=quote(referencia, safe=""))
 
 
-def resgate(new_code: str | None = None) -> str:
-    """Portal do Projeto Resgate. Ainda sem link por documento (Q8)."""
-    del new_code  # reservado para quando houver link direto (extensão 5.3)
+def resgate(docreader: str | None = None) -> str:
+    """A imagem do documento no DocReader do Resgate (`docreader` = `rolo#quadro`), ou o portal."""
+    if docreader and "#" in docreader:
+        bib, pagfis = docreader.split("#", 1)
+        if bib and pagfis.isdigit():
+            return DOCREADER.format(bib=quote(bib, safe=""), pagfis=pagfis)
     return RESGATE
 
 
@@ -149,8 +158,10 @@ def digitarq_do_documento(documento) -> tuple[str | None, bool]:
 def do_documento(documento) -> dict[str, str | None]:
     """Os links de uma linha de `documentos.parquet`, e o rótulo do link do DigitArq."""
     link, so_caixa = digitarq_do_documento(documento)
+    quadro = _valor(documento, "resgate_docreader")
     return {
         "digitarq": link,
         "digitarq_rotulo": "Caixa no DigitArq" if so_caixa else "Ficha no DigitArq",
-        "resgate": resgate(_valor(documento, "new_code")),
+        "resgate": resgate(quadro),
+        "resgate_rotulo": "Imagem no Projeto Resgate" if quadro else "Portal do Projeto Resgate",
     }

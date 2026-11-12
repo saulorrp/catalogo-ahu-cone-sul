@@ -465,7 +465,7 @@ def _documento_do_plano(dados, doc_uid: str, pessoa_uid: str | None) -> dict:
                                if pessoa_uid else False),
         "pessoas": _pessoas_do_documento(dados, doc_uid),
         "links": {"digitarq": mod_links.digitarq_do_documento(linha)[0],
-                  "resgate": mod_links.resgate()},
+                  "resgate": mod_links.do_documento(linha)["resgate"]},
     }
 
 

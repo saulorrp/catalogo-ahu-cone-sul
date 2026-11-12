@@ -19,6 +19,12 @@ O índice `corpus/digitarq_referencias.tsv.gz` (gerado por `coleta/scripts/varre
 lista os registros do DigitArq caixa a caixa, e cada documento recebe o registro que tem o seu
 número: o mesmo número de início, ou um intervalo que o contém. Sem registro, a coluna fica vazia e
 o app oferece a busca pela caixa.
+
+E outro encaixe, o **`resgate_docreader`**: o quadro do visualizador de imagens do Projeto Resgate
+(Biblioteca Nacional) em que o documento começa, como `021_SC#37` (rolo e quadro). Vem do índice
+`corpus/resgate_docreader.tsv.gz` (gerado por `coleta/scripts/extrair_docreader.py` a partir dos
+links que as páginas de verbetes do gov.br põem em cada número) e só existe para as capitanias
+cujos catálogos estão em HTML no gov.br. Sem quadro, o app aponta para o portal.
 """
 from __future__ import annotations
 
@@ -83,12 +89,23 @@ class IndiceDigitArq:
         return candidatos[0][3]
 
 
+def ler_docreader(caminho: Path) -> dict[str, str] | None:
+    """Referência CRAV -> `rolo#quadro` do DocReader do Resgate. None quando o índice não existe."""
+    if not caminho.exists():
+        return None
+    with gzip.open(caminho, "rt", encoding="utf-8") as f:
+        linhas = (linha.rstrip("\n").split("\t") for linha in f if linha.startswith("PT/"))
+        return {ref: f"{bib}#{pagfis}" for ref, bib, pagfis in linhas}
+
+
 def _mudou(antes: pd.Series, depois: pd.Series) -> int:
     return int((antes.fillna("") != depois.fillna("")).sum())
 
 
-def ajustar(base: pd.DataFrame, indice: IndiceDigitArq | None) -> tuple[pd.DataFrame, dict]:
-    """A base com os dois acertos e a `referencia_digitarq`, e a contagem de cada um."""
+def ajustar(base: pd.DataFrame, indice: IndiceDigitArq | None,
+            docreader: dict[str, str] | None = None) -> tuple[pd.DataFrame, dict]:
+    """A base com os dois acertos, a `referencia_digitarq` e o `resgate_docreader`, e a contagem
+    de cada um."""
     base = base.copy()
     contagem = {}
     novo = base["new_code"].map(limpar_new_code)
@@ -108,4 +125,8 @@ def ajustar(base: pd.DataFrame, indice: IndiceDigitArq | None) -> tuple[pd.DataF
         contagem["digitarq_registro_diferente"] = int(
             (base["referencia_digitarq"].notna()
              & (base["referencia_digitarq"] != base["reference_code"])).sum())
+    if docreader is not None:
+        base["resgate_docreader"] = [docreader.get(r) if isinstance(r, str) else None
+                                     for r in base["reference_code"]]
+        contagem["resgate_com_quadro"] = int(base["resgate_docreader"].notna().sum())
     return base, contagem
