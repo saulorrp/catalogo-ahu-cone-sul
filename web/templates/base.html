@@ -11,8 +11,11 @@
 </head>
 <body>
     <div class="layout">
-        <aside class="rail">
-            <div class="logo">❧ AHU-Brasil</div>
+        <aside class="rail" id="main-rail">
+            <div class="logo-container" style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="logo">❧ AHU-Brasil</div>
+                <button class="menu-toggle" onclick="document.getElementById('main-rail').classList.toggle('open')" aria-label="Menu">☰</button>
+            </div>
             <nav>
                 <a href="{{ url_for('busca') }}">Busca</a>
                 <a href="{{ url_for('pessoas') }}">Pessoas</a>

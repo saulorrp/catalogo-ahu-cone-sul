@@ -1,4 +1,5 @@
 import pathlib
+import re
 
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
@@ -7,6 +8,14 @@ from ahu.consulta import Consulta
 
 BASE_DIR = pathlib.Path(__file__).parent
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
+
+
+def _marcas(texto: str) -> str:
+    """`ahu.ficha.marcar_termos` marca com **…** (já sobre texto escapado): vira <mark>."""
+    return re.sub(r"\*\*(.+?)\*\*", r"<mark>\1</mark>", texto or "")
+
+
+templates.env.filters["marcas"] = _marcas
 
 def parse_consulta(request: Request) -> Consulta:
     params = {}
