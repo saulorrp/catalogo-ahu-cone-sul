@@ -402,9 +402,10 @@ def filtros_enriquecidos(opcoes, f) -> None:
                 "do catálogo (e não ao manuscrito original). Elas produzem a categoria social "
                 "do remetente, o vetor de comunicação, o impacto da tipologia e a pontuação "
                 "SRSP de 1 a 9.\n\n"
-                "**Auditoria do SRSP (preprint §2.1):**\n\n"
-                "MAE 1,13 · r = 0,48 · viés +0,59 · N = 705 · avaliador único. "
-                "Diferenças de ±1 ponto não são distinguíveis.\n\n"
+                "**Auditoria do SRSP (preprint §3.1), camada exploratória:**\n\n"
+                "MAE 1,13, pior que prever sempre \"2\" (MAE 0,97); o modelo só ordena, de forma "
+                "fraca a moderada: Spearman 0,37 · QWK 0,44 · r = 0,48 · viés +0,59 · N = 716 · "
+                "avaliador único. Diferenças de ±1 ponto não são distinguíveis.\n\n"
                 "**Mediação notarial:**\n\n"
                 "> \"Essa inferência, contudo, é metodologicamente delicada, por mais que seja uma "
                 "informação fundamental para a linguística diacrônica (uma vez que a escolaridade "
@@ -1453,9 +1454,13 @@ def aba_sobre(dados) -> None:
     auditoria = srsp.get("auditoria", {})
     if auditoria:
         st.markdown(
-            f"**Auditoria do SRSP** (preprint §2.1): escala inteira "
+            f"**Auditoria do SRSP** (preprint §{auditoria.get('secao_preprint', '3.1')}, "
+            f"camada {auditoria.get('estatuto', 'exploratória')}): escala inteira "
             f"{srsp.get('escala', [1, 9])[0]}–{srsp.get('escala', [1, 9])[1]} · "
-            f"MAE {auditoria.get('mae')} · r = {auditoria.get('r')} · "
+            f"MAE {auditoria.get('mae')} (linha de base \"sempre 2\": "
+            f"{auditoria.get('linha_base_constante_2_mae', '—')}) · "
+            f"Spearman {auditoria.get('spearman', '—')} · QWK {auditoria.get('qwk', '—')} · "
+            f"r = {auditoria.get('r')} · "
             f"viés +{auditoria.get('vies')} · N = {auditoria.get('n')} · "
             f"{auditoria.get('avaliadores')} avaliador. {auditoria.get('nota', '')}"
         )

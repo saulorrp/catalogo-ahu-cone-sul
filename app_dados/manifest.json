@@ -156,12 +156,17 @@
     "camada": "sociolinguistica_deepseek_v3",
     "auditoria": {
       "escala": "inteira 1-9 (SRSP)",
+      "secao_preprint": "3.1",
       "mae": 1.13,
+      "linha_base_constante_2_mae": 0.97,
       "r": 0.48,
+      "spearman": 0.37,
+      "qwk": 0.44,
       "vies": 0.59,
-      "n": 705,
+      "n": 716,
       "avaliadores": 1,
-      "nota": "Diferenças de ±1 ponto não são distinguíveis."
+      "estatuto": "exploratória",
+      "nota": "Prever sempre \"2\" daria MAE 0,97, menor que o do modelo: o SRSP não acerta o valor, só ordena de forma fraca a moderada (Spearman 0,37; QWK 0,44). Diferenças de ±1 ponto não são distinguíveis."
     }
   },
   "acertos": {

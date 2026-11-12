@@ -240,7 +240,7 @@ def test_cada_camada_tem_camada_json_com_proveniencia(corpus_com_base):
 
     soc = json.loads((corpus / "camadas" / ic.CAMADA_SOCIO / "camada.json").read_text("utf-8"))
     assert soc["modelo"] == ic.MODELO_SOCIO and soc["versao"] == "3"
-    assert soc["auditoria"]["mae"] == 1.13 and soc["auditoria"]["n"] == 705
+    assert soc["auditoria"]["mae"] == 1.13 and soc["auditoria"]["n"] == 716
     assert soc["contagem_por_srsp"] == {"2": 3, "6": 1, "9": 1}
     assert "PDF" in soc["uso_restrito"]["scribe_mediation_likely"]
 

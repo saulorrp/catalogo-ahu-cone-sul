@@ -244,7 +244,8 @@ def test_faixas_e_nota_do_srsp():
 
 def test_auditoria_do_srsp_chega_do_manifesto(corpus_busca):
     auditoria = mod_filtros.auditoria_srsp(corpus_busca)
-    assert auditoria["mae"] == 1.13 and auditoria["n"] == 705
+    assert auditoria["mae"] == 1.13 and auditoria["n"] == 716
+    assert auditoria["linha_base_constante_2_mae"] == 0.97
 
 
 def test_opcoes_de_pessoas_tem_nome_variantes_e_titulos(corpus_busca):

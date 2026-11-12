@@ -8,7 +8,7 @@ Saídas  : corpus/camadas/tipologia_v1/
           corpus/camadas/sociolinguistica_deepseek_v3/
               sociolinguistica.parquet  doc_uid, sender_category, vector, typology_impact,
                                         vernacular_score, scribe_mediation_likely, justificativa
-              camada.json          modelo, prompt do preprint §2, auditoria §2.1, contagens
+              camada.json          modelo, prompt do preprint §2, auditoria §3.1, contagens
 
 Regras (spec §3.1, §6.2; AGENTS.md 7 e 9):
   * uma linha por `doc_uid`, na ordem da base;
@@ -71,19 +71,27 @@ CAMPOS_SOCIO = {
     "sociolinguistic_reasoning_by_deepseek_v3": "justificativa",
 }
 
-# Números da auditoria do preprint §2.1, mostrados na interface (spec §6.2).
+# Números da auditoria do preprint §3.1 (revisão de 29/10/2026, N = 716, com linha de base),
+# mostrados na interface (spec §6.2).
 # Escala do SRSP desta camada. É um dado da camada, não uma regra do código: uma reclassificação
 # futura é uma camada nova, que declara a sua própria escala no seu camada.json (decisão 2026-10-08).
 ESCALA_PADRAO = [1, 9]
 
 AUDITORIA_SRSP = {
     "escala": "inteira 1-9 (SRSP)",
+    "secao_preprint": "3.1",
     "mae": 1.13,
+    "linha_base_constante_2_mae": 0.97,
     "r": 0.48,
+    "spearman": 0.37,
+    "qwk": 0.44,
     "vies": 0.59,
-    "n": 705,
+    "n": 716,
     "avaliadores": 1,
-    "nota": "Diferenças de ±1 ponto não são distinguíveis.",
+    "estatuto": "exploratória",
+    "nota": ("Prever sempre \"2\" daria MAE 0,97, menor que o do modelo: o SRSP não acerta o valor, "
+             "só ordena de forma fraca a moderada (Spearman 0,37; QWK 0,44). "
+             "Diferenças de ±1 ponto não são distinguíveis."),
 }
 
 PROMPT_PENDENTE = (
