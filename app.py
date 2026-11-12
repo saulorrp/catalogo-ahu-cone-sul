@@ -476,7 +476,8 @@ def desenhar_ficha(dados, doc_uid: str, termos: list[str], resultado=None) -> No
             colunas[1].code(valor, language=None)
         destinos = ([f"[{f.links['digitarq_rotulo']}]({f.links['digitarq']})"]
                     if f.links.get("digitarq") else [])
-        destinos.append(f"[Portal do Projeto Resgate]({f.links['resgate']})")
+        destinos.append(f"[{f.links.get('resgate_rotulo', 'Portal do Projeto Resgate')}]"
+                        f"({f.links['resgate']})")
         st.markdown(" · ".join(destinos))
 
         if f.destinatario:
@@ -1308,7 +1309,7 @@ def mostrar_conversao(dados, conversoes) -> None:
         else {"reference_code": escolhida.referencia, "new_code": escolhida.resgate})
     destinos = ([f"[{links['digitarq_rotulo']}]({links['digitarq']})"]
                 if links.get("digitarq") else [])
-    destinos.append(f"[Portal do Projeto Resgate]({links['resgate']})")
+    destinos.append(f"[{links['resgate_rotulo']}]({links['resgate']})")
     st.markdown(" · ".join(destinos))
     if escolhida.linha is not None:
         st.caption("No catálogo AHU-Sul: " + mod_conversor.rotulo_do_documento(dados, escolhida.linha, 300))
