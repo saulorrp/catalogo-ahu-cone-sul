@@ -239,7 +239,7 @@ def test_escala_do_srsp_vem_do_manifesto(corpus_busca):
 def test_faixas_e_nota_do_srsp():
     """§6.2: faixas 1–3 / 4–6 / 7–9 e a ressalva de ±1 ponto."""
     assert FAIXAS_SRSP == {"baixo": (1, 3), "medio": (4, 6), "alto": (7, 9)}
-    assert "±1" in mod_filtros.NOTA_SRSP and "1,13" in mod_filtros.NOTA_SRSP
+    assert "±1" in mod_filtros.NOTA_SRSP and "0,37" in mod_filtros.NOTA_SRSP
 
 
 def test_auditoria_do_srsp_chega_do_manifesto(corpus_busca):
