@@ -1,0 +1,209 @@
+# Verbetes repetidos que a busca ignora; seguem nos dados (scripts/listar_duplicatas.py).
+# Formato: doc_uid  # repete <doc_uid mantido> | <cota>. Apague a linha para trazer de volta.
+ahu-sul:564a7ef4fc  # repete ahu-sul:f0d170b4ca | AHU_ACL_CU_017, Cx. 81, D. 7240.
+ahu-sul:5d8ed6e79d  # repete ahu-sul:8d16f87e6b | AHU_ACL_CU_017-01, Cx. 2, D. 305.
+ahu-sul:a3a32b4b2f  # repete ahu-sul:7771a01729 | AHU_ACL_CU_012, Cx. 1, D. 55.
+ahu-sul:c041584df5  # repete ahu-sul:da4dbb47bb | AHU_ACL_CU_012, Cx. 1, D. 58.
+ahu-sul:77aa38f69d  # repete ahu-sul:9b11e6e73d | AHU_ACL_CU_012, Cx. 1, D. 90.
+ahu-sul:67390e3f6f  # repete ahu-sul:bfd7ecc6a3 | AHU_ACL_CU_012, Cx. 1, D. 120.
+ahu-sul:4c04c73fc3  # repete ahu-sul:b27c6c05f1 | AHU_ACL_CU_012, Cx. 2, D. 155.
+ahu-sul:66137a672f  # repete ahu-sul:2049193a7c | AHU_ACL_CU_012, Cx. 2, D. 230.
+ahu-sul:76ef768f12  # repete ahu-sul:2ea90caba2 | AHU_ACL_CU_012, Cx. 6, D. 550.
+ahu-sul:8819bfa60f  # repete ahu-sul:5506160bca | AHU_ACL_CU_023-01, Cx. 5, D. 599.
+ahu-brasil:3d32e324b5  # repete ahu-brasil:f92fee5e3a | AHU_CU_005-01, Cx. 72, D. 13842-13843.
+ahu-brasil:eb88a60b8f  # repete ahu-brasil:d1e4606b7a | AHU_CU_011, Cx. 62, D. 5149.
+ahu-brasil:de28b0910f  # repete ahu-brasil:9a81389811 | AHU_CU_011, Cx. 62, D. 5150.
+ahu-brasil:41088dafa3  # repete ahu-brasil:3d983db28f | AHU_CU_011, Cx. 62, D. 5151.
+ahu-brasil:3db8a30100  # repete ahu-brasil:06dec7f760 | AHU_CU_011, Cx. 62, D. 5152.
+ahu-brasil:750e59a5b5  # repete ahu-brasil:964d24948b | AHU_CU_011, Cx. 62, D. 5153.
+ahu-brasil:e44f6d58a6  # repete ahu-brasil:c1ab1bfc20 | AHU_CU_011, Cx. 62, D. 5154.
+ahu-brasil:7e2fe6bc53  # repete ahu-brasil:e9d49d2f5f | AHU_CU_011, Cx. 62, D. 5155.
+ahu-brasil:82f8836f8f  # repete ahu-brasil:56d0b04d08 | AHU_CU_011, Cx. 62, D. 5156.
+ahu-brasil:026f099500  # repete ahu-brasil:42eb627c54 | AHU_CU_011, Cx. 62, D. 5157.
+ahu-brasil:749b484a64  # repete ahu-brasil:e0bb170270 | AHU_CU_011, Cx. 62, D. 5158.
+ahu-brasil:d8810469e5  # repete ahu-brasil:d832efb796 | AHU_CU_011, Cx. 62, D. 5159.
+ahu-brasil:715576bc09  # repete ahu-brasil:4286c65c12 | AHU_CU_011, Cx. 62, D. 5160.
+ahu-brasil:45c9ee67ea  # repete ahu-brasil:7373b983e6 | AHU_CU_011, Cx. 62, D. 5161.
+ahu-brasil:5e374679ae  # repete ahu-brasil:1830e87356 | AHU_CU_011, Cx. 62, D. 5162.
+ahu-brasil:3637491101  # repete ahu-brasil:0a511e914b | AHU_CU_011, Cx. 62, D. 5163.
+ahu-brasil:18ab55d40e  # repete ahu-brasil:ca8e339ac5 | AHU_CU_011, Cx. 62, D. 5164.
+ahu-brasil:6d0dec0833  # repete ahu-brasil:c1c49bfd0d | AHU_CU_011, Cx. 62, D. 5165.
+ahu-brasil:6728f5fd8e  # repete ahu-brasil:0b91e220e8 | AHU_CU_011, Cx. 62, D. 5166.
+ahu-brasil:07c381f154  # repete ahu-brasil:5ef15f13c3 | AHU_CU_011, Cx. 62, D. 5167.
+ahu-brasil:395a0a3cc5  # repete ahu-brasil:543ba21cbc | AHU_CU_011, Cx. 62, D. 5168.
+ahu-brasil:d504ca738a  # repete ahu-brasil:aa63b4fa58 | AHU_CU_011, Cx. 62, D. 5169.
+ahu-brasil:1c563e0fdf  # repete ahu-brasil:5590b59b61 | AHU_CU_011, Cx. 62, D. 5171.
+ahu-brasil:667915b5d6  # repete ahu-brasil:8f07d347b5 | AHU_CU_011, Cx. 62, D. 5172.
+ahu-brasil:ac8254a4d1  # repete ahu-brasil:57708c4f1c | AHU_CU_011, Cx. 62, D. 5173.
+ahu-brasil:a03a81df63  # repete ahu-brasil:12eff9f0a2 | AHU_CU_011, Cx. 62, D. 5174.
+ahu-brasil:0aa17a5050  # repete ahu-brasil:878e261d7f | AHU_CU_011, Cx. 62, D. 5175.
+ahu-brasil:ced3a20af0  # repete ahu-brasil:6156770318 | AHU_CU_011, Cx. 62, D. 5176.
+ahu-brasil:20272b49c6  # repete ahu-brasil:8c931add42 | AHU_CU_011, Cx. 62, D. 5177.
+ahu-brasil:a4423cde1f  # repete ahu-brasil:38387d8a49 | AHU_CU_011, Cx. 62, D. 5178.
+ahu-brasil:e70eef6eb4  # repete ahu-brasil:0ebd62c09b | AHU_CU_011, Cx. 62, D. 5179.
+ahu-brasil:620a08b41b  # repete ahu-brasil:d8dbee4c91 | AHU_CU_011, Cx. 62, D. 5180.
+ahu-brasil:344680e252  # repete ahu-brasil:defc900ef1 | AHU_CU_011, Cx. 62, D. 5181.
+ahu-brasil:aca1b2decb  # repete ahu-brasil:6f26e0312b | AHU_CU_011, Cx. 62, D. 5182.
+ahu-brasil:ff61e5c234  # repete ahu-brasil:e0336f3a4a | AHU_CU_011, Cx. 62, D. 5183.
+ahu-brasil:9e639ee1ed  # repete ahu-brasil:66e356816c | AHU_CU_011, Cx. 62, D. 5184.
+ahu-brasil:e6af2fe49d  # repete ahu-brasil:11ba81f2c6 | AHU_CU_011, Cx. 62, D. 5185.
+ahu-brasil:a2fd80a9a3  # repete ahu-brasil:f24388e92d | AHU_CU_011, Cx. 62, D. 5186.
+ahu-brasil:216aa56fce  # repete ahu-brasil:7ec5fc823e | AHU_CU_011, Cx. 62, D. 5187.
+ahu-brasil:bac61182ab  # repete ahu-brasil:0a00ca10c8 | AHU_CU_011, Cx. 62, D. 5188.
+ahu-brasil:997e2280d1  # repete ahu-brasil:1583e6edc5 | AHU_CU_011, Cx. 62, D. 5189.
+ahu-brasil:d79b417ff1  # repete ahu-brasil:1092dc3589 | AHU_CU_011, Cx. 62, D. 5190.
+ahu-brasil:d0b07de889  # repete ahu-brasil:3730cc4a92 | AHU_CU_011, Cx. 62, D. 5191.
+ahu-brasil:9febd7d4ad  # repete ahu-brasil:95a5f89c32 | AHU_CU_011, Cx. 62, D. 5192.
+ahu-brasil:3781769a8b  # repete ahu-brasil:c3c4eb2b60 | AHU_CU_011, Cx. 62, D. 5193.
+ahu-brasil:05d150cee4  # repete ahu-brasil:f74154f156 | AHU_CU_011, Cx. 62, D. 5194.
+ahu-brasil:9a6861bd6b  # repete ahu-brasil:8b6ef40e2a | AHU_CU_011, Cx. 62, D. 5195.
+ahu-brasil:b314e49c24  # repete ahu-brasil:273fe9ce32 | AHU_CU_011, Cx. 62, D. 5196.
+ahu-brasil:36c03127e6  # repete ahu-brasil:d858df5569 | AHU_CU_011, Cx. 62, D. 5197.
+ahu-brasil:73711bed92  # repete ahu-brasil:b17951183a | AHU_CU_011, Cx. 62, D. 5198.
+ahu-brasil:f3d71014fc  # repete ahu-brasil:299659eb90 | AHU_CU_011, Cx. 62, D. 5199.
+ahu-brasil:17fdbf1c90  # repete ahu-brasil:bc0e4973cf | AHU_CU_011, Cx. 62, D. 5200.
+ahu-brasil:2583a64a6b  # repete ahu-brasil:1f0438c6f4 | AHU_CU_011, Cx. 62, D. 5201.
+ahu-brasil:0755eac44f  # repete ahu-brasil:c0ecd628dc | AHU_CU_011, Cx. 62, D. 5202.
+ahu-brasil:00829070ae  # repete ahu-brasil:a5d52c82ac | AHU_CU_011, Cx. 62, D. 5203.
+ahu-brasil:4fb232fafc  # repete ahu-brasil:b17c1dfaee | AHU_CU_011, Cx. 62, D. 5204.
+ahu-brasil:15461922ad  # repete ahu-brasil:0b63306c17 | AHU_CU_011, Cx. 62, D. 5205.
+ahu-brasil:351c8007ba  # repete ahu-brasil:06511bafc4 | AHU_CU_011, Cx. 62, D. 5206.
+ahu-brasil:ffa050b241  # repete ahu-brasil:048ff98ddd | AHU_CU_011, Cx. 62, D. 5207.
+ahu-brasil:9cf09a4548  # repete ahu-brasil:c655168155 | AHU_CU_011, Cx. 62, D. 5208.
+ahu-brasil:48160b0c3e  # repete ahu-brasil:3473d16897 | AHU_CU_011, Cx. 62, D. 5209.
+ahu-brasil:d6d0f4b165  # repete ahu-brasil:5d3facd81d | AHU_CU_011, Cx. 62, D. 5210.
+ahu-brasil:fc154c0472  # repete ahu-brasil:d7fe628f05 | AHU_CU_011, Cx. 62, D. 5211.
+ahu-brasil:7d49089a40  # repete ahu-brasil:b1c1d20f7d | AHU_CU_011, Cx. 62, D. 5212.
+ahu-brasil:f3b4e32864  # repete ahu-brasil:841a28b985 | AHU_CU_011, Cx. 62, D. 5213.
+ahu-brasil:36c86e93ae  # repete ahu-brasil:9a5924ce5a | AHU_CU_011, Cx. 62, D. 5214.
+ahu-brasil:624f04cff9  # repete ahu-brasil:f3af8f8bad | AHU_CU_011, Cx. 62, D. 5215.
+ahu-brasil:4740e32f0c  # repete ahu-brasil:9f4a80e7fd | AHU_CU_011, Cx. 62, D. 5216.
+ahu-brasil:0b8de0f04b  # repete ahu-brasil:7e723353cf | AHU_CU_011, Cx. 62, D. 5217.
+ahu-brasil:73c3c7242b  # repete ahu-brasil:601ef7b2b3 | AHU_CU_011, Cx. 62, D. 5218.
+ahu-brasil:84e7ca8a7d  # repete ahu-brasil:3c50ff7080 | AHU_CU_011, Cx. 62, D. 5219.
+ahu-brasil:2c49016d14  # repete ahu-brasil:6f7019baac | AHU_CU_011, Cx. 62, D. 5220.
+ahu-brasil:a54f766459  # repete ahu-brasil:50de39d1ae | AHU_CU_011, Cx. 62, D. 5221.
+ahu-brasil:0ef8f7de4f  # repete ahu-brasil:5ed13f314d | AHU_CU_011, Cx. 62, D. 5222.
+ahu-brasil:6d1627bdec  # repete ahu-brasil:ba97337eee | AHU_CU_011, Cx. 62, D. 5223.
+ahu-brasil:81d51d48f6  # repete ahu-brasil:eb58dad599 | AHU_CU_011, Cx. 62, D. 5224.
+ahu-brasil:c0961207db  # repete ahu-brasil:d16a7a6069 | AHU_CU_011, Cx. 62, D. 5225.
+ahu-brasil:eb668185c4  # repete ahu-brasil:a4b5158e51 | AHU_CU_011, Cx. 62, D. 5226.
+ahu-brasil:c9b595bd82  # repete ahu-brasil:cbd3683953 | AHU_CU_011, Cx. 62, D. 5227.
+ahu-brasil:9967a1d4d0  # repete ahu-brasil:b9be0e47b4 | AHU_CU_011, Cx. 62, D. 5228.
+ahu-brasil:7f063b6257  # repete ahu-brasil:8bd0f29e6a | AHU_CU_011, Cx. 62, D. 5229.
+ahu-brasil:42bd08c659  # repete ahu-brasil:58a56049d1 | AHU_CU_011, Cx. 62, D. 5230.
+ahu-brasil:76af8e5fe7  # repete ahu-brasil:331e758f46 | AHU_CU_011, Cx. 62, D. 5231.
+ahu-brasil:476f8636cc  # repete ahu-brasil:f74ade44ca | AHU_CU_011, Cx. 62, D. 5232.
+ahu-brasil:00b8bdf8c2  # repete ahu-brasil:0a91da74c2 | AHU_CU_011, Cx. 62, D. 5233.
+ahu-brasil:5d38738175  # repete ahu-brasil:455c5bc35b | AHU_CU_011, Cx. 62, D. 5234.
+ahu-brasil:db9358bbeb  # repete ahu-brasil:4e0accccd8 | AHU_CU_011, Cx. 62, D. 5235.
+ahu-brasil:e0e93f08ca  # repete ahu-brasil:7242f90dea | AHU_CU_011, Cx. 62, D. 5236.
+ahu-brasil:2deba66ab6  # repete ahu-brasil:507c72ab7a | AHU_CU_011, Cx. 62, D. 5237.
+ahu-brasil:a6bb127bed  # repete ahu-brasil:e4ea7d1686 | AHU_CU_011, Cx. 62, D. 5238.
+ahu-brasil:61f3e23f43  # repete ahu-brasil:4d111b3b8e | AHU_CU_011, Cx. 62, D. 5239.
+ahu-brasil:80c92e7f31  # repete ahu-brasil:e12c17deb4 | AHU_CU_011, Cx. 62, D. 5240.
+ahu-brasil:c85a19468f  # repete ahu-brasil:5f5b8849b9 | AHU_CU_011, Cx. 62, D. 5241.
+ahu-brasil:17a8d70bcc  # repete ahu-brasil:739523eb01 | AHU_CU_011, Cx. 62, D. 5242.
+ahu-brasil:300a3f30cc  # repete ahu-brasil:cc80adbd05 | AHU_CU_011, Cx. 62, D. 5243.
+ahu-brasil:f2b65599b3  # repete ahu-brasil:b93bf04951 | AHU_CU_011, Cx. 62, D. 5244.
+ahu-brasil:7547f4701e  # repete ahu-brasil:62c5633099 | AHU_CU_011, Cx. 62, D. 5245.
+ahu-brasil:32aeb65a2e  # repete ahu-brasil:016f6532ca | AHU_CU_011, Cx. 62, D. 5246.
+ahu-brasil:3c5df1c333  # repete ahu-brasil:9f5fab20e9 | AHU_CU_011, Cx. 62, D. 5247.
+ahu-brasil:ca18edbbc2  # repete ahu-brasil:3c164eb436 | AHU_CU_011, Cx. 62, D. 5248.
+ahu-brasil:ce830d72b7  # repete ahu-brasil:452f33aae5 | AHU_CU_011, Cx. 62, D. 5249.
+ahu-brasil:ccce499139  # repete ahu-brasil:0c6f1429ef | AHU_CU_011, Cx. 62, D. 5250.
+ahu-brasil:d814308c15  # repete ahu-brasil:eaedd31b6c | AHU_CU_011, Cx. 62, D. 5251.
+ahu-brasil:ffe90cdc3e  # repete ahu-brasil:db5fc39085 | AHU_CU_011, Cx. 62, D. 5252.
+ahu-brasil:6897c26844  # repete ahu-brasil:2f6aa64a0a | AHU_CU_011, Cx. 62, D. 5253.
+ahu-brasil:b053e25313  # repete ahu-brasil:2f2c1df961 | AHU_CU_011, Cx. 62, D. 5254.
+ahu-brasil:f07bd81167  # repete ahu-brasil:1542de176d | AHU_CU_011, Cx. 62, D. 5255.
+ahu-brasil:beebc699e3  # repete ahu-brasil:db0bf0b4a8 | AHU_CU_011, Cx. 62, D. 5257.
+ahu-brasil:22f87fd7be  # repete ahu-brasil:5047aec46d | AHU_CU_011, Cx. 62, D. 5258.
+ahu-brasil:b1a0331dc6  # repete ahu-brasil:db94e691df | AHU_CU_011, Cx. 62, D. 5259.
+ahu-brasil:2ce6435a0a  # repete ahu-brasil:5ae3a991e1 | AHU_CU_011, Cx. 62, D. 5260.
+ahu-brasil:a1a01247b8  # repete ahu-brasil:ae54593b9b | AHU_CU_011, Cx. 62, D. 5261.
+ahu-brasil:ee24ea8f75  # repete ahu-brasil:96d32010ff | AHU_CU_011, Cx. 62, D. 5262.
+ahu-brasil:cd42a1ae1e  # repete ahu-sul:93eb3db6fe | AHU_CU_012, Cx. 2, D. 156.
+ahu-brasil:cd4ac400db  # repete ahu-brasil:47d589dde2 | AHU_CU_015, Cx. 115, D. 8845.
+ahu-brasil:acdf92fcae  # repete ahu-sul:c03080c164 | AHU_CU_019, Cx. 5, D. 413.
+ahu-brasil:1cc9d93200  # repete ahu-sul:d5a2b3cb9f | AHU_CU_017-01, Cx. 37, D. 8701.
+ahu-brasil:d7cdc0bb53  # repete ahu-sul:0dcf855cc7 | AHU_CU_017, Cx. 52, D. 5195.
+ahu-brasil:c560df4447  # repete ahu-sul:3281c0e74d | AHU_CU_017, Cx. 272, D. 18814.
+ahu-brasil:8a43f30696  # repete ahu-sul:2f01c3cce7 | AHU_CU_023-01, Cx. 1, D. 41.
+ahu-brasil:72bb1dc094  # repete ahu-sul:7382fcb141 | AHU_CU_023, Cx. 6, D. 356.
+ahu-brasil:15a432e92c  # repete ahu-brasil:b892700ba3 | AHU_ACL_CU_018, Cx. 8, D. 475
+ahu-brasil:414b4ef9c0  # repete ahu-brasil:c24aa9ac6d | AHU_ACL_CU_018, Cx. 8, D. 476
+ahu-brasil:7e2e00b892  # repete ahu-brasil:a9d8e179e2 | AHU_ACL_CU_018, Cx. 8, D. 477
+ahu-brasil:f9ee2e7114  # repete ahu-brasil:9f084a9d95 | AHU_ACL_CU_018, Cx. 8, D. 478
+ahu-brasil:3326801e17  # repete ahu-brasil:91a9043f15 | AHU_ACL_CU_018, Cx. 8, D. 479
+ahu-brasil:0479dcdd42  # repete ahu-brasil:51cb6986b5 | AHU_ACL_CU_018, Cx. 8, D. 480
+ahu-brasil:ac6082e541  # repete ahu-brasil:7a88e49ca0 | AHU_ACL_CU_018, Cx. 8, D. 481
+ahu-brasil:a335c19e75  # repete ahu-brasil:39b1ea0f47 | AHU_ACL_CU_018, Cx. 8, D. 482
+ahu-brasil:7328a141a3  # repete ahu-brasil:387bdc0401 | AHU_ACL_CU_018, Cx. 8, D. 483
+ahu-brasil:00ee9f1657  # repete ahu-brasil:64b8073639 | AHU_ACL_CU_018, Cx. 8, D. 484
+ahu-brasil:bc96bbce83  # repete ahu-brasil:5ce6108774 | AHU_ACL_CU_018, Cx. 8, D. 486
+ahu-brasil:a79040a6d5  # repete ahu-brasil:f63ecdc7b1 | AHU_ACL_CU_018, Cx. 8, D. 487
+ahu-brasil:7e75ff5a32  # repete ahu-brasil:49d894c16f | AHU_ACL_CU_018, Cx. 8, D. 488
+ahu-brasil:271587646e  # repete ahu-brasil:52e37d446b | AHU_ACL_CU_018, Cx. 8, D. 489
+ahu-brasil:fe0423a47c  # repete ahu-brasil:f2b3cef602 | AHU_ACL_CU_018, Cx. 8, D. 490
+ahu-brasil:aaa45877bf  # repete ahu-brasil:bcfee047ce | AHU_ACL_CU_018, Cx. 8, D. 491
+ahu-brasil:a1d8c3b117  # repete ahu-brasil:88c22c110b | AHU_ACL_CU_018, Cx. 8, D 492.
+ahu-brasil:ea83a453b7  # repete ahu-brasil:f3626f7deb | AHU_ACL_CU_018, Cx. 8, D. 493
+ahu-brasil:3f8d822743  # repete ahu-brasil:dcd5c37b2b | AHU_ACL_CU_018, Cx. 8, D. 494
+ahu-brasil:466b358b6e  # repete ahu-brasil:3eff87ff3d | AHU_ACL_CU_018, Cx. 8, D. 495
+ahu-brasil:d7ec61bfd4  # repete ahu-brasil:98e867ea5d | AHU_ACL_CU_018, Cx. 8, D. 496
+ahu-brasil:075f196c0b  # repete ahu-brasil:0eaff9cfc4 | AHU_ACL_CU_018, Cx. 8, D. 497
+ahu-brasil:22b7c5200e  # repete ahu-brasil:7b4d31d9c2 | AHU_ACL_CU_018, Cx. 8, D. 498
+ahu-brasil:012bbe9a5b  # repete ahu-brasil:419c052f4b | AHU_ACL_CU_018, Cx. 8, D. 500
+ahu-brasil:37789fd40e  # repete ahu-brasil:5f2de8268a | AHU_ACL_CU_018, Cx. 8, D. 501
+ahu-brasil:041a96bdfb  # repete ahu-brasil:4c5629c3c3 | AHU_ACL_CU_018, Cx. 8, D. 502
+ahu-brasil:b5ce769b03  # repete ahu-brasil:774c63e4ee | AHU_ACL_CU_018, Cx. 8, D. 503
+ahu-brasil:b64538e1e9  # repete ahu-brasil:8ea1db8f69 | AHU_ACL_CU_018, Cx. 8, D. 504
+ahu-brasil:478c054a2d  # repete ahu-brasil:2e374ebf9b | AHU_ACL_CU_018, Cx. 8, D. 505
+ahu-brasil:42266bb6bb  # repete ahu-brasil:89466b4747 | AHU_ACL_CU_018, Cx. 8, D. 506
+ahu-brasil:1680e1c4ad  # repete ahu-brasil:926b36557c | AHU_ACL_CU_018, Cx. 8, D. 507
+ahu-brasil:d87b85e05d  # repete ahu-brasil:c502408717 | AHU_ACL_CU_018, Cx. 8, D. 508
+ahu-brasil:30e5d2108a  # repete ahu-brasil:3a4bf96c6f | AHU_ACL_CU_018, Cx. 8, D. 509
+ahu-brasil:82d726550c  # repete ahu-brasil:648de6999b | AHU_ACL_CU_018, Cx. 8, D. 510
+ahu-brasil:783f7f8883  # repete ahu-brasil:0a8454d5cb | AHU_ACL_CU_018, Cx. 8, D. 511
+ahu-brasil:6974d71d0b  # repete ahu-brasil:7b219735a6 | AHU_ACL_CU_018, Cx. 8, D. 512
+ahu-brasil:83e421ba84  # repete ahu-brasil:fdfd373f26 | AHU_ACL_CU_018, Cx. 8, D. 513
+ahu-brasil:71ea2b3a51  # repete ahu-brasil:91e3092cd1 | AHU_ACL_CU_018, Cx. 8, D. 514
+ahu-brasil:387db10a49  # repete ahu-brasil:4749f366ee | AHU_ACL_CU_018, Cx. 8, D. 515
+ahu-brasil:8d46ecd136  # repete ahu-brasil:ba7a7704c7 | AHU_ACL_CU_018, Cx. 8, D. 516
+ahu-brasil:72637c66ac  # repete ahu-brasil:e79c43063f | AHU_ACL_CU_018, Cx. 8, D. 517
+ahu-brasil:a1fd1e8053  # repete ahu-sul:788613c415 | AHU_CU_012, Cx. 1, D. .36.
+ahu-brasil:2ed76a9120  # repete ahu-brasil:7742d7d30d | AHU_CU_015, Cx. 82, D. .6785
+ahu-brasil:ab32226fa7  # repete ahu-sul:e08fbd796c | AHU_CU_017-01, Cx. 3, D. .387-389. 1645, junho, 26, Lisboa CONSULTA do Conselho Ultramarino acerca de uma petição de Antonio de Andrade sobre a serventia do ofício de Escrivão dos órfãos, notas e sesmarias do Rio de Janeiro.
+ahu-brasil:ca4f9cb28e  # repete ahu-sul:4697c5438e | AHU_CU_017-01, Cx. 6, D. –1011-1015. 1664, setembro, 26, Lisboa CONSULTA do Conselho Ultramarino, favorável ao requerimento de Domingos Franco Baptista, em que pede a patente de capitão ad honorem, da sua nau Santa Ana Maria, em que partia para o Brasil.
+ahu-brasil:a5c4fabc89  # repete ahu-brasil:b542443fe4 | AHU_CU_023-01, Cx. 7, D. .810
+ahu-brasil:db0e140536  # repete ahu-brasil:039e4991c7 | AHU_CU_023-01, Cx. 16, D. .1574
+ahu-brasil:b9b22b0331  # repete ahu-brasil:63ef5dc20b | AHU_CU_023-01, Cx. 18, D. .1715
+ahu-brasil:338e306755  # repete ahu-brasil:ce09f98cbf | AHU_CU_023-01, Cx. 40, D. .3304
+ahu-brasil:54ceefc853  # repete ahu-brasil:7f16dc8d6b | AHU_CU_023-01, Cx. 62, D. .4721
+ahu-brasil:3b835a8107  # repete ahu-brasil:96ea609fb5 | AHU_CU_023-01, Cx. 62, D. .4754
+ahu-brasil:e38cd4ce96  # repete ahu-brasil:f2860defd1 | AHU_CU_023-01, Cx. 63, D. .4845
+ahu-brasil:dbcdb215b7  # repete ahu-brasil:b6c168dba1 | AHU_ACL_CU_006, Cx. 1, D .9.
+ahu-brasil:06483e156b  # repete ahu-brasil:6bd4eced71 | AHU_ACL_CU_008, Cx. 2, D. .123
+ahu-brasil:5509cadfe4  # repete ahu-brasil:4c69763408 | AHU_ACL_CU_008, Cx. 19, D. .1142
+ahu-brasil:e69c6c616e  # repete ahu-brasil:a8c3e28c0a | AHU_ACL_CU_017-01, D.17020-17026.
+ahu-brasil:c34efcf4c5  # repete ahu-brasil:f8b0101053 | AHU_ACL_CU_017, 127, D. 10152.
+ahu-brasil:d87052e73a  # repete ahu-brasil:902ff63cb0 | AHU_ACL_CU_017-01, Cx. 2, D. .233 1641, novembro, Bahia CARTA (traslado) patente pela qual os Governadores do Estado do Brasil, com poderes de Vice-Rei e Capitão General houveram por bem nomear Duarte Corrêa Vasqueanes Capitão-mor e Governador da Capitania do Rio de Janeiro.
+ahu-brasil:a84d633d1f  # repete ahu-sul:e08fbd796c | AHU_ACL_CU_017-01, Cx. 3, D. .387-389. 1645, junho, 26, Lisboa CONSULTA do Conselho Ultramarino acerca de uma petição de Antonio de Andrade sobre a serventia do ofício de Escrivão dos órfãos, notas e sesmarias do Rio de Janeiro.
+ahu-brasil:82800001d1  # repete ahu-brasil:d63cb1b4f3 | AHU_ACL_CU_017-01, Cx. 5, D. . 1660, dezembro, 9, Rio de Janeiro AUTO que mandou fazer o juiz Ordinário Diogo Lobo Pereira a requerimento dos procuradores do Povo da cidade do Rio de Janeiro, sobre a conjuração que se descobrira estar preparada no Convento de São Bento.
+ahu-brasil:6c23ffba2a  # repete ahu-sul:4697c5438e | AHU_ACL_CU_017-01, Cx. 6, D. –1011-1015. 1664, setembro, 26, Lisboa CONSULTA do Conselho Ultramarino, favorável ao requerimento de Domingos Franco Baptista, em que pede a patente de capitão ad honorem, da sua nau Santa Ana Maria, em que partia para o Brasil.
+ahu-brasil:04c2365306  # repete ahu-brasil:fd667e98b7 | AHU_ACL_CU_017-01, Cx. 12, D. .2328 1699, dezembro, 7, Lisboa CONSULTA do Conselho Ultramarino sobre a propriedade do ofício de Escrivão dos órfãos da Vila de Santo Antonio de Sá, de novo erigida na Capitania do Rio de Janeiro.
+ahu-brasil:9788db53de  # repete ahu-brasil:3cf8659baa | AHU_ACL_CU_017-01, Cx. 13, D. . 1703, setembro, 7, Lisboa CONSULTA do Conselho Ultramarino, sobre a repreensão que se devia dar ao Superintendente das Minas José Vaz Pinto pela maneira desrespeitosa como se dirigira ao Governador nos seus ofícios.
+ahu-brasil:26d014ba54  # repete ahu-brasil:fecce591dd | AHU_ACL_CU_017-01, Cx. 24, D. . 1726, maio, 2, Vila de Santos INFORMAÇÃO de Thimoteo Corrêa de Goes, sobre a arrematação dos contratos da Fazenda Real.
+ahu-brasil:0ad0bc78ea  # repete ahu-brasil:1a88eec098 | AHU_ACL_CU_017-01, Cx. 38, D. . 1720, janeiro, 22, Lisboa PROVISÃO do Conselho Ultramarino, pela qual se fez mercê a Francisco Gomes Barbosa de um mês de licença para tratar no Reino dos seus interesses particulares.
+ahu-brasil:fcf1367eea  # repete ahu-brasil:1fcb4d1d4c | AHU_ACL_CU_017-01, Cx. 45, D. . 1736, janeiro, 22, Lisboa PROVISÃO do Conselho Ultramarino, na qual ordena que o Governador do Rio de Janeiro informe acerca da sesmaria que requerera José Ferreira de Noronha no caminho das Minas.
+ahu-brasil:43cc520bbd  # repete ahu-brasil:0af1cd9732 | AHU_ACL_CU_017-01, Cx. 47, D. .10960 1736, junho, 21, e julho, 23, Rio de Janeiro ATAS de 2 sessões do Senado da Câmara do Rio de Janeiro, com a assistência, a seu convite, dos representantes da nobreza, do comércio e do povo, em que se tratou de resolver a maneira de obter recursos para o pagamento da grande dívida da criação dos expostos e para ocorrer ao das suas futuras despesas. Anexas ao n.º 10958.
+ahu-brasil:9184120a59  # repete ahu-brasil:cc86c1ad59 | AHU_ACL_CU_017-01, Cx. 49, D. . 1741 REQUERIMENTO de Manuel Gomes Baptista, da guarnição da Praça do Rio de Janeiro, em que pede licença, para ir as Minas Gerais cobrar diferentes dívidas.
+ahu-brasil:45c3c27223  # repete ahu-brasil:d6de4d6823 | AHU_ACL_CU_017-01, Cx. 52, D. .12146 1741, janeiro, 21, Lisboa PROVISÃO régia pela qual se fez mercê a Manuel Vaz Fagundes de ser substituído, durante um ano, por Bento de Araujo Pereira, na serventia do ofício de Tabelião de Notas de Vila Rica.
+ahu-brasil:baef907e98  # repete ahu-brasil:7c523c309d | AHU_ACL_CU_017-01, Cx. 52, D. .1239-12241 1744 REQUERIMENTO de Antonio de Proença Coutinho, Luiz Peixoto da Silva, Nicolao Viegas de Proença e os mais moradores e povoadores do caminho novo de Inhomerim, relativo a informação de qualquer ministro da comarca do Rio de Janeiro sobre uma pretensão, que tinham pendente.
+ahu-brasil:2206649a19  # repete ahu-brasil:6ba4e5b2f4 | AHU_ACL_CU_017-01, Cx. 64, D. .15092-15093 1750 REQUERIMENTOS (2) de Thomaz Luiz Osorio, Capitão de Dragões do Regimento da Nova Colônia, em que pede um ano de licença, para tratar dos negócios da sua casa.
+ahu-brasil:f8e7c281fb  # repete ahu-brasil:45a08126f7 | AHU_ACL_CU_017-01, Cx. 68, D. .15976-15981 S. d. FÉS de ofícios (4) de Roque da Silva Paes. Anexas ao n.º 15976.
+ahu-brasil:06ecf95c59  # repete ahu-brasil:030f8bcfc1 | AHU_ACL_CU_017-01, Cx. 70, D. .16202 1753, outubro, 12, Rio de Janeiro OFÍCIO do Governador interino para o Juiz da Alfândega do Rio de Janeiro, João Martins Brito, no qual lhe ordena que tire uma devassa sobre os despachos das fazendas e o procedimento dos comerciantes.
+ahu-brasil:86fc0b15db  # repete ahu-brasil:b8d56b72f6 | AHU_ACL_CU_017-01, Cx. 75, D. .17517 1754, dezembro, 1, Rio de Janeiro OFÍCIO do Governador José Antonio Freire de Andrade para Diogo de Mendonça, em que lhe comunica ter chegado em 12 de outubro a Nau Almirante da Frota Nossa Senhora da Natividade, sob o comando do Capitão de Mar e Guerra Gonçalo Xavier de Barros e Alvim, e ter-se demorado no Rio 50 dias.
+ahu-brasil:c960928254  # repete ahu-brasil:cb8728e366 | AHU_ACL_CU_017-01, Cx. 76, D. .17702 1754 REQUERIMENTOS (2) de Francisco Peres de Sousa, arrematante do contrato da pesca das baleias da Capitania do Rio de Janeiro, nos quais pede que se lhe passem as ordens necessárias para a execução do seu contrato.
+ahu-brasil:87092cc42e  # repete ahu-brasil:a119d0481d | AHU_ACL_CU_017-01, Cx. 82, D. . 1755, maio, 5, Rio de Janeiro INFORMAÇÃO do Chanceler da Relação João Soares Tavares, sobre a representação dos oficiais de livreiros da cidade do Rio de Janeiro, em que pediam a concessão dos mesmos privilégios de que gozavam os livreiros da Corte.
