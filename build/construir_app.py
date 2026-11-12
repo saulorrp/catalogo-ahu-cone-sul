@@ -25,6 +25,7 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from datetime import datetime, timezone
@@ -54,7 +55,10 @@ CAMPOS_PDF = ["scribe_mediation_likely"]
 
 COLUNAS_BASE = ["doc_uid", "colecao", "folder", "description", "old_code", "new_code",
                 "reference_code", "document_id_and_date", "ano_isolado", "recipient_name",
-                "sender_name", "referencia_digitarq", "resgate_docreader", "duplicata_de"]
+                "sender_name", "referencia_digitarq", "resgate_docreader", "duplicata_de",
+                # Proveniência de cada verbete (só a coleção ahu-brasil as tem; no ahu-sul ficam
+                # vazias): o PDF e a página do ACTD, a página do Projeto Resgate e as marcas do QC.
+                "url_actd", "pagina_actd", "caminho_resgate", "qc"]
 COLUNAS_TIPOLOGIA = ["tipologia", "tipologia_chave", "typology_status"]
 COLUNAS_SOCIO = ["sender_category", "vector", "typology_impact", "vernacular_score",
                  "justificativa"]
@@ -145,6 +149,13 @@ def montar_documentos(
             )
 
     docs = base[[c for c in COLUNAS_BASE if c in base.columns]].copy()
+    # O sha1 do resumo deixa publicar os dados sem o texto do catálogo (registro B) e conferir a
+    # reidratação a partir dos PDFs do ACTD (coleta/scripts/reidratar_resumos.py).
+    if "pagina_actd" in docs.columns:
+        # Página é inteiro; a concatenação com o ahu-sul (sem a coluna) a deixaria em float.
+        docs["pagina_actd"] = docs["pagina_actd"].astype("Int32")
+    docs["sha1_resumo"] = docs["description"].map(
+        lambda t: hashlib.sha1(t.encode("utf-8")).hexdigest() if isinstance(t, str) else None)
     docs = docs.merge(tipologia[["doc_uid", *COLUNAS_TIPOLOGIA]], on="doc_uid", how="left")
     docs = docs.merge(socio[["doc_uid", *COLUNAS_SOCIO]], on="doc_uid", how="left")
 

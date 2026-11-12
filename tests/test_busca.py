@@ -64,6 +64,35 @@ def test_cota_antiga_com_regiao():
     assert busca.chave_cota("AHU-Rio de Janeiro, cx. 287, doc. 85.") == "reg|rio de janeiro|287|85"
 
 
+# Grafias tortas da própria base que só o conversor lia (ida e volta da auditoria, 82 documentos).
+GRAFIAS_TORTAS = [
+    ("AHU_CU_017Cx. 48, D. 4860.", "AHU_CU_017, Cx. 48, D. 4860."),
+    ("AHU_ACL_CU_071, C x. 1, D. 15.", "AHU_ACL_CU_071, Cx. 1, D. 15."),
+    ("AHU_ACL_CU_017, 8, D. 818.", "AHU_ACL_CU_017, Cx. 8, D. 818."),
+    ("AHU_CU_005, Cx9., D. 12.", "AHU_CU_005, Cx. 9, D. 12."),
+    ("AHU_ACL_CU_017, Cx. 81, D9.", "AHU_ACL_CU_017, Cx. 81, D. 9."),
+    ("AHU_ACL_CU_015, Cx. 3, D. 245A.", "AHU_ACL_CU_015, Cx. 3, D. 245."),
+    ("AHU_CU_017-01Cx. 9, D. 900 - 901.", "AHU_CU_017-01, Cx. 9, D. 900."),
+]
+
+
+@pytest.mark.parametrize("torta,limpa", GRAFIAS_TORTAS)
+def test_grafia_torta_da_a_chave_da_forma_limpa(torta, limpa):
+    assert busca.chave_cota(limpa) is not None
+    assert busca.chave_cota(torta) == busca.chave_cota(limpa)
+
+
+def test_grafia_torta_com_intervalo_responde_por_cada_documento():
+    chaves = busca.chaves_do_campo("AHU_CU_017-01Cx. 9, D. 900 - 901.")
+    assert {"cu|17-1|9|900", "cu|17-1|9|901"} <= set(chaves)
+
+
+def test_grafia_torta_dentro_de_frase_separa_o_resto():
+    chave, resto = busca._trecho_da_cota("cartas AHU_CU_017Cx. 48, D. 4860. gado")
+    assert chave == "cu|17|48|4860"
+    assert resto == "cartas gado"
+
+
 def test_a3_numero_solto_nao_e_cota():
     """A consulta `17` não pode devolver documentos por cota (A3)."""
     for texto in ("17", "1750", "cx. 6", "d. 390", "390"):
@@ -276,6 +305,24 @@ def test_a3_nos_dados_reais():
     r = busca.buscar(d, "17", modo="exata")
     assert r.cota is None
     assert all("cota" not in x.posicoes for x in r.resultados)
+
+
+@pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
+def test_toda_cota_do_resgate_que_o_conversor_le_esta_na_tabela():
+    """Toda cota do Resgate que o conversor lê tem chave na busca e leva à própria linha."""
+    from ahu import conversor
+
+    d = carregar_sem_cache(APP_DADOS)
+    tabela = busca.tabela_de_cotas(d)
+    falhas = []
+    for i, valor in enumerate(d.documentos["new_code"]):
+        cota = conversor.reconhecer(valor) if isinstance(valor, str) else None
+        if cota is None or cota.familia != "resgate":
+            continue
+        chave = busca.chave_cota(valor)
+        if chave is None or i not in tabela.get(chave, []):
+            falhas.append((i, valor, chave))
+    assert not falhas, f"{len(falhas)} falhas: {falhas[:10]}"
 
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")

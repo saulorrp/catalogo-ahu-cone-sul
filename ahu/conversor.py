@@ -191,6 +191,30 @@ def reconhecer_todas(texto: str | None) -> list[Cota]:
     return _reconhecer_antiga(texto)
 
 
+def localizar(texto: str | None) -> tuple[Cota, int, int] | None:
+    """A primeira cota de referência ou do Resgate da linha, com o trecho (início, fim) dela.
+
+    A busca usa isto como plano B: o conversor lê grafias tortas que a rota de cotas não lê, e a
+    busca precisa do trecho para separar a cota do resto da consulta.
+    """
+    if not texto:
+        return None
+    texto = str(texto)
+    m = _RE_REFERENCIA.search(texto)
+    if m:
+        serie, sub, caixa, doc = m.groups()
+        return (Cota("referencia", int(caixa), int(doc), int(serie), _int(sub),
+                     serie_curta=len(serie) < 3), m.start(), m.end())
+    m = _RE_RESGATE.search(texto)
+    if m:
+        serie, sub, caixa, doc, fim = m.groups()
+        doc, fim = doc.replace(".", ""), _int(fim and fim.replace(".", ""))
+        return (Cota("resgate", int(caixa), int(doc), int(serie), _int(sub),
+                     documento_fim=fim if fim and fim > int(doc) else None,
+                     serie_curta=len(serie) < 3), m.start(), m.end())
+    return None
+
+
 def reconhecer(texto: str | None) -> Cota | None:
     """A primeira cota da linha, ou None se não houver uma reconhecível."""
     cotas = reconhecer_todas(texto)

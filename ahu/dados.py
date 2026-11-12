@@ -37,6 +37,9 @@ PASTA_EMBEDDINGS = "embeddings"
 
 # D1: nunca na interface, nos filtros, no CSV nem no JSON. Só no dossiê em PDF.
 CAMPOS_SO_PDF = ("scribe_mediation_likely",)
+# Colunas que o app não usa e não carrega: servem à exportação do registro B do Zenodo e à
+# reidratação dos resumos (o sha1 de 167 mil resumos custaria ~15 MiB de RAM à toa).
+COLUNAS_SO_EXPORTACAO = ("sha1_resumo",)
 
 RECONSTRUIR = "Rode `python build/construir_app.py` para reconstruir os artefatos."
 
@@ -235,6 +238,15 @@ def verificar_regras(dados: dict) -> None:
 # Carregamento
 # ---------------------------------------------------------------------------
 
+def _colunas_do_app(caminho: Path) -> list[str] | None:
+    """As colunas do parquet menos as só de exportação; None (todas) quando não há nenhuma."""
+    import pyarrow.parquet as pq
+
+    nomes = pq.read_schema(caminho).names
+    fora = [c for c in nomes if c in COLUNAS_SO_EXPORTACAO]
+    return [c for c in nomes if c not in fora] if fora else None
+
+
 def carregar_sem_cache(pasta: Path | str = APP_DADOS) -> Dados:
     pasta = Path(pasta)
     if not pasta.is_dir():
@@ -242,7 +254,13 @@ def carregar_sem_cache(pasta: Path | str = APP_DADOS) -> Dados:
     manifesto = ler_manifesto(pasta)
     verificar_hashes(pasta, manifesto)
 
-    dados = {nome.split(".")[0]: pd.read_parquet(pasta / nome) for nome in ARTEFATOS_PARQUET}
+    dados = {nome.split(".")[0]: pd.read_parquet(pasta / nome, columns=_colunas_do_app(pasta / nome))
+             for nome in ARTEFATOS_PARQUET}
+    # O pyarrow guarda no seu pool os buffers da decodificação, que o pandas já copiou: devolvê-los
+    # ao sistema tira ~140 MiB do RSS do app (medido em 12/11/2026, 167 mil documentos).
+    import pyarrow
+
+    pyarrow.default_memory_pool().release_unused()
     partes = sorted(n for n in manifesto["artefatos"] if n.startswith(f"{PASTA_EMBEDDINGS}/"))
     dados["embeddings"] = Vetores([np.load(pasta / n, mmap_mode="r") for n in partes])
     dados["lexico"] = Lexico(pasta, dados["documentos"]["doc_uid"].astype(str).tolist())
