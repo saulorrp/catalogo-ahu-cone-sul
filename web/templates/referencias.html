@@ -1,7 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Referências - Catálogo AHU{% endblock %}
+{% block aba %}sobre{% endblock %}
+{% block title %}Referências · Catálogo AHU{% endblock %}
 {% block content %}
-<h1>Referências</h1>
+<nav class="subabas" aria-label="Sobre">
+    <a href="{{ url_for('sobre') }}">Sobre e método</a>
+    <a class="atual" href="{{ url_for('referencias') }}">Referências e fontes</a>
+</nav>
+<div class="prosa">
+<h1>Referências e fontes</h1>
 
 <h3>Arquivo Histórico Ultramarino (AHU)</h3>
 <p>Arquivo em Lisboa, criado em 1931, que guarda a documentação da administração ultramarina portuguesa. O núcleo usado aqui é o fundo do <strong>Conselho Ultramarino</strong> (1642–1833), o órgão que despachava os assuntos das colônias: requerimentos, ofícios, consultas, cartas de governadores e de câmaras. Os documentos avulsos estão organizados por <strong>série</strong> (em geral, uma capitania), <strong>caixa</strong> e <strong>documento</strong>, e é isso que a cota registra. Hoje o AHU faz parte da Direção-Geral do Livro, dos Arquivos e das Bibliotecas (DGLAB).</p>
@@ -45,4 +51,5 @@
     <li>Código e dados: <a href="https://github.com/saulorrp/catalogo-ahu-cone-sul" target="_blank">https://github.com/saulorrp/catalogo-ahu-cone-sul</a></li>
     <li>Método de coleta, transcrição e cura das cotas: <a href="https://github.com/saulorrp/catalogo-ahu-cone-sul/blob/main/docs/METODO_COLETA.md" target="_blank">https://github.com/saulorrp/catalogo-ahu-cone-sul/blob/main/docs/METODO_COLETA.md</a></li>
 </ul>
+</div>
 {% endblock %}

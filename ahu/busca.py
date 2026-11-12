@@ -25,6 +25,7 @@ ouro. Estão todos neste módulo, em constantes, para que a calibração mexa nu
 """
 from __future__ import annotations
 
+import os
 import re
 import unicodedata
 from dataclasses import dataclass, field
@@ -76,7 +77,8 @@ COSSENO_MINIMO = 0.70
 # resolve o primeiro caso de graça — "lavradio" está no corpus — e a (b) separa o resto.
 # Continua sendo **só um aviso**: nada é cortado. O 4,5 é provisório, calibrado no WP 4.2.
 LIMITE_DESTAQUE = 4.5
-LIMITE_RERANKER = 30        # quantos do topo da fusão o reranker relê (docs/plano_busca_servidor.md)
+# Quantos do topo da fusão o reranker relê (docs/plano_busca_servidor.md).
+LIMITE_RERANKER = int(os.environ.get("AHU_RERANKER_TOPO", "30"))
 AVISO_DISTANTE = ("Nenhum documento muito próximo desta consulta; "
                   "os resultados podem ser pouco relevantes.")
 
@@ -476,6 +478,33 @@ def reordenar(dados, texto: str, ordem: list[Resultado], reranker,
     for p, i in enumerate(posicoes, start=1):
         topo[i].posicoes["reranker"] = p
     return [topo[i] for i in posicoes] + cauda
+
+
+def refinar(dados, texto: str, resposta: "Resposta", reranker) -> "Resposta":
+    """Passa o reranker por uma `Resposta` que saiu sem ele, e devolve outra, sem tocar na primeira.
+
+    É o segundo tempo da busca em dois tempos da interface web: a fusão responde na hora, e o
+    cross-encoder relê o topo depois. O resultado é **o mesmo** de `buscar(..., reranker=...)`
+    (há teste): a ordem da fusão se refaz pela nota do RRF, o topo é relido, e os documentos da
+    cota citada na frase continuam na frente.
+    """
+    from dataclasses import replace
+
+    if reranker is None or resposta.modo == "exata" or not resposta.resultados:
+        return resposta
+    chave, resto = _trecho_da_cota(texto)
+    copias = [replace(r, posicoes=dict(r.posicoes)) for r in resposta.resultados]
+    da_cota = [r for r in copias if "cota" in r.posicoes]
+    # Quem veio só pela cota não passou pela fusão; os demais voltam à ordem que ela deu.
+    fundidos = sorted((r for r in copias if set(r.posicoes) - {"cota"}),
+                      key=lambda r: (-r.nota_rrf, r.linha))
+    if not fundidos:
+        return resposta
+    ordem = reordenar(dados, resto if chave else texto, fundidos, reranker)
+    ordem = da_cota + [r for r in ordem if "cota" not in r.posicoes]
+    for posicao, r in enumerate(ordem, start=1):
+        r.posicao = posicao
+    return replace(resposta, resultados=ordem)
 
 
 # ---------------------------------------------------------------------------

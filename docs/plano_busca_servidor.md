@@ -47,6 +47,38 @@ O RRF puro sai **abaixo** do léxico nesta avaliação (0,863 contra 0,899): o e
 de sentido próximo que o juiz considera menos relevantes que os de palavra exata. O reranker
 recupera isso e passa os dois.
 
+### Espera na tela (12/11/2026, PR do redesenho)
+
+Sem trocar o modelo nem o número de candidatos, a espera caiu por quatro caminhos:
+
+- **Busca em dois tempos** (`web/cache.py`, `busca.refinar`): a fusão responde e a tela mostra a
+  lista; o reranker relê o topo num segundo pedido e a lista se reordena. O resultado final é o
+  mesmo de `buscar(..., reranker=...)` (teste em `tests/test_web.py`).
+- **Memória das respostas**: "Carregar mais", voltar e desmarcar um filtro não refazem a busca.
+  Antes, cada página nova rodava a busca e o reranker de novo.
+- **Memória dos pares** (`reranker.com_memoria`): a mesma consulta com outro filtro só relê os
+  pares novos.
+- **Lotes de 8 em ordem de tamanho**: a ordenação por tamanho que o código anunciava não
+  acontecia (os pares já vinham preenchidos até o maior). Agora acontece.
+
+Medido na nuvem (4 núcleos, 2 threads; os tempos do agiulfo são maiores, a proporção deve valer),
+com os mesmos julgamentos, releitura de 30 pares:
+
+| variante | nDCG@10 | Recall@20 | mediana |
+|---|---:|---:|---:|
+| como estava (lote 16, sem ordenar) | 0,926 | 0,548 | 1,55 s |
+| lote 16, ordenado | 0,926 | 0,546 | 1,08 s |
+| **lote 8, ordenado (no ar)** | **0,927** | 0,545 | **0,97 s** |
+| lote 8, top-50 | 0,939 | 0,540 | 1,37 s |
+| corte em 128 tokens (lote 16 antigo) | 0,918 | 0,539 | 0,91 s |
+| corte em 96 tokens | 0,903 | 0,534 | 0,71 s |
+| top-20 | 0,921 | 0,518 | 0,91 s |
+
+O modelo int8 quantiza por lote, então a nota de um par oscila um pouco com a composição do
+lote; nas métricas isso fica dentro do ruído (±0,003). Cortar tokens custa qualidade e não foi
+adotado. `AHU_RERANKER_TOPO` e `AHU_RERANKER_TOKENS` mudam o número de candidatos e o corte sem
+tocar no código: com o lote novo, top-50 custa menos que o top-30 custava.
+
 ## 2. Motor léxico com índice posicional (se a velocidade pedir)
 - Tantivy (`tantivy-py`) ou SQLite FTS5: frase, NEAR e BM25 nativos, em milissegundos, do disco.
 - Substituiria `ahu/lexico.py` e o bônus de proximidade feito à mão em `ahu/busca.py`.

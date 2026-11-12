@@ -1,7 +1,8 @@
 {% extends "base.html" %}
-{% block title %}{{ pagina.pessoa.nome }} - Catálogo AHU{% endblock %}
+{% block aba %}pessoas{% endblock %}
+{% block title %}{{ pagina.pessoa.nome }} · Catálogo AHU{% endblock %}
 {% block content %}
-<a href="{{ url_for('pessoas') }}">← Voltar à lista</a>
+<a class="voltar" href="{{ url_for('pessoas') }}">← Voltar à lista de pessoas</a>
 <h1>{{ pagina.pessoa.nome }}</h1>
 <p><span class="rotulo">{{ pagina.pessoa.n_documentos }} documento(s) · atividade <span class="numero">{{ pagina.pessoa.periodo }}</span></span></p>
 
@@ -20,55 +21,57 @@
 {% endif %}
 
 <div class="doc-actions">
-    <a href="{{ pagina.url_documentos }}" class="btn">Ver documentos</a>
+    <a href="{{ url_for('busca') }}{{ pagina.url_documentos }}" class="btn btn-primario">Ver os documentos na busca</a>
     <a href="{{ url_for('amostras') }}?tipo=diacronica&pessoa_uid={{ pagina.pessoa.pessoa_uid }}" class="btn">Gerar amostra diacrônica</a>
-    <a href="{{ pagina.url_issue }}" target="_blank" class="btn">Reportar erro</a>
+    <a href="{{ pagina.url_issue }}" target="_blank" rel="noopener" class="btn-texto empurra">Reportar erro</a>
 </div>
 
 <h3>Linha do tempo</h3>
-{% if pagina.linha_do_tempo.empty %}
+{% if not linha_do_tempo %}
 <p>Nenhum documento com data.</p>
 {% else %}
-<table class="tabela-resultados">
-    <tr><th>Ano</th><th>Documentos</th></tr>
-    {% for row in pagina.linha_do_tempo.itertuples() %}
-    <tr><td>{{ row.ano }}</td><td>{{ row.documentos }}</td></tr>
+<div class="barras-ano" role="img" aria-label="Documentos por ano, de {{ linha_do_tempo[0][0] }} a {{ linha_do_tempo[-1][0] }}">
+    {% for ano, n in linha_do_tempo %}
+    <div class="barra-ano" title="{{ ano }}: {{ n }} documento(s)"><span class="numero">{{ ano }}</span><span class="trilho"><span style="width: {{ (n / maximo_por_ano * 100) | round(1) }}%"></span></span><span class="numero">{{ n }}</span></div>
     {% endfor %}
-</table>
+</div>
 {% endif %}
-{% if pagina.sem_data %}<p>{{ pagina.sem_data }} documento(s) sem data.</p>{% endif %}
+{% if pagina.sem_data %}<p class="rotulo">{{ pagina.sem_data }} documento(s) sem data.</p>{% endif %}
 
-<div style="display: flex; gap: 20px;">
+<div class="painel-duplo">
     <div>
         <h3>Tipologias</h3>
-        <table class="tabela-resultados">
-            <tr><th>Tipologia</th><th>Documentos</th></tr>
+        <table class="tabela">
+            <tr><th>Tipologia</th><th class="num">Documentos</th></tr>
             {% for t, c in pagina.tipologias %}
-            <tr><td>{{ t }}</td><td>{{ c }}</td></tr>
+            <tr><td>{{ t }}</td><td class="num">{{ c }}</td></tr>
             {% endfor %}
         </table>
     </div>
     <div>
         <h3>Destinatários</h3>
-        <table class="tabela-resultados">
-            <tr><th>Destinatário</th><th>Documentos</th></tr>
+        <table class="tabela">
+            <tr><th>Destinatário</th><th class="num">Documentos</th></tr>
             {% for d, c in pagina.destinatarios %}
-            <tr><td>{{ d }}</td><td>{{ c }}</td></tr>
+            <tr><td>{{ d }}</td><td class="num">{{ c }}</td></tr>
             {% endfor %}
         </table>
     </div>
 </div>
 
 <h3>Documentos em ordem cronológica</h3>
-<table class="tabela-resultados">
-    <tr><th>Ano</th><th>Tipologia</th><th>Destinatário</th><th>Autoria verificada</th></tr>
-    {% for row in pagina.documentos.itertuples() %}
+<div class="tabela-rolagem">
+<table class="tabela">
+    <tr><th class="num">Ano</th><th>Tipologia</th><th>Destinatário</th><th>Autoria verificada</th><th></th></tr>
+    {% for d in documentos %}
     <tr>
-        <td>{{ row.ano if not row.ano != row.ano else '—' }}</td>
-        <td>{{ row.tipologia if row.tipologia else '—' }}</td>
-        <td>{{ row.destinatario if row.destinatario else '—' }}</td>
-        <td>{{ 'Sim' if row.autoria_verificada else 'Não' }}</td>
+        <td class="num">{{ d.ano or '—' }}</td>
+        <td>{{ d.tipologia or '—' }}</td>
+        <td>{{ d.destinatario or '—' }}</td>
+        <td>{{ 'Sim' if d.autoria_verificada else 'Não' }}</td>
+        <td><a href="{{ url_for('doc', doc_uid=d.uid) }}">Ver a ficha →</a></td>
     </tr>
     {% endfor %}
 </table>
+</div>
 {% endblock %}

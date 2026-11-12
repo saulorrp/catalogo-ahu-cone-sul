@@ -1,197 +1,211 @@
 {% extends "base.html" %}
+{% block aba %}busca{% endblock %}
+{% block classe_conteudo %}conteudo-largo{% endblock %}
+
+{% macro faceta(nome, input_name, lista_opcoes, dict_counts, selecionados) %}
+    {% set itens = [] %}
+    {% for val in lista_opcoes %}
+        {% set count = dict_counts.get(val, 0) %}
+        {% if count > 0 or val in selecionados %}
+            {% set _ = itens.append((val, count)) %}
+        {% endif %}
+    {% endfor %}
+    {% set ordenados = itens | sort(attribute='1', reverse=true) %}
+    {% if ordenados %}
+    <fieldset class="filtro-grupo">
+        <legend class="filtro-titulo">{{ nome }}</legend>
+        {% for val, count in ordenados[:5] %}
+        <label class="faceta-item">
+            <input type="checkbox" name="{{ input_name }}" value="{{ val }}" {% if val in selecionados %}checked{% endif %}>
+            <span class="faceta-nome" title="{{ val }}">{{ val }}</span> <span class="faceta-count">{{ count | milhar }}</span>
+        </label>
+        {% endfor %}
+        {% if ordenados | length > 5 %}
+        {% set resto = ordenados[5:] %}
+        {% set marcados_no_resto = resto | map(attribute=0) | select('in', selecionados) | list %}
+        <details class="gaveta-mais" {% if marcados_no_resto %}open{% endif %}>
+            <summary>mais {{ resto | length }}</summary>
+            {% for val, count in resto %}
+            <label class="faceta-item">
+                <input type="checkbox" name="{{ input_name }}" value="{{ val }}" {% if val in selecionados %}checked{% endif %}>
+                <span class="faceta-nome" title="{{ val }}">{{ val }}</span> <span class="faceta-count">{{ count | milhar }}</span>
+            </label>
+            {% endfor %}
+        </details>
+        {% endif %}
+    </fieldset>
+    {% endif %}
+{% endmacro %}
 
 {% block content %}
-<div class="busca-container">
-    <form id="form-busca" action="{{ url_for('busca') }}" method="GET" hx-get="{{ url_for('resultados') }}" hx-target="#lista-resultados" hx-swap="innerHTML" hx-push-url="true" hx-trigger="submit, change from:select, change from:input[type='checkbox'], change from:input[type='radio']">
-        <input type="hidden" name="v" value="2">
-        <div class="busca-bar">
-            <input type="text" name="q" value="{{ consulta.texto }}" placeholder="Buscar..." id="input-busca" accesskey="/">
+<div class="busca-pagina">
+<form id="form-busca" class="busca-form" action="{{ url_for('busca') }}" method="GET" role="search"
+      hx-get="{{ url_for('busca') }}" hx-target="#busca-corpo" hx-select="#busca-corpo" hx-swap="outerHTML"
+      hx-push-url="true" hx-sync="this:replace" hx-indicator="#carregando, #busca-corpo, #buscando"
+      hx-trigger="submit, change[target.name!='q' && !target.hasAttribute('data-quieto')]">
+    <input type="hidden" name="v" value="2">
+    <div class="busca-bar">
+        <input type="search" name="q" value="{{ consulta.texto }}" id="input-busca" accesskey="/" autocomplete="off"
+               placeholder="Assunto, nome, lugar ou cota" aria-label="Buscar no catálogo" {% if inicio %}autofocus{% endif %}>
+        <button type="submit" class="btn btn-primario">Buscar</button>
+    </div>
+    <div class="busca-opcoes">
+        <label title="Automático junta palavras e sentido. Exata procura só as palavras digitadas. Conceitual procura só pelo sentido.">Modo
             <select name="m">
                 <option value="automatico" {% if consulta.modo == 'automatico' %}selected{% endif %}>Automático</option>
-                <option value="exata" {% if consulta.modo == 'exata' %}selected{% endif %}>Exata</option>
-                <option value="conceitual" {% if consulta.modo == 'conceitual' %}selected{% endif %}>Conceitual</option>
+                <option value="exata" {% if consulta.modo == 'exata' %}selected{% endif %}>Exata (só as palavras)</option>
+                <option value="conceitual" {% if consulta.modo == 'conceitual' %}selected{% endif %}>Conceitual (só o sentido)</option>
             </select>
+        </label>
+        <label title="Até onde um documento pode se afastar do sentido da consulta e ainda entrar na lista. Alto traz menos documentos, mais próximos.">Rigor
             <select name="r">
-                <option value="alto" {% if consulta.rigor == 'alto' %}selected{% endif %}>Rigor alto</option>
-                <option value="medio" {% if consulta.rigor == 'medio' %}selected{% endif %}>Rigor médio</option>
-                <option value="baixo" {% if consulta.rigor == 'baixo' %}selected{% endif %}>Rigor baixo</option>
+                <option value="alto" {% if consulta.rigor == 'alto' %}selected{% endif %}>Alto</option>
+                <option value="medio" {% if consulta.rigor == 'medio' %}selected{% endif %}>Médio</option>
+                <option value="baixo" {% if consulta.rigor == 'baixo' %}selected{% endif %}>Baixo</option>
             </select>
-            <button type="submit">Buscar</button>
-        </div>
-        
-        <div class="filtros-layout">
-            <button type="button" class="filtros-toggle btn" onclick="document.getElementById('filtros-sidebar').classList.toggle('open')">❧ Filtros</button>
-            <aside class="filtros-sidebar" id="filtros-sidebar">
-                <div class="filtro-grupo">
-                    <div class="filtro-titulo">Período</div>
+        </label>
+        <span class="dica">Use aspas para a frase exata. <a href="{{ url_for('sobre') }}#busca">Como a busca funciona</a></span>
+    </div>
+
+    <div id="buscando" class="buscando" role="status"><span class="giro">❦</span> Buscando…</div>
+
+    <div class="busca-corpo" id="busca-corpo">
+        <aside class="filtros" id="filtros">
+            <div class="filtros-cabeca">
+                <button type="button" class="filtros-toggle" data-alterna="#filtros">Filtros{% if not consulta.filtros.vazio() %} <span class="conta">{{ consulta.filtros.ativos() | length }}</span>{% endif %}</button>
+                <h2>Filtros</h2>
+                {% if not consulta.filtros.vazio() %}
+                <a class="limpar" href="{{ url_for('busca') }}?v=2{% if consulta.texto %}&q={{ consulta.texto | urlencode }}{% endif %}&m={{ consulta.modo }}&r={{ consulta.rigor }}">Limpar filtros</a>
+                {% endif %}
+            </div>
+            <div class="filtros-corpo">
+                <fieldset class="filtro-grupo">
+                    <legend class="filtro-titulo">Período</legend>
                     <div class="periodo-inputs">
-                        <input type="number" name="a1" value="{{ consulta.filtros.ano_de or '' }}" placeholder="De" onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
-                        <input type="number" name="a2" value="{{ consulta.filtros.ano_ate or '' }}" placeholder="Até" onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
+                        <input type="number" name="a1" id="f-a1" value="{{ consulta.filtros.ano_de or '' }}" placeholder="De" aria-label="Ano inicial" inputmode="numeric">
+                        <span aria-hidden="true">–</span>
+                        <input type="number" name="a2" id="f-a2" value="{{ consulta.filtros.ano_ate or '' }}" placeholder="Até" aria-label="Ano final" inputmode="numeric">
                     </div>
-                    <label class="faceta-item"><input type="checkbox" name="sd" value="1" {% if consulta.filtros.sem_data %}checked{% endif %} onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));"> Incluir sem data</label>
-                </div>
-                
+                    {% if facetas.decada and facetas.decada | length > 1 %}
+                    {% set maximo = facetas.decada.values() | max %}
+                    {% set decadas = facetas.decada.items() | sort %}
+                    {# Só as décadas com peso: datas soltas muito fora esticariam o eixo. #}
+                    {% set visiveis = [] %}
+                    {% for d, n in decadas %}{% if n * 200 >= maximo %}{% set _ = visiveis.append(d) %}{% endif %}{% endfor %}
+                    {% if visiveis | length > 1 %}
+                    <div class="mini-decadas" role="group" aria-label="Documentos por década; clique para filtrar">
+                        {% for d in range(visiveis[0], visiveis[-1] + 10, 10) %}
+                        {% set n = facetas.decada.get(d, 0) %}
+                        <button type="button" class="mini-barra" {% if n %}data-decada="{{ d }}"{% else %}disabled{% endif %} title="Década de {{ d }}: {{ n | milhar }} documento(s).{% if n %} Clique para filtrar.{% endif %}" aria-label="Década de {{ d }}: {{ n }} documentos"><span style="height: {{ (n / maximo * 100) | round(1) }}%"></span></button>
+                        {% endfor %}
+                    </div>
+                    <div class="mini-decadas-eixo"><span>{{ visiveis[0] }}</span><span>por década</span><span>{{ visiveis[-1] + 9 }}</span></div>
+                    {% endif %}
+                    {% endif %}
+                    <label class="faceta-item"><input type="checkbox" name="sd" value="1" {% if consulta.filtros.sem_data %}checked{% endif %}> Incluir documentos sem data</label>
+                </fieldset>
+
+                {{ faceta('Capitania ou região', 'fp', opcoes.pastas, facetas.folder or {}, consulta.filtros.pastas) }}
+                {{ faceta('Tipologia', 'ft', opcoes.tipologias | map(attribute=0) | list, facetas.tipologia or {}, consulta.filtros.tipologias) }}
+
                 {% if opcoes.pessoas %}
-                <div class="filtro-grupo autocomplete-container">
-                    <div class="filtro-titulo">Remetente</div>
-                    <input type="text" id="remetente-input" placeholder="Buscar remetente..." autocomplete="off">
-                    <input type="hidden" name="fu" id="remetente-hidden" value="{{ consulta.filtros.pessoas[0] if consulta.filtros.pessoas else '' }}">
-                    <div id="remetente-input-list" class="autocomplete-list"></div>
-                </div>
+                {% set fu = consulta.filtros.pessoas[0] if consulta.filtros.pessoas else '' %}
+                <fieldset class="filtro-grupo autocomplete-container">
+                    <legend class="filtro-titulo">Remetente</legend>
+                    <input type="text" id="remetente-input" class="campo" placeholder="Digite um nome…" autocomplete="off" data-quieto
+                           data-sugerir="remetente" data-oculto="remetente-hidden" value="{{ opcoes.nome_da_pessoa.get(fu, '') }}">
+                    <input type="hidden" name="fu" id="remetente-hidden" value="{{ fu }}">
+                    <div class="autocomplete-list" hidden></div>
+                </fieldset>
                 {% endif %}
 
                 {% if opcoes.tem_destinatario %}
-                <div class="filtro-grupo autocomplete-container">
-                    <div class="filtro-titulo">Destinatário</div>
-                    <input type="text" name="fd" id="destinatario-input" value="{{ consulta.filtros.destinatario or '' }}" placeholder="Buscar destinatário..." autocomplete="off">
-                    <div id="destinatario-input-list" class="autocomplete-list"></div>
-                </div>
+                <fieldset class="filtro-grupo autocomplete-container">
+                    <legend class="filtro-titulo">Destinatário</legend>
+                    <input type="text" name="fd" id="destinatario-input" class="campo" value="{{ consulta.filtros.destinatario or '' }}" placeholder="Digite um nome…" autocomplete="off"
+                           data-sugerir="destinatario">
+                    <div class="autocomplete-list" hidden></div>
+                </fieldset>
                 {% endif %}
 
-                {% macro render_faceta_lista(nome, input_name, lista_opcoes, dict_counts, selecionados) %}
-                <div class="filtro-grupo">
-                    <div class="filtro-titulo">{{ nome }}</div>
-                    {% set itens = [] %}
-                    {% for val in lista_opcoes %}
-                        {% set count = dict_counts.get(val, 0) %}
-                        {% if count > 0 or val in selecionados %}
-                            {% set _ = itens.append((val, count)) %}
-                        {% endif %}
-                    {% endfor %}
-                    {% set sorted_itens = itens | sort(attribute='1', reverse=true) %}
-                    {% for val, count in sorted_itens[:5] %}
-                    <label class="faceta-item">
-                        <input type="checkbox" name="{{ input_name }}" value="{{ val }}" {% if val in selecionados %}checked{% endif %} onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
-                        <span class="faceta-nome" title="{{ val }}">{{ val }}</span> <span class="faceta-count">({{ count }})</span>
-                    </label>
-                    {% endfor %}
-                    {% if sorted_itens | length > 5 %}
-                    <details class="gaveta-mais">
-                        <summary>mais...</summary>
-                        {% for val, count in sorted_itens[5:] %}
-                        <label class="faceta-item">
-                            <input type="checkbox" name="{{ input_name }}" value="{{ val }}" {% if val in selecionados %}checked{% endif %} onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
-                            <span class="faceta-nome" title="{{ val }}">{{ val }}</span> <span class="faceta-count">({{ count }})</span>
-                        </label>
-                        {% endfor %}
-                    </details>
-                    {% endif %}
-                </div>
-                {% endmacro %}
+                {% if opcoes.mostrar_colecao %}
+                {{ faceta('Coleção', 'fc', opcoes.colecoes, facetas.colecao or {}, consulta.filtros.colecoes) }}
+                {% endif %}
 
-                {% macro render_faceta_tuplas(nome, input_name, lista_tuplas, dict_counts, selecionados) %}
-                <div class="filtro-grupo">
-                    <div class="filtro-titulo">{{ nome }}</div>
-                    {% set itens = [] %}
-                    {% for val, _ in lista_tuplas %}
-                        {% set count = dict_counts.get(val, 0) %}
-                        {% if count > 0 or val in selecionados %}
-                            {% set _ = itens.append((val, count)) %}
-                        {% endif %}
-                    {% endfor %}
-                    {% set sorted_itens = itens | sort(attribute='1', reverse=true) %}
-                    {% for val, count in sorted_itens[:5] %}
-                    <label class="faceta-item">
-                        <input type="checkbox" name="{{ input_name }}" value="{{ val }}" {% if val in selecionados %}checked{% endif %} onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
-                        <span class="faceta-nome" title="{{ val }}">{{ val }}</span> <span class="faceta-count">({{ count }})</span>
-                    </label>
-                    {% endfor %}
-                    {% if sorted_itens | length > 5 %}
-                    <details class="gaveta-mais">
-                        <summary>mais...</summary>
-                        {% for val, count in sorted_itens[5:] %}
-                        <label class="faceta-item">
-                            <input type="checkbox" name="{{ input_name }}" value="{{ val }}" {% if val in selecionados %}checked{% endif %} onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
-                            <span class="faceta-nome" title="{{ val }}">{{ val }}</span> <span class="faceta-count">({{ count }})</span>
-                        </label>
-                        {% endfor %}
-                    </details>
-                    {% endif %}
-                </div>
-                {% endmacro %}
-
-                {{ render_faceta_lista('Coleção', 'fc', opcoes.colecoes, facetas.colecao, consulta.filtros.colecoes) }}
-                {{ render_faceta_lista('Pasta / Região', 'fp', opcoes.pastas, facetas.folder, consulta.filtros.pastas) }}
-                {{ render_faceta_tuplas('Tipologia', 'ft', opcoes.tipologias, facetas.tipologia, consulta.filtros.tipologias) }}
-
-                <details class="gaveta">
-                    <summary>Inferências (DeepSeek)</summary>
+                <details class="gaveta" {% if consulta.filtros.usa_deepseek() %}open{% endif %}>
+                    <summary>Inferências por IA</summary>
                     <div class="gaveta-content">
-                        <div class="filtro-grupo">
-                            <div class="filtro-titulo">SRSP</div>
+                        <p class="dica">Estimativas do modelo DeepSeek, só para a coleção ahu-sul. <a href="{{ url_for('sobre') }}#camadas">Saiba mais</a></p>
+                        <fieldset class="filtro-grupo">
+                            <legend class="filtro-titulo">SRSP</legend>
                             <div class="periodo-inputs">
-                                <input type="number" name="s1" value="{{ consulta.filtros.srsp_de or '' }}" placeholder="De" onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
-                                <input type="number" name="s2" value="{{ consulta.filtros.srsp_ate or '' }}" placeholder="Até" onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
+                                <input type="number" name="s1" id="f-s1" value="{{ consulta.filtros.srsp_de or '' }}" placeholder="De" aria-label="SRSP mínimo">
+                                <span aria-hidden="true">–</span>
+                                <input type="number" name="s2" id="f-s2" value="{{ consulta.filtros.srsp_ate or '' }}" placeholder="Até" aria-label="SRSP máximo">
                             </div>
-                        </div>
-                        
-                        <div class="filtro-grupo">
-                            <div class="filtro-titulo">Categoria social</div>
+                        </fieldset>
+                        <fieldset class="filtro-grupo">
+                            <legend class="filtro-titulo">Categoria social</legend>
                             {% for cat, _ in opcoes.categorias %}
                             <label class="faceta-item">
-                                <input type="checkbox" name="fg" value="{{ cat }}" {% if cat in consulta.filtros.categorias %}checked{% endif %} onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
+                                <input type="checkbox" name="fg" value="{{ cat }}" {% if cat in consulta.filtros.categorias %}checked{% endif %}>
                                 <span class="faceta-nome">{{ cat }}</span>
                             </label>
                             {% endfor %}
-                        </div>
-
-                        <div class="filtro-grupo">
-                            <div class="filtro-titulo">Vetor</div>
+                        </fieldset>
+                        <fieldset class="filtro-grupo">
+                            <legend class="filtro-titulo">Vetor</legend>
                             {% for vet, _ in opcoes.vetores %}
                             <label class="faceta-item">
-                                <input type="checkbox" name="fv" value="{{ vet }}" {% if vet in consulta.filtros.vetores %}checked{% endif %} onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
+                                <input type="checkbox" name="fv" value="{{ vet }}" {% if vet in consulta.filtros.vetores %}checked{% endif %}>
                                 <span class="faceta-nome">{{ vet }}</span>
                             </label>
                             {% endfor %}
-                        </div>
+                        </fieldset>
                     </div>
                 </details>
-            </aside>
-            
-            <div class="resultados-area">
-                <div class="resultados-header">
-                    <span class="total-resultados"><strong>{{ resposta.total }}</strong> documento(s)</span>
-                    <select name="o" onchange="document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));">
-                        <option value="relevancia" {% if consulta.ordenacao == 'relevancia' %}selected{% endif %}>Relevância</option>
-                        <option value="ano_asc" {% if consulta.ordenacao == 'ano_asc' %}selected{% endif %}>Ano (mais antigo)</option>
-                        <option value="ano_desc" {% if consulta.ordenacao == 'ano_desc' %}selected{% endif %}>Ano (mais recente)</option>
-                    </select>
-                </div>
-                
-                {% if facetas.decada %}
-                <div class="histograma-svg-container" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-mid); padding-bottom: 10px;">
-                    {% set max_count = facetas.decada.values() | max %}
-                    {% set num_bars = facetas.decada | length %}
-                    <svg width="100%" height="75">
-                        {% set bar_width = 100 / num_bars %}
-                        {% for decada, count in facetas.decada.items() | sort %}
-                        {% set height_pct = (count / max_count) * 60 %}
-                        <g class="histograma-grupo" 
-                           onclick="document.querySelector('[name=a1]').value={{ decada }}; document.querySelector('[name=a2]').value={{ decada + 9 }}; document.getElementById('form-busca').dispatchEvent(new Event('submit', {cancelable: true}));"
-                           style="cursor: pointer;">
-                            <title>{{ decada }}s: {{ count }} documentos</title>
-                            <rect x="{{ loop.index0 * bar_width }}%" y="{{ 60 - height_pct }}" width="{{ bar_width - 1 }}%" height="{{ height_pct }}" fill="var(--accent-primary)" opacity="0.6" class="histograma-rect"></rect>
-                            <text x="{{ loop.index0 * bar_width + (bar_width - 1)/2 }}%" y="72" text-anchor="middle" fill="var(--txt-secondary)" font-size="10" font-family="Consolas, monospace">{{ decada }}</text>
-                        </g>
-                        {% endfor %}
-                    </svg>
-                </div>
-                {% endif %}
-                
-                <div id="lista-resultados">
-                    {% include "_resultados_itens.html" %}
-                </div>
-                <div id="carregar-mais-container">
-                    {% if pagina_atual < total_paginas %}
-                    <button type="button" class="btn-carregar-mais" hx-get="{{ url_for('resultados') }}" hx-include="#form-busca" hx-vals='{"p": {{ pagina_atual + 1 }}}' hx-target="#lista-resultados" hx-swap="beforeend">Carregar mais</button>
-                    {% endif %}
-                </div>
             </div>
-        </div>
-    </form>
+        </aside>
+
+        <section class="resultados-area" aria-label="Resultados">
+            {% if inicio %}
+            <div class="boas-vindas">
+                <h1>Catálogo dos documentos do Arquivo Histórico Ultramarino sobre o Brasil</h1>
+                <p>{{ resposta.total | milhar }} verbetes dos catálogos do Conselho Ultramarino. Busque por assunto, nome, lugar ou cota, guarde na <strong>seleção</strong> o que interessa e leve ao arquivo a lista em PDF.</p>
+                <p class="exemplos"><span class="rotulo">Experimente:</span>
+                    <a href="{{ url_for('busca') }}?v=2&q=contrabando+de+gado">contrabando de gado</a>
+                    <a href="{{ url_for('busca') }}?v=2&q=deser%C3%A7%C3%A3o+de+soldados">deserção de soldados</a>
+                    <a href="{{ url_for('busca') }}?v=2&q=Gomes+Freire+de+Andrade">Gomes Freire de Andrade</a>
+                    <a href="{{ url_for('busca') }}?v=2&q=Col%C3%B4nia+do+Sacramento">Colônia do Sacramento</a>
+                </p>
+            </div>
+            {% endif %}
+            <div class="resultados-header">
+                <span class="total-resultados"><strong>{{ resposta.total | milhar }}</strong> {{ 'documento' if resposta.total == 1 else 'documentos' }}{% if inicio %} no catálogo{% endif %}
+                    {% if pendente %}<span id="refinando" class="refinando htmx-indicator"><span class="giro">❦</span> refinando a ordem…</span>{% endif %}
+                </span>
+                <label class="ordenar">Ordenar por
+                    <select name="o">
+                        <option value="relevancia" {% if consulta.ordenacao == 'relevancia' %}selected{% endif %}>Relevância</option>
+                        <option value="ano_asc" {% if consulta.ordenacao == 'ano_asc' %}selected{% endif %}>Ano, do mais antigo</option>
+                        <option value="ano_desc" {% if consulta.ordenacao == 'ano_desc' %}selected{% endif %}>Ano, do mais recente</option>
+                    </select>
+                </label>
+            </div>
+            {% for aviso in resposta.avisos %}
+            <p class="aviso">{{ aviso }}</p>
+            {% endfor %}
+
+            <div id="lista-resultados" {% if pendente %}hx-get="{{ url_for('resultados') }}?{{ query }}&fino=1" hx-trigger="load" hx-target="this" hx-swap="innerHTML" hx-select="unset" hx-push-url="false" hx-indicator="#refinando"{% endif %}>
+                {% include "_resultados_itens.html" %}
+            </div>
+            {% include "_carregar_mais.html" %}
+        </section>
+    </div>
+</form>
+
+<aside class="coluna-selecao" aria-label="Seleção">
+    {% include "_gaveta_selecao.html" %}
+</aside>
 </div>
-<script>
-    setupAutocomplete('remetente-input', 'remetente-hidden', 'remetente');
-    setupAutocomplete('destinatario-input', null, 'destinatario');
-</script>
 {% endblock %}

@@ -124,6 +124,7 @@ Ambiente: Python 3.11 declarado em `runtime.txt` (desenvolvimento local em 3.12 
 | F4 | 4.4 Versão e Zenodo | feito (v3.0.0 em pyproject.toml, CITATION.cff, docs/notas_de_versao_v3.md) |
 | **F4** | **completa** | **infraestrutura de avaliação, CI e versão 3.0.0 finalizadas** |
 | pós-3.0 | Aba Conversor de cotas | feito (`ahu/conversor.py`; referência ↔ Resgate ↔ cota antiga, em três níveis) |
+| pós-3.0 | Redesenho da interface web | feito (abas no topo, gaveta da seleção na busca, bordô `#800000`, linha do tempo no Sobre, busca em dois tempos em `web/cache.py`) |
 
 Atualize esta tabela ao concluir cada pacote.
 

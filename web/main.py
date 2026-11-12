@@ -2,6 +2,7 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from ahu.dados import ErroDados, carregar
@@ -60,9 +61,13 @@ async def lifespan(app: FastAPI):
     try:
         from ahu import reranker as mod_reranker
         if mod_reranker.ligado():
-            reranker_app = mod_reranker.criar_reranker()
+            reranker_app = mod_reranker.com_memoria(mod_reranker.criar_reranker())
     except ImportError:
         pass
+
+    if dados_app and os.environ.get("AHU_SEM_AQUECIMENTO", "").strip().lower() not in ("1", "sim"):
+        import threading
+        threading.Thread(target=_aquecer, daemon=True).start()
 
     yield
 
@@ -70,12 +75,37 @@ async def lifespan(app: FastAPI):
     encoder_app = None
     reranker_app = None
 
+def _aquecer():
+    """Deixa prontos, logo que o servidor sobe, os modelos e a página inicial.
+
+    Sem isto a primeira pessoa a buscar depois de uma atualização espera a carga do e5, do
+    reranker e dos índices. Roda fora do caminho dos pedidos; se falhar, a busca carrega tudo na
+    primeira consulta, como antes.
+    """
+    try:
+        from ahu.consulta import Consulta
+        from web import cache
+        from web.rotas_busca import opcoes_dos_filtros
+        opcoes_dos_filtros(dados_app)
+        resposta, _, _ = cache.buscar(dados_app, Consulta(), encoder=encoder_app)
+        if resposta.resultados:
+            from ahu.ficha import montar
+            montar(dados_app, resposta.resultados[0].doc_uid)   # monta o índice de pessoas
+        cache.buscar(dados_app, Consulta(texto="carta do governador"), encoder=encoder_app,
+                     reranker=reranker_app)
+    except Exception as e:   # pragma: no cover - depende de rede e de modelo
+        print(f"Aquecimento incompleto: {e}")
+
+
 def criar_app(dados_injetados=None):
     global dados_app
     if dados_injetados:
         dados_app = dados_injetados
 
     inner_app = FastAPI(lifespan=lifespan if not dados_injetados else None)
+    # As páginas são HTML repetitivo (a de resultados passa de 100 kB): comprimidas, viajam em
+    # um quinto do tamanho.
+    inner_app.add_middleware(GZipMiddleware, minimum_size=1024)
 
     inner_app.include_router(router_busca)
     inner_app.include_router(router_doc)
@@ -96,7 +126,3 @@ def criar_app(dados_injetados=None):
 
 app = criar_app()
 
-
-def extra_busca() -> dict:
-    """Só passa o reranker à busca se ele existir (antes do merge da frente de hospedagem, não existe)."""
-    return {"reranker": reranker_app} if reranker_app is not None else {}

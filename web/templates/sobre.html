@@ -1,13 +1,56 @@
 {% extends "base.html" %}
-{% block title %}Sobre - Catálogo AHU{% endblock %}
+{% block aba %}sobre{% endblock %}
+{% block title %}Sobre · Catálogo AHU{% endblock %}
 {% block content %}
+<nav class="subabas" aria-label="Sobre">
+    <a class="atual" href="{{ url_for('sobre') }}">Sobre e método</a>
+    <a href="{{ url_for('referencias') }}">Referências e fontes</a>
+</nav>
+<div class="prosa">
 <h1>Sobre e método</h1>
 <p>Este app é um instrumento de <strong>triagem documental</strong>: leva de uma pergunta a um conjunto de cotas que se possa justificar, citar e levar ao arquivo. Ele <strong>não</strong> contém as imagens dos manuscritos.</p>
+
+{% if linha.decadas %}
+<h3 id="linha-do-tempo">O catálogo no tempo</h3>
+<p>Dos {{ linha.total | milhar }} documentos do catálogo, quantos são de cada década, de {{ linha.inicio }} a {{ linha.fim }}.</p>
+{% set L = 56 %}{% set T = 12 %}{% set W = 760 %}{% set H = 220 %}
+{% set n = linha.decadas | length %}
+{% set passo = (W - L - 8) / n %}
+<figure class="linha-do-tempo">
+    <svg viewBox="0 0 {{ W }} {{ H + 40 }}" role="img" aria-label="Gráfico de barras: documentos por década, de {{ linha.inicio }} a {{ linha.fim }}. A década com mais documentos tem {{ linha.maximo | milhar }}.">
+        {% for i in range(5) %}
+        {% set y = T + H - (H * i / 4) %}
+        <line x1="{{ L }}" x2="{{ W - 8 }}" y1="{{ y }}" y2="{{ y }}" class="grade"/>
+        <text x="{{ L - 8 }}" y="{{ y + 4 }}" text-anchor="end" class="eixo">{{ (linha.teto * i / 4) | int | milhar }}</text>
+        {% endfor %}
+        {% for d, c in linha.decadas %}
+        {% set h = H * c / linha.teto %}
+        {% set x = L + loop.index0 * passo %}
+        <rect x="{{ (x + 2) | round(1) }}" y="{{ (T + H - h) | round(1) }}" width="{{ (passo - 4) | round(1) }}" height="{{ h | round(1) }}" rx="2" class="barra"><title>Década de {{ d }}: {{ c | milhar }} documentos</title></rect>
+        {% if d % 50 == 0 %}
+        <line x1="{{ (x + passo / 2) | round(1) }}" x2="{{ (x + passo / 2) | round(1) }}" y1="{{ T + H }}" y2="{{ T + H + 5 }}" class="grade"/>
+        <text x="{{ (x + passo / 2) | round(1) }}" y="{{ T + H + 20 }}" text-anchor="middle" class="eixo">{{ d }}</text>
+        {% endif %}
+        {% endfor %}
+        <text x="{{ L + (W - L - 8) / 2 }}" y="{{ T + H + 38 }}" text-anchor="middle" class="eixo titulo-eixo">década</text>
+    </svg>
+    <figcaption>Documentos por década. Passe o cursor sobre uma barra para ver o número.{% if linha.sem_data or linha.fora %} Ficam fora do gráfico {{ linha.sem_data | milhar }} documentos sem data{% if linha.fora %} e {{ linha.fora | milhar }} com data anterior a {{ linha.inicio }} ou posterior a {{ linha.fim }}{% endif %}.{% endif %}</figcaption>
+    <details class="gaveta">
+        <summary>Ver os números</summary>
+        <div class="gaveta-content">
+            <table class="tabela tabela-estreita">
+                <thead><tr><th>Década</th><th class="num">Documentos</th></tr></thead>
+                <tbody>{% for d, c in linha.decadas %}<tr><td>{{ d }}–{{ d + 9 }}</td><td class="num">{{ c | milhar }}</td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
+    </details>
+</figure>
+{% endif %}
 
 <h3>1. Fontes</h3>
 <p>O que são o AHU, o Projeto Resgate, a Biblioteca Nacional e o ACTD, de onde vêm os resumos e as cotas, e os links para os catálogos e os microfilmes estão na aba <a href="{{ url_for('referencias') }}">Referências</a>. O passo a passo da coleta do catálogo está em <a href="https://github.com/saulorrp/catalogo-ahu-cone-sul/blob/main/docs/METODO_COLETA.md" target="_blank">METODO_COLETA.md</a>.</p>
 
-<h3>2. Como a busca funciona</h3>
+<h3 id="busca">2. Como a busca funciona</h3>
 <p>A busca combina três motores e funde os resultados pela <strong>posição</strong> de cada documento em cada motor, não por uma nota inventada.</p>
 <ul>
     <li><strong>Cota.</strong> Se a consulta é uma cota, em qualquer das três formas (Resgate, código de referência ou cota antiga), a resposta é o documento dessa cota e mais nada. Se a cota aparece no meio de uma frase, o documento vem primeiro, e o resto da frase segue a busca normal.</li>
@@ -15,7 +58,7 @@
     <li><strong>Sentido (semântica).</strong> Compara o significado da consulta com o de cada resumo, com o modelo multilíngue <code>multilingual-e5-small</code>. Acha documentos que tratam do assunto com outras palavras. O <strong>rigor</strong> define até onde, abaixo do documento mais próximo, um resultado ainda entra.</li>
 </ul>
 
-<h3>3. A coleção AHU-Sul e as camadas de análise</h3>
+<h3 id="camadas">3. A coleção AHU-Sul e as camadas de análise</h3>
 <p>A <strong>ahu-sul</strong> reúne os documentos do AHU sobre o Sul do Brasil e a região do Prata (Rio Grande, Santa Catarina, Colônia do Sacramento, Montevidéu, Buenos Aires, e os papéis do Rio de Janeiro e de São Paulo sobre o Sul). Sobre o resumo do catálogo, ela tem camadas que o resto do banco não tem:</p>
 <ul>
     <li><strong>Pessoas.</strong> Os remetentes e destinatários de cada resumo foram extraídos e consolidados num cadastro de pessoas, coletivos e instituições. Cada pessoa tem um identificador estável, e variantes de grafia do mesmo nome contam como a mesma pessoa.</li>
@@ -28,4 +71,5 @@
 
 <h3>Licença</h3>
 <p>Código: MIT. Dados derivados: CC BY 4.0 (provisório). Resumos e cotas: AHU e Projeto Resgate "Barão do Rio Branco".</p>
+</div>
 {% endblock %}

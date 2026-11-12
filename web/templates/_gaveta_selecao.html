@@ -1,0 +1,34 @@
+{# A gaveta da seleção na página de busca. Volta inteira a cada mudança (hx-swap-oob). #}
+<details class="gaveta gaveta-selecao" id="gaveta-selecao" {% if fora %}hx-swap-oob="true"{% endif %} open>
+    <summary>
+        <span class="gaveta-titulo">Seleção</span>
+        <span class="conta{% if not linhas_selecao %} vazia{% endif %}">{{ linhas_selecao | length }}</span>
+    </summary>
+    <div class="gaveta-content">
+        {% if aviso_selecao %}<p class="aviso">{{ aviso_selecao }}</p>{% endif %}
+        {% if linhas_selecao %}
+        <ol class="sel-lista">
+            {% for linha in linhas_selecao %}
+            <li>
+                <a href="{{ url_for('doc', doc_uid=linha.uid) }}" class="sel-item" title="{{ linha.resumo }}">
+                    <span class="sel-ano">{{ linha.ano or 's/d' }}</span>
+                    <span class="cota">{{ linha.cota or linha.referencia or '—' }}</span>
+                    <span class="sel-resumo">{{ linha.resumo }}</span>
+                </a>
+                <button type="button" class="sel-x" aria-label="Tirar da seleção" title="Tirar da seleção"
+                        hx-post="{{ url_for('remover_selecao', doc_uid=linha.uid) }}?de=gaveta" hx-swap="none">✕</button>
+            </li>
+            {% endfor %}
+        </ol>
+        <div class="sel-acoes">
+            <a href="{{ url_for('selecao_pdf') }}" class="btn btn-primario">Baixar a lista em PDF</a>
+            <a href="{{ url_for('selecao') }}" class="btn">Abrir a seleção</a>
+            <form method="post" action="{{ url_for('limpar_selecao') }}?volta=busca" onsubmit="return confirm('Esvaziar a seleção?')">
+                <button type="submit" class="btn-texto">Esvaziar</button>
+            </form>
+        </div>
+        {% else %}
+        <p class="sel-vazia">Aqui fica a lista dos documentos que você quer consultar no arquivo. Em cada resultado, use <strong><span class="capitulo">⸿</span> Pôr na seleção</strong>. A seleção continua com você de uma busca para outra e sai em PDF, com as cotas, pronta para pedir os documentos no AHU.</p>
+        {% endif %}
+    </div>
+</details>

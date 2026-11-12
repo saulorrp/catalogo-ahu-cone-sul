@@ -9,28 +9,25 @@
     <script src="{{ url_for('static', path='htmx.min.js') }}" defer></script>
     <script src="{{ url_for('static', path='catalogo.js') }}" defer></script>
 </head>
-<body>
-    <div class="layout">
-        <aside class="rail" id="main-rail">
-            <div class="logo-container" style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="logo">❧ AHU-Brasil</div>
-                <button class="menu-toggle" onclick="document.getElementById('main-rail').classList.toggle('open')" aria-label="Menu">☰</button>
-            </div>
-            <nav>
-                <a href="{{ url_for('busca') }}">Busca</a>
-                <a href="{{ url_for('pessoas') }}">Pessoas</a>
-                <a href="{{ url_for('amostras') }}">Amostras</a>
-                <a href="{{ url_for('painel') }}">Painel</a>
-                <a href="{{ url_for('conversor') }}">Conversor</a>
-                <a href="{{ url_for('selecao') }}">Seleção</a>
-                <a href="{{ url_for('sobre') }}">Sobre</a>
-            </nav>
-        </aside>
-        <main class="content">
-            {% block content %}
-            {{ conteudo }}
-            {% endblock %}
-        </main>
-    </div>
+{% set aba %}{% block aba %}{% endblock %}{% endset %}
+{% set aba = aba | trim %}
+{% if total_selecao is not defined %}{% set total_selecao = conta_selecao(request) %}{% endif %}
+<body data-url-sugerir="{{ url_for('api_sugerir') }}">
+    <div id="carregando" class="barra-carregando" aria-hidden="true"></div>
+    <header class="topo">
+        <a class="marca" href="{{ url_for('busca') }}"><span class="fleurao">❧</span> Catálogo AHU-Brasil</a>
+        <nav class="abas" aria-label="Seções">
+            <a href="{{ url_for('busca') }}" class="aba {% if aba == 'busca' %}atual{% endif %}" {% if aba == 'busca' %}aria-current="page"{% endif %}>Busca</a>
+            <a href="{{ url_for('selecao') }}" class="aba {% if aba == 'selecao' %}atual{% endif %}" {% if aba == 'selecao' %}aria-current="page"{% endif %}>Seleção {% include "_conta_aba.html" %}</a>
+            <a href="{{ url_for('pessoas') }}" class="aba {% if aba == 'pessoas' %}atual{% endif %}" {% if aba == 'pessoas' %}aria-current="page"{% endif %}>Pessoas</a>
+            <a href="{{ url_for('amostras') }}" class="aba {% if aba == 'amostras' %}atual{% endif %}" {% if aba == 'amostras' %}aria-current="page"{% endif %}>Amostras</a>
+            <a href="{{ url_for('painel') }}" class="aba {% if aba == 'painel' %}atual{% endif %}" {% if aba == 'painel' %}aria-current="page"{% endif %}>Painel</a>
+            <a href="{{ url_for('conversor') }}" class="aba {% if aba == 'conversor' %}atual{% endif %}" {% if aba == 'conversor' %}aria-current="page"{% endif %}>Conversor</a>
+            <a href="{{ url_for('sobre') }}" class="aba {% if aba == 'sobre' %}atual{% endif %}" {% if aba == 'sobre' %}aria-current="page"{% endif %}>Sobre</a>
+        </nav>
+    </header>
+    <main class="conteudo {% block classe_conteudo %}{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
 </body>
 </html>

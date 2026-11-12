@@ -2,40 +2,18 @@ import os
 import sqlite3
 from datetime import datetime
 
-import pandas as pd
 from fastapi import APIRouter, Request
 
 import web.main as main_module
-from ahu.consulta import executar
 from ahu.ficha import montar
 from ahu.filtros import opcoes
-from web.core import parse_consulta, templates
+from web import cache
+from web.core import parse_consulta, query_sem_pagina, selecao_do_pedido, templates
 
 router = APIRouter()
 
-def calcular_facetas(dados, resposta):
-    if not resposta.resultados:
-        return {}
-    linhas = [r.linha for r in resposta.resultados]
-    df = dados.documentos.iloc[linhas]
+POR_PAGINA = 25
 
-    facetas = {
-        "colecao": df["colecao"].value_counts().to_dict(),
-        "folder": df["folder"].value_counts().to_dict(),
-        "tipologia": df["tipologia"].value_counts().to_dict(),
-    }
-
-    anos = pd.to_numeric(df["ano_isolado"], errors="coerce").dropna()
-    if not anos.empty:
-        decadas = (anos // 10 * 10).astype(int)
-        facetas["decada"] = decadas.value_counts().to_dict()
-        counts = anos.value_counts().to_dict()
-        facetas["histograma"] = {int(k): int(v) for k, v in counts.items()}
-    else:
-        facetas["decada"] = {}
-        facetas["histograma"] = {}
-
-    return facetas
 
 def log_busca(texto, num_resultados):
     log_dir = os.environ.get("AHU_LOG_DIR")
@@ -60,49 +38,55 @@ def log_busca(texto, num_resultados):
     except Exception:
         pass
 
-@router.get("/", name="busca_raiz")
-@router.get("/busca", name="busca")
-async def busca(request: Request):
+
+def opcoes_dos_filtros(dados) -> dict:
+    def calcular():
+        o = opcoes(dados)
+        o["tem_destinatario"] = "recipient_name" in dados.documentos.columns
+        o["nome_da_pessoa"] = {p["pessoa_uid"]: p["nome"] for p in o["pessoas"]}
+        return o
+    return cache.por_dados(dados, "opcoes", calcular)
+
+
+def _contexto(request: Request, esperar: bool) -> dict:
     dados = main_module.dados_app
     consulta = parse_consulta(request)
-
-    resposta = executar(dados, consulta, encoder=main_module.encoder_app, **main_module.extra_busca())
-
-    if consulta.texto:
-        log_busca(consulta.texto, resposta.total)
-
-    facetas = calcular_facetas(dados, resposta)
-    opcoes_filtros = opcoes(dados)
-    opcoes_filtros["tem_destinatario"] = "recipient_name" in dados.documentos.columns
-
-    fichas = []
-    for r in resposta.pagina(consulta.pagina, 25):
-        fichas.append((r, montar(dados, r.doc_uid, resposta.termos_consulta)))
-
-    return templates.TemplateResponse(request, "busca.html", {
+    resposta, facetas, pendente = cache.buscar(
+        dados, consulta, encoder=main_module.encoder_app, reranker=main_module.reranker_app,
+        esperar=esperar or consulta.pagina > 1)
+    fichas = [(r, montar(dados, r.doc_uid, resposta.termos_consulta))
+              for r in resposta.pagina(consulta.pagina, POR_PAGINA)]
+    return {
         "consulta": consulta,
         "resposta": resposta,
         "facetas": facetas,
-        "opcoes": opcoes_filtros,
+        "pendente": pendente,
+        "query": query_sem_pagina(request),
         "pagina_atual": consulta.pagina,
-        "total_paginas": max(1, -(-resposta.total // 25)),
-        "fichas": fichas
+        "total_paginas": max(1, -(-resposta.total // POR_PAGINA)),
+        "fichas": fichas,
+        "na_selecao": set(selecao_do_pedido(request, dados).uids),
+    }
+
+
+@router.get("/", name="busca_raiz")
+@router.get("/busca", name="busca")
+def busca(request: Request):
+    dados = main_module.dados_app
+    contexto = _contexto(request, esperar=False)
+    consulta = contexto["consulta"]
+    if consulta.texto:
+        log_busca(consulta.texto, contexto["resposta"].total)
+    selecao = selecao_do_pedido(request, dados)
+    contexto.update({
+        "opcoes": opcoes_dos_filtros(dados),
+        "linhas_selecao": selecao.linhas(dados),
+        "inicio": not consulta.texto and consulta.filtros.vazio(),
     })
+    return templates.TemplateResponse(request, "busca.html", contexto)
+
 
 @router.get("/resultados", name="resultados")
-async def resultados(request: Request):
-    dados = main_module.dados_app
-    consulta = parse_consulta(request)
-    resposta = executar(dados, consulta, encoder=main_module.encoder_app, **main_module.extra_busca())
-
-    fichas = []
-    for r in resposta.pagina(consulta.pagina, 25):
-        fichas.append((r, montar(dados, r.doc_uid, resposta.termos_consulta)))
-
-    return templates.TemplateResponse(request, "_resultados.html", {
-        "consulta": consulta,
-        "resposta": resposta,
-        "pagina_atual": consulta.pagina,
-        "total_paginas": max(1, -(-resposta.total // 25)),
-        "fichas": fichas
-    })
+def resultados(request: Request):
+    """Um pedaço da lista: a página seguinte ("Carregar mais") ou a ordem fina do reranker."""
+    return templates.TemplateResponse(request, "_resultados.html", _contexto(request, esperar=True))
