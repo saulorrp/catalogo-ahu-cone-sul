@@ -1,0 +1,266 @@
+{
+  "arquivo": "documentos_sem_resumo.parquet",
+  "linhas": 167344,
+  "colunas": [
+    {
+      "nome": "doc_uid",
+      "tipo": "string",
+      "origem": "Gerado no build do corpus",
+      "regra": "Identificador interno estável: ahu-sul vem de corpus/colecoes/ahu-sul/registro_ids.json; ahu-brasil é sha1 da chave da cota (com #n quando a cota se repete), em coleta/scripts/juntar.py.",
+      "exemplo": "ahu-sul:e7fd41bfb3",
+      "vazios": 0,
+      "vazios_pct": 0.0,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "colecao",
+      "tipo": "string",
+      "origem": "Corpus",
+      "regra": "Coleção de origem: ahu-sul ou ahu-brasil.",
+      "exemplo": "ahu-sul",
+      "vazios": 0,
+      "vazios_pct": 0.0,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "folder",
+      "tipo": "string",
+      "origem": "Catálogo do AHU (ACTD) / Projeto Resgate",
+      "regra": "Série ou capitania (pasta) do verbete, como no catálogo.",
+      "exemplo": "Brasil Geral",
+      "vazios": 0,
+      "vazios_pct": 0.0,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "old_code",
+      "tipo": "string",
+      "origem": "Catálogo do AHU (ACTD) / Projeto Resgate",
+      "regra": "Cota antiga (arrumação anterior do AHU), como impressa.",
+      "exemplo": "AHU-Maranhão.",
+      "vazios": 75573,
+      "vazios_pct": 45.16,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "new_code",
+      "tipo": "string",
+      "origem": "Catálogo do AHU (ACTD) / Projeto Resgate",
+      "regra": "Cota atual no formato do Resgate (AHU_ACL_CU_<série>, Cx., D.), como impressa.",
+      "exemplo": "AHU_ACL_CU_003, Cx. 1, D. 100.",
+      "vazios": 5,
+      "vazios_pct": 0.0,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "reference_code",
+      "tipo": "string",
+      "origem": "ahu/conversor.py",
+      "regra": "Código de referência PT/AHU/CU/<série>/<caixa>/<documento>, escrito pelo conversor a partir da cota.",
+      "exemplo": "PT/AHU/CU/003/0001/00100",
+      "vazios": 9769,
+      "vazios_pct": 5.84,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "document_id_and_date",
+      "tipo": "string",
+      "origem": "Catálogo do AHU (ACTD) / Projeto Resgate",
+      "regra": "Número do verbete, data e local, como no catálogo.",
+      "exemplo": "2673. 1686, Fevereiro, 12, Lisboa",
+      "vazios": 0,
+      "vazios_pct": 0.0,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "ano_isolado",
+      "tipo": "int64",
+      "origem": "build/cotas.py",
+      "regra": "Ano extraído da data do verbete; vazio quando não há ano legível.",
+      "exemplo": "1686",
+      "vazios": 2390,
+      "vazios_pct": 1.43,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "recipient_name",
+      "tipo": "string",
+      "origem": "Camada do ahu-sul (pipeline de biografias)",
+      "regra": "Destinatário; só existe na coleção ahu-sul.",
+      "exemplo": "D. Pedro II",
+      "vazios": 160293,
+      "vazios_pct": 95.79,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "sender_name",
+      "tipo": "string",
+      "origem": "Camada do ahu-sul (pipeline de biografias)",
+      "regra": "Remetente; só existe na coleção ahu-sul.",
+      "exemplo": "Conselho Ultramarino",
+      "vazios": 160293,
+      "vazios_pct": 95.79,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "referencia_digitarq",
+      "tipo": "string",
+      "origem": "DigitArq do AHU (coleta/scripts/varrer_digitarq.py)",
+      "regra": "Código de referência do registro do DigitArq que contém o documento.",
+      "exemplo": "PT/AHU/CU/003/0001/00100",
+      "vazios": 9991,
+      "vazios_pct": 5.97,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "resgate_docreader",
+      "tipo": "string",
+      "origem": "Projeto Resgate, DocReader da BN",
+      "regra": "Identificador do documento no DocReader (imagens digitalizadas).",
+      "exemplo": "019_RS#1",
+      "vazios": 151561,
+      "vazios_pct": 90.57,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "duplicata_de",
+      "tipo": "string",
+      "origem": "corpus/duplicatas.ignore",
+      "regra": "doc_uid do verbete de que este é repetição; a busca ignora o repetido.",
+      "exemplo": "ahu-sul:f0d170b4ca",
+      "vazios": 167137,
+      "vazios_pct": 99.88,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "tipologia",
+      "tipo": "string",
+      "origem": "Camada tipologia_v1",
+      "regra": "Primeira palavra em maiúsculas do resumo, normalizada e corrigida por corpus/correcoes_tipologia.json.",
+      "exemplo": "CONSULTA",
+      "vazios": 3974,
+      "vazios_pct": 2.37,
+      "licenca": "CC BY 4.0"
+    },
+    {
+      "nome": "tipologia_chave",
+      "tipo": "string",
+      "origem": "Camada tipologia_v1",
+      "regra": "A tipologia sem acentos, para agrupar e filtrar.",
+      "exemplo": "CONSULTA",
+      "vazios": 3974,
+      "vazios_pct": 2.37,
+      "licenca": "CC BY 4.0"
+    },
+    {
+      "nome": "typology_status",
+      "tipo": "bool",
+      "origem": "Camada tipologia_v1",
+      "regra": "Falso quando a tipologia ficou vazia depois da normalização.",
+      "exemplo": "True",
+      "vazios": 0,
+      "vazios_pct": 0.0,
+      "licenca": "CC BY 4.0"
+    },
+    {
+      "nome": "sender_category",
+      "tipo": "string",
+      "origem": "Camada sociolinguistica_deepseek_v3 (DeepSeek, preprint §2)",
+      "regra": "Categoria social do remetente; só ahu-sul.",
+      "exemplo": "Metropolitan Elite",
+      "vazios": 160293,
+      "vazios_pct": 95.79,
+      "licenca": "CC BY 4.0"
+    },
+    {
+      "nome": "vector",
+      "tipo": "string",
+      "origem": "Camada sociolinguistica_deepseek_v3 (DeepSeek, preprint §2)",
+      "regra": "Direção da comunicação (ex.: Top-Down); só ahu-sul.",
+      "exemplo": "Top-Down",
+      "vazios": 160293,
+      "vazios_pct": 95.79,
+      "licenca": "CC BY 4.0"
+    },
+    {
+      "nome": "typology_impact",
+      "tipo": "string",
+      "origem": "Camada sociolinguistica_deepseek_v3 (DeepSeek, preprint §2)",
+      "regra": "Quanto a tipologia fixa a forma do texto (ex.: Highly Formulaic); só ahu-sul.",
+      "exemplo": "Highly Formulaic",
+      "vazios": 160293,
+      "vazios_pct": 95.79,
+      "licenca": "CC BY 4.0"
+    },
+    {
+      "nome": "vernacular_score",
+      "tipo": "int64",
+      "origem": "Camada sociolinguistica_deepseek_v3 (DeepSeek, preprint §2)",
+      "regra": "SRSP, inteiro de 1 a 9; exploratório (ver LIMITACOES.md); só ahu-sul.",
+      "exemplo": "1",
+      "vazios": 160293,
+      "vazios_pct": 95.79,
+      "licenca": "CC BY 4.0"
+    },
+    {
+      "nome": "justificativa",
+      "tipo": "string",
+      "origem": "Camada sociolinguistica_deepseek_v3 (DeepSeek, preprint §2)",
+      "regra": "Justificativa do modelo para a classificação, em inglês; só ahu-sul.",
+      "exemplo": "This is a 'Consulta' from the Overseas Council to the king, representing the hig",
+      "vazios": 160311,
+      "vazios_pct": 95.8,
+      "licenca": "CC BY 4.0"
+    },
+    {
+      "nome": "url_actd",
+      "tipo": "string",
+      "origem": "ACTD/IICT",
+      "regra": "URL do PDF do catálogo da série no ACTD de onde veio o resumo.",
+      "exemplo": "https://actd.iict.pt/eserv/actd:CUc004/CU-Alagoas.pdf",
+      "vazios": 10055,
+      "vazios_pct": 6.01,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "pagina_actd",
+      "tipo": "int32",
+      "origem": "ACTD/IICT",
+      "regra": "Página do PDF (contada pelo PyMuPDF, a partir de 1) onde está o verbete.",
+      "exemplo": "3",
+      "vazios": 10055,
+      "vazios_pct": 6.01,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "caminho_resgate",
+      "tipo": "string",
+      "origem": "Projeto Resgate (gov.br)",
+      "regra": "Página do instrumento de pesquisa do Projeto Resgate que traz o verbete.",
+      "exemplo": "https://www.gov.br/bn/pt-br/central-de-conteudos/projeto-resgate/novos-instrumen",
+      "vazios": 121295,
+      "vazios_pct": 72.48,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "qc",
+      "tipo": "string",
+      "origem": "coleta/scripts/qc_banco.py",
+      "regra": "Marcas de controle de qualidade, separadas por ponto e vírgula (ex.: sem_data, cota_repetida).",
+      "exemplo": "cota_repetida",
+      "vazios": 163170,
+      "vazios_pct": 97.51,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    },
+    {
+      "nome": "sha1_resumo",
+      "tipo": "string",
+      "origem": "build/construir_app.py",
+      "regra": "SHA-1 do resumo (UTF-8, como na coluna retirada); confere a reidratação a partir do ACTD.",
+      "exemplo": "397d2146ee3b9e2a93e5eff2ed0db3583d603c93",
+      "vazios": 30,
+      "vazios_pct": 0.02,
+      "licenca": "CC0 1.0 (fatos não são protegidos)"
+    }
+  ]
+}
