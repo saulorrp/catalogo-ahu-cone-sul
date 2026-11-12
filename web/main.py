@@ -42,9 +42,13 @@ async def lifespan(app: FastAPI):
     sem_semantica = os.environ.get("AHU_SEM_SEMANTICA", "").strip().lower() in ("1", "sim", "true")
     if not sem_semantica and dados_app:
         from ahu.consulta_onnx import criar_encoder_de_dados
+        cache = {}
+
         def encoder_preguicoso(textos):
-            enc = criar_encoder_de_dados(dados_app)
-            return enc(textos)
+            # Carrega o modelo na primeira busca e o reaproveita nas seguintes.
+            if "enc" not in cache:
+                cache["enc"] = criar_encoder_de_dados(dados_app)
+            return cache["enc"](textos)
         encoder_app = encoder_preguicoso
     elif dados_app:
         from ahu.dados import APP_DADOS
