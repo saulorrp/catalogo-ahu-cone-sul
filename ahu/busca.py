@@ -76,6 +76,7 @@ COSSENO_MINIMO = 0.70
 # resolve o primeiro caso de graça — "lavradio" está no corpus — e a (b) separa o resto.
 # Continua sendo **só um aviso**: nada é cortado. O 4,5 é provisório, calibrado no WP 4.2.
 LIMITE_DESTAQUE = 4.5
+LIMITE_RERANKER = 30        # quantos do topo da fusão o reranker relê (docs/plano_busca_servidor.md)
 AVISO_DISTANTE = ("Nenhum documento muito próximo desta consulta; "
                   "os resultados podem ser pouco relevantes.")
 
@@ -457,6 +458,26 @@ def _fundir(por_motor: dict[str, list[int]], pesos: dict[str, float]) -> dict[in
     return fundidos
 
 
+def reordenar(dados, texto: str, ordem: list[Resultado], reranker,
+              limite: int | None = None) -> list[Resultado]:
+    """O cross-encoder relê os `limite` primeiros da fusão; o resto segue na ordem do RRF.
+
+    A nota dele não substitui a do RRF de quem fica de fora: só a ordem do topo muda, e o total
+    continua o mesmo.
+    """
+    from ahu.reranker import texto_do_documento
+
+    limite = limite or LIMITE_RERANKER
+    topo, cauda = ordem[:limite], ordem[limite:]
+    docs = dados.documentos
+    textos = [texto_do_documento(docs.iloc[r.linha]) for r in topo]
+    notas = np.asarray(reranker(texto, textos), dtype=np.float32)
+    posicoes = np.argsort(-notas, kind="stable")
+    for p, i in enumerate(posicoes, start=1):
+        topo[i].posicoes["reranker"] = p
+    return [topo[i] for i in posicoes] + cauda
+
+
 # ---------------------------------------------------------------------------
 # Busca
 # ---------------------------------------------------------------------------
@@ -465,13 +486,16 @@ def buscar(
     dados, texto: str, modo: str = "automatico", rigor: str = "medio",
     encoder: Encoder | None = None, limite_motor: int = LIMITE_MOTOR,
     cosseno_minimo: float = COSSENO_MINIMO, limite_destaque: float = LIMITE_DESTAQUE,
-    filtro: np.ndarray | None = None,
+    filtro: np.ndarray | None = None, reranker=None,
 ) -> Resposta:
     """A busca da §5.2–§5.5. `encoder=None` desliga o motor semântico (busca só léxica).
 
     `cosseno_minimo` é o piso absoluto do motor semântico, calibrado para o e5. Outro modelo tem
     outra escala de cosseno: quem troca o modelo (WP 4.2) passa o piso dele aqui. Um `encoder`
     que traga `cosseno_minimo`, `margens_rigor` e `pesos_rrf` (o estático) usa os dele.
+
+    `reranker` (ver `ahu/reranker.py`) relê o topo da fusão e o reordena; o modo Exata não passa
+    por ele, porque ali a ordem tem de ser explicável pelas palavras.
     """
     cosseno_minimo = getattr(encoder, "cosseno_minimo", cosseno_minimo)
     margens = getattr(encoder, "margens_rigor", MARGENS_RIGOR)
@@ -529,6 +553,8 @@ def buscar(
 
     # §5.3: a cota dentro da frase -> esses documentos primeiro, o resto da frase segue a busca.
     ordem = sorted(fundidos.values(), key=lambda r: (-r.nota_rrf, r.linha))
+    if reranker is not None and modo != "exata" and ordem:
+        ordem = reordenar(dados, resto if chave else texto, ordem, reranker)
     if linhas_da_cota:
         da_cota = []
         for p, linha in enumerate(linhas_da_cota, start=1):

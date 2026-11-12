@@ -33,6 +33,7 @@ from ahu import links as mod_links
 from ahu import lista_ahu as mod_lista
 from ahu import pdf as mod_pdf
 from ahu import pessoas as mod_pessoas
+from ahu import reranker as mod_reranker
 from ahu import selecao as mod_selecao
 from ahu.consulta import TAMANHO_PAGINA, Consulta, ErroDeLink, executar, url_da_busca
 from ahu.dados import APP_DADOS, ErroDados, carregar
@@ -224,7 +225,7 @@ def resposta_da_consulta(dados, consulta: Consulta):
         return guardado[1]
     st.session_state.modo_buscado = consulta.modo
     encoder = encoder_preguicoso(dados) if consulta.modo in ("automatico", "conceitual") else None
-    resposta = executar(dados, consulta, encoder=encoder)
+    resposta = executar(dados, consulta, encoder=encoder, reranker=reranker_do_servidor())
     st.session_state.resposta_memoizada = (chave, resposta)
     return resposta
 
@@ -299,6 +300,28 @@ def encoder_preguicoso(dados):
             st.stop()
 
     return encoder
+
+
+@st.cache_resource(show_spinner="Carregando o reordenador da busca (uma vez por processo)...")
+def reranker_de_consulta():
+    """O cross-encoder que relê o topo da busca (`ahu/reranker.py`). Só no servidor próprio."""
+    return mod_reranker.criar_reranker()
+
+
+def reranker_do_servidor():
+    """O reranker, se `AHU_RERANKER` estiver ligado; senão `None`, e a ordem é a do RRF.
+
+    Se o modelo não puder ser preparado, a busca segue sem ele em vez de parar: a ordem do RRF
+    continua boa, e o aviso diz o que aconteceu.
+    """
+    if SEM_SEMANTICA or not mod_reranker.ligado():
+        return None
+    try:
+        return reranker_de_consulta()
+    except mod_onnx.ErroDeModelo as e:
+        st.warning(f"A reordenação fina da busca não está disponível agora ({e}).",
+                   icon=":material/info:")
+        return None
 
 # ---------------------------------------------------------------------------
 # Controles

@@ -95,17 +95,27 @@ def pasta_de_cache() -> Path:
 
 def baixar(modelo: str, qual: str, log=None) -> Path:
     """Baixa um arquivo do modelo, se ainda não estiver em cache. Devolve o caminho local."""
+    try:
+        return baixar_arquivo(repositorio_de(modelo), ARQUIVOS[qual], log)
+    except ErroDeModelo as e:
+        raise ErroDeModelo(
+            f"Não foi possível baixar {qual} do modelo {modelo} ({e}). A busca conceitual "
+            f"precisa dele; a busca exata e a por cota continuam funcionando."
+        ) from e
+
+
+def baixar_arquivo(repositorio: str, arquivo: str, log=None) -> Path:
+    """Baixa `arquivo` do repositório do Hugging Face para o cache, se ainda não estiver lá."""
     import urllib.error
     import urllib.request
 
-    repositorio = repositorio_de(modelo)
-    destino = pasta_de_cache() / repositorio.replace("/", "__") / Path(ARQUIVOS[qual]).name
+    destino = pasta_de_cache() / repositorio.replace("/", "__") / Path(arquivo).name
     if destino.exists() and destino.stat().st_size > 0:
         return destino
     destino.parent.mkdir(parents=True, exist_ok=True)
-    url = BASE.format(repositorio=repositorio) + "/" + ARQUIVOS[qual]
+    url = BASE.format(repositorio=repositorio) + "/" + arquivo
     if log:
-        log(f"baixando {qual} de {url}")
+        log(f"baixando {url}")
     parcial = destino.with_suffix(destino.suffix + ".parcial")
     try:
         with urllib.request.urlopen(url, timeout=120) as resposta, open(parcial, "wb") as saida:
@@ -113,10 +123,7 @@ def baixar(modelo: str, qual: str, log=None) -> Path:
                 saida.write(bloco)
     except (urllib.error.URLError, TimeoutError, OSError) as e:
         parcial.unlink(missing_ok=True)
-        raise ErroDeModelo(
-            f"Não foi possível baixar {qual} do modelo {modelo} ({e}). A busca conceitual "
-            f"precisa dele; a busca exata e a por cota continuam funcionando."
-        ) from e
+        raise ErroDeModelo(str(e)) from e
     # Renomeia só no fim: um download interrompido não pode virar um cache quebrado.
     parcial.replace(destino)
     return destino
