@@ -51,8 +51,11 @@ def corpus_busca(tmp_path_factory):
         doc_busca(6, "MAPA dos habitantes da vila, com soldados e moradores.", tipologia="MAPA"),
         doc_busca(7, "CARTA sobre a fuga de presos e a deserção da tropa paga."),
         doc_busca(8, "PARECER sobre o pedido de Manoel de Mello e Castro.", tipologia="PARECER"),
+        # Subsérie (017-01 / 017-001) e intervalo de documentos: o caso que sumia da busca.
         doc_busca(9, "CONSULTA sobre a demarcação de limites no rio Uruguai.",
-                  tipologia="CONSULTA"),
+                  tipologia="CONSULTA",
+                  reference="PT/AHU/CU/017-001/0057/13257",
+                  new_code="AHU_CU_017-01, Cx. 57, D. 13257-13259."),
         doc_busca(10, "CARTA do governador ao vice-rei marquês do Lavradio sobre tropas.",
                   recipient="marquês do Lavradio"),
     ]

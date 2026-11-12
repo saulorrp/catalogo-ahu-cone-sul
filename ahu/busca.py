@@ -103,78 +103,133 @@ def _achatar(texto: str) -> str:
     'PT/AHU/CU/021/0006/00390'      -> 'pt ahu cu 021 0006 00390'
     'AHU_ACL_CU_021, Cx. 6, D. 390.'-> 'ahu acl cu 021 cx 6 d 390'
     'ahu acl cu 021 cx 6 d 390'     -> igual (é o que o usuário digita)
+    'AHU_CU_005-01, Cx. 105, D. 20.367' -> 'ahu cu 005 01 cx 105 d 20367'
     """
     t = unicodedata.normalize("NFKD", str(texto or ""))
     t = "".join(c for c in t if not unicodedata.combining(c)).lower()
+    # Milhar com ponto, como nos catálogos impressos: `D. 20.367` é o documento 20367.
+    t = re.sub(r"(?<=\d)\.(?=\d{3}(?!\d))", "", t)
     return re.sub(r"[^a-z0-9]+", " ", t).strip()
 
 
-# `AHU_ACL_CU_021, Cx. 6, D. 390` e as suas variações de pontuação e espaço.
-_RE_CU_CX = re.compile(r"\b(?:pt )?ahu (?:acl )?cu (\d{1,4}) cx (\d{1,4}) (?:d|doc) (\d{1,6})\b")
-# `PT/AHU/CU/021/0006/00390`: três números seguidos, sem as palavras cx/d.
-_RE_CU_REF = re.compile(r"\b(?:pt )?ahu (?:acl )?cu (\d{1,4}) (\d{1,5}) (\d{1,6})\b")
+# A série pode trazer subsérie: `AHU_CU_017-01` no Resgate, `PT/AHU/CU/017-001` na referência.
+# Achatadas, ficam `cu 017 01` e `cu 017 001`; a chave guarda as duas como `17-1`.
+_SERIE = r"(?:pt )?ahu (?:acl )?cu (\d{1,4})(?: (\d{1,3}))?"
+# `AHU_ACL_CU_021, Cx. 6, D. 390`, `AHU_CU_017-01, Cx. 57, D. 13257-13259` e as variações de
+# pontuação e espaço. O fim de um intervalo (`13259`) fica no grupo 5.
+_RE_CU_CX = re.compile(_SERIE + r" cx (\d{1,4}) (?:d|doc|documento) (\d{1,6})(?: (\d{1,6}))?\b")
+# `PT/AHU/CU/021/0006/00390`, `PT/AHU/CU/017-001/0057/13257`: números seguidos, sem cx/d.
+_RE_CU_REF = re.compile(_SERIE + r" (\d{1,5}) (\d{1,6})\b")
 # `AHU-Santa Catarina, cx. 8, doc. 14`: a região no lugar do número do fundo.
 _RE_REGIAO = re.compile(r"\bahu ([a-z]+(?: [a-z]+){0,3}?) cx (\d{1,4}) (?:d|doc) (\d{1,6})\b")
+# Os pares seguintes de uma cota antiga: `cx. 183, doc. 60; cx. 188, doc. 39`.
+_RE_PAR = re.compile(r"\bcx (\d{1,4}) (?:d|doc) (\d{1,6})(?: (\d{1,6}))?\b")
 
 _MOTIVOS = (("cu_cx", _RE_CU_CX), ("cu_ref", _RE_CU_REF), ("regiao", _RE_REGIAO))
+
+# Um intervalo do Resgate (`D. 13257-13259`) responde por cada documento dele, até este tamanho.
+INTERVALO_MAXIMO = 50
+
+
+def _chave_cu(serie: str, subserie: str | None, caixa: str, documento: int) -> str:
+    fundo = f"{int(serie)}" + (f"-{int(subserie)}" if subserie is not None else "")
+    return f"cu|{fundo}|{int(caixa)}|{documento}"
+
+
+def _intervalo(inicio: int, fim: str | None) -> list[int]:
+    if fim is None or not (inicio < int(fim) <= inicio + INTERVALO_MAXIMO):
+        return [inicio]
+    return list(range(inicio, int(fim) + 1))
+
+
+def _casar(achatado: str):
+    """O primeiro padrão de cota que casa, como (motivo, match); ou (None, None)."""
+    for motivo, padrao in _MOTIVOS:
+        for m in padrao.finditer(achatado):
+            if motivo == "regiao" and m.group(1).strip() in {"cu", "acl cu", "acl"}:
+                # 'ahu acl cu' já foi tratado acima; aqui a "região" nunca é a palavra 'cu'.
+                continue
+            return motivo, m
+    return None, None
+
+
+def _chave_do_match(motivo: str, m) -> str:
+    if motivo == "regiao":
+        return f"reg|{m.group(1).strip()}|{int(m.group(2))}|{int(m.group(3))}"
+    return _chave_cu(m.group(1), m.group(2), m.group(3), int(m.group(4)))
 
 
 def chave_cota(texto: str) -> str | None:
     """Chave canônica de uma cota, ou None se o texto não contiver uma.
 
-    As três famílias caem na mesma chave quando são o mesmo documento: zeros à esquerda somem.
+    As três famílias caem na mesma chave quando são o mesmo documento: zeros à esquerda somem, e
+    a subsérie `01`/`001` vira `-1` (`cu|17-1|57|13257`). De um intervalo vale o primeiro documento.
+    """
+    motivo, m = _casar(_achatar(texto))
+    return _chave_do_match(motivo, m) if m else None
+
+
+def chaves_do_campo(texto: str) -> list[str]:
+    """Todas as chaves que um campo de cota da base responde, para a tabela de lookup.
+
+    Além da chave da `chave_cota`: cada documento de um intervalo (`D. 13257-13259` responde por
+    13257, 13258 e 13259) e cada par de uma cota antiga com várias (`cx. 183, doc. 60; cx. 188,
+    doc. 39`).
     """
     achatado = _achatar(texto)
-    for motivo, padrao in _MOTIVOS:
-        m = padrao.search(achatado)
-        if not m:
-            continue
-        if motivo == "regiao":
-            regiao, cx, doc = m.group(1).strip(), int(m.group(2)), int(m.group(3))
-            # 'ahu acl cu' já foi tratado acima; aqui a "região" nunca é a palavra 'cu'.
-            if regiao in {"cu", "acl cu", "acl"}:
-                continue
-            return f"reg|{regiao}|{cx}|{doc}"
-        return f"cu|{int(m.group(1))}|{int(m.group(2))}|{int(m.group(3))}"
-    return None
+    motivo, m = _casar(achatado)
+    if not m:
+        return []
+    if motivo == "cu_cx":
+        return [_chave_cu(m.group(1), m.group(2), m.group(3), d)
+                for d in _intervalo(int(m.group(4)), m.group(5))]
+    if motivo == "cu_ref":
+        return [_chave_do_match(motivo, m)]
+    regiao = m.group(1).strip()
+    chaves = [_chave_do_match(motivo, m)]
+    for par in _RE_PAR.finditer(achatado, m.start(2) - 3):
+        for d in _intervalo(int(par.group(2)), par.group(3)):
+            chave = f"reg|{regiao}|{int(par.group(1))}|{d}"
+            if chave not in chaves:
+                chaves.append(chave)
+    return chaves
 
 
 def _trecho_da_cota(texto: str) -> tuple[str | None, str]:
     """Devolve (chave, resto do texto sem a cota). O resto segue a busca normal (§5.3)."""
     achatado = _achatar(texto)
-    for motivo, padrao in _MOTIVOS:
-        m = padrao.search(achatado)
-        if not m:
-            continue
-        if motivo == "regiao" and m.group(1).strip() in {"cu", "acl cu", "acl"}:
-            continue
-        chave = chave_cota(texto)
-        resto = re.sub(r"\s+", " ", achatado[: m.start()] + " " + achatado[m.end():]).strip()
-        return chave, resto
-    return None, achatado
+    motivo, m = _casar(achatado)
+    if not m:
+        return None, achatado
+    resto = re.sub(r"\s+", " ", achatado[: m.start()] + " " + achatado[m.end():]).strip()
+    return _chave_do_match(motivo, m), resto
+
+
+# v2: subsérie na chave (`cu|17-1|...`), intervalos e cotas antigas com vários pares.
+_ATRIBUTO_TABELA = "_tabela_cotas_v2"
 
 
 def tabela_de_cotas(dados) -> dict[str, list[int]]:
     """chave de cota -> linhas de `documentos.parquet`. Lida das três colunas de cota.
 
-    Construída uma vez e guardada no próprio `Dados` (é derivada, não um artefato do §3.4).
+    Construída uma vez e guardada no próprio `Dados` (é derivada, não um artefato do §3.4). O
+    nome do atributo leva a versão das chaves: o `Dados` em `st.cache_resource` sobrevive a uma
+    atualização do código, e uma tabela com as chaves antigas não pode ser reaproveitada.
     """
-    cache = getattr(dados, "_tabela_cotas", None)
+    cache = getattr(dados, _ATRIBUTO_TABELA, None)
     if cache is not None:
         return cache
     tabela: dict[str, list[int]] = {}
     colunas = [c for c in ("reference_code", "new_code", "old_code") if c in dados.documentos.columns]
     for coluna in colunas:
         for i, valor in enumerate(dados.documentos[coluna]):
-            if not valor or valor is None:
+            if not isinstance(valor, str) or not valor:
                 continue
-            chave = chave_cota(valor)
-            if chave is None:
-                continue
-            linhas = tabela.setdefault(chave, [])
-            if i not in linhas:
-                linhas.append(i)
-    object.__setattr__(dados, "_tabela_cotas", tabela)
+            for chave in chaves_do_campo(valor):
+                linhas = tabela.setdefault(chave, [])
+                if i not in linhas:
+                    linhas.append(i)
+    object.__setattr__(dados, _ATRIBUTO_TABELA, tabela)
     return tabela
 
 
