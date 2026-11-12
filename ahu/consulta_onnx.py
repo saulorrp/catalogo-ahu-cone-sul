@@ -22,9 +22,15 @@ comparáveis:
 aceita. Ele é baixado do Hugging Face na primeira consulta semântica e fica em cache no disco
 (`AHU_ONNX_CACHE`, ou a pasta temporária do sistema). No Streamlit Cloud isso acontece uma vez por
 ambiente.
+
+O download é fixado por revisão git e conferido por SHA-256 para garantir reprodutibilidade e
+evitar alterações silenciosas em modelos remotos. Para usar um espelho local ou offline, baixe
+os arquivos para `<pasta>/{repositorio}/resolve/{revisao}/<arquivo>` e aponte
+`AHU_ONNX_BASE_URL=file:///<pasta>/{repositorio}/resolve/{revisao}`.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import tempfile
 from pathlib import Path
@@ -34,8 +40,9 @@ import numpy as np
 PREFIXO_PADRAO = "query: "
 MAXIMO_TOKENS = 512
 
+BASE_PADRAO = "https://huggingface.co/{repositorio}/resolve/{revisao}"
 # De onde o modelo vem. `AHU_ONNX_BASE_URL` existe para um fork apontar para outro espelho.
-BASE = os.environ.get("AHU_ONNX_BASE_URL", "https://huggingface.co/{repositorio}/resolve/main")
+BASE = os.environ.get("AHU_ONNX_BASE_URL", BASE_PADRAO)
 
 # O índice é construído com o modelo do `intfloat`, mas o ONNX **quantizado** não está lá — está
 # no espelho do `Xenova`, que é o export para transformers.js. São os mesmos pesos, em int8.
@@ -71,10 +78,77 @@ ESPELHOS = {
 ARQUIVO_MODELO = os.environ.get("AHU_ONNX_ARQUIVO", "onnx/model.onnx")
 ARQUIVOS = {"modelo": ARQUIVO_MODELO, "tokenizador": "tokenizer.json"}
 
+# Revisões git e hashes SHA-256 fixados para garantir que execuções futuras baixem exatamente
+# os mesmos artefatos testados e aprovados.
+MODELOS_FIXADOS: dict[str, dict] = {
+    "Xenova/multilingual-e5-small": {
+        "revisao": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+        "arquivos": {
+            "onnx/model.onnx": "4aa845c27760e06e9a686b9d8b5d440eae4b6612cd09e5b522b716d3941f77ff",
+            "onnx/model_quantized.onnx": (
+                "f80102d3f2a1229f387d3c81909990d8945513e347b0eab049f7de3c6f98c193"
+            ),
+            "tokenizer.json": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39",
+        },
+    },
+    "Xenova/multilingual-e5-base": {
+        "revisao": "1ec9243030a27d1a115d5c340572074c125b58b2",
+        "arquivos": {
+            "onnx/model.onnx": "84a4d426f7e87a6bf5bf195f0bae2c4a7d15f675b23ca96f42fab8326d7a77aa",
+            "onnx/model_quantized.onnx": (
+                "df7a9a29309e3ad491e1783adf8baee710262cc06079c7cbab63c630277fac94"
+            ),
+            "tokenizer.json": "62c24cdc13d4c9952d63718d6c9fa4c287974249e16b7ade6d5a85e7bbb75626",
+        },
+    },
+    "Xenova/multilingual-e5-large": {
+        "revisao": "00fc3aeb3dbb95842de2ac1961d33c6319acf57b",
+        "arquivos": {
+            "onnx/model.onnx": "8e17fbd06c54c2a53b467f5b127230f798d4fb69c5344ef9a9d6fa463862c453",
+            "onnx/model.onnx_data": (
+                "0cf1883fee81c63819a44e2ba0efa51d4043d9759685a4ebebbde97e0623d15c"
+            ),
+            "onnx/model_quantized.onnx": (
+                "0a8d65db9a36f810ba5da15249f13145fcdc7890e6656f1fd38cd8b7c4db1fca"
+            ),
+            "tokenizer.json": "62c24cdc13d4c9952d63718d6c9fa4c287974249e16b7ade6d5a85e7bbb75626",
+        },
+    },
+    "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1": {
+        "revisao": "1427fd652930e4ba29e8149678df786c240d8825",
+        "arquivos": {
+            "onnx/model.onnx": "3e9a03ed1e966f7c5288dd4230e3d6a9bf5e3a170a06f1f4241c5bca12c6487c",
+            "onnx/model_quint8_avx2.onnx": (
+                "6c2513767fb63d008a4377bef7a7a3555433d9436342bb53e35a3a72ffc52d4b"
+            ),
+            "tokenizer.json": "62c24cdc13d4c9952d63718d6c9fa4c287974249e16b7ade6d5a85e7bbb75626",
+        },
+    },
+}
+
+# Memoriza no processo os caminhos locais de arquivos cuja integridade já foi conferida.
+_CONFERIDOS: set[Path] = set()
+
 
 def repositorio_de(modelo: str) -> str:
     """Onde buscar o ONNX de um modelo do índice. Sem espelho conhecido, o próprio repositório."""
     return ESPELHOS.get(modelo, modelo)
+
+
+def revisao_de(repositorio: str) -> str:
+    """A revisão git fixada para o repositório, ou 'main' se desconhecido."""
+    info = MODELOS_FIXADOS.get(repositorio)
+    if info and "revisao" in info:
+        return info["revisao"]
+    return "main"
+
+
+def sha256_esperado(repositorio: str, arquivo: str) -> str | None:
+    """O hash SHA-256 esperado para o arquivo do repositório, se fixado."""
+    info = MODELOS_FIXADOS.get(repositorio)
+    if not info:
+        return None
+    return info.get("arquivos", {}).get(arquivo)
 
 
 class ErroDeModelo(RuntimeError):
@@ -93,6 +167,15 @@ def pasta_de_cache() -> Path:
     return pasta
 
 
+def _sha256_arquivo(caminho: Path) -> str:
+    """Calcula o SHA-256 de um arquivo em blocos de 1 MiB para não esgotar a memória."""
+    h = hashlib.sha256()
+    with open(caminho, "rb") as f:
+        while bloco := f.read(1 << 20):
+            h.update(bloco)
+    return h.hexdigest()
+
+
 def baixar(modelo: str, qual: str, log=None) -> Path:
     """Baixa um arquivo do modelo, se ainda não estiver em cache. Devolve o caminho local."""
     try:
@@ -105,15 +188,36 @@ def baixar(modelo: str, qual: str, log=None) -> Path:
 
 
 def baixar_arquivo(repositorio: str, arquivo: str, log=None) -> Path:
-    """Baixa `arquivo` do repositório do Hugging Face para o cache, se ainda não estiver lá."""
+    """Baixa `arquivo` do Hugging Face para o cache com conferência de revisão e SHA-256."""
     import urllib.error
     import urllib.request
 
     destino = pasta_de_cache() / repositorio.replace("/", "__") / Path(arquivo).name
+    esperado = sha256_esperado(repositorio, arquivo)
+
     if destino.exists() and destino.stat().st_size > 0:
-        return destino
+        if esperado is not None:
+            if destino in _CONFERIDOS:
+                return destino
+            obtido = _sha256_arquivo(destino)
+            if obtido == esperado:
+                _CONFERIDOS.add(destino)
+                return destino
+            if log:
+                log(
+                    f"cache divergente para {arquivo} em {repositorio} "
+                    f"({obtido} != {esperado}); baixando novamente"
+                )
+            destino.unlink(missing_ok=True)
+        else:
+            if log and destino not in _CONFERIDOS:
+                log(f"aviso: arquivo {arquivo} de {repositorio} sem sha256 fixado")
+                _CONFERIDOS.add(destino)
+            return destino
+
+    revisao = revisao_de(repositorio)
     destino.parent.mkdir(parents=True, exist_ok=True)
-    url = BASE.format(repositorio=repositorio) + "/" + arquivo
+    url = BASE.format(repositorio=repositorio, revisao=revisao) + "/" + arquivo
     if log:
         log(f"baixando {url}")
     parcial = destino.with_suffix(destino.suffix + ".parcial")
@@ -124,9 +228,32 @@ def baixar_arquivo(repositorio: str, arquivo: str, log=None) -> Path:
     except (urllib.error.URLError, TimeoutError, OSError) as e:
         parcial.unlink(missing_ok=True)
         raise ErroDeModelo(str(e)) from e
+
+    if esperado is not None:
+        obtido = _sha256_arquivo(parcial)
+        if obtido != esperado:
+            parcial.unlink(missing_ok=True)
+            raise ErroDeModelo(
+                f"Integridade violada para {arquivo} de {repositorio}: "
+                f"esperado {esperado}, obtido {obtido}."
+            )
+        _CONFERIDOS.add(destino)
+    elif log:
+        log(f"aviso: arquivo {arquivo} de {repositorio} sem sha256 fixado")
+
     # Renomeia só no fim: um download interrompido não pode virar um cache quebrado.
     parcial.replace(destino)
     return destino
+
+
+def manifesto_modelos() -> dict:
+    """Metadados dos modelos de consulta e reranker para o manifesto do app."""
+    return {
+        "fonte": BASE_PADRAO,
+        "repositorios": {repo: dict(dados) for repo, dados in MODELOS_FIXADOS.items()},
+        "espelhos": dict(ESPELHOS),
+        "arquivo_consulta": ARQUIVO_MODELO,
+    }
 
 
 def _mean_pooling(estados: np.ndarray, mascara: np.ndarray) -> np.ndarray:

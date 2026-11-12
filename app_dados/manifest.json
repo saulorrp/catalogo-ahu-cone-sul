@@ -164,6 +164,50 @@
       "nota": "Diferenças de ±1 ponto não são distinguíveis."
     }
   },
+  "modelos": {
+    "fonte": "https://huggingface.co/{repositorio}/resolve/{revisao}",
+    "repositorios": {
+      "Xenova/multilingual-e5-small": {
+        "revisao": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+        "arquivos": {
+          "onnx/model.onnx": "4aa845c27760e06e9a686b9d8b5d440eae4b6612cd09e5b522b716d3941f77ff",
+          "onnx/model_quantized.onnx": "f80102d3f2a1229f387d3c81909990d8945513e347b0eab049f7de3c6f98c193",
+          "tokenizer.json": "0b44a9d7b51c3c62626640cda0e2c2f70fdacdc25bbbd68038369d14ebdf4c39"
+        }
+      },
+      "Xenova/multilingual-e5-base": {
+        "revisao": "1ec9243030a27d1a115d5c340572074c125b58b2",
+        "arquivos": {
+          "onnx/model.onnx": "84a4d426f7e87a6bf5bf195f0bae2c4a7d15f675b23ca96f42fab8326d7a77aa",
+          "onnx/model_quantized.onnx": "df7a9a29309e3ad491e1783adf8baee710262cc06079c7cbab63c630277fac94",
+          "tokenizer.json": "62c24cdc13d4c9952d63718d6c9fa4c287974249e16b7ade6d5a85e7bbb75626"
+        }
+      },
+      "Xenova/multilingual-e5-large": {
+        "revisao": "00fc3aeb3dbb95842de2ac1961d33c6319acf57b",
+        "arquivos": {
+          "onnx/model.onnx": "8e17fbd06c54c2a53b467f5b127230f798d4fb69c5344ef9a9d6fa463862c453",
+          "onnx/model.onnx_data": "0cf1883fee81c63819a44e2ba0efa51d4043d9759685a4ebebbde97e0623d15c",
+          "onnx/model_quantized.onnx": "0a8d65db9a36f810ba5da15249f13145fcdc7890e6656f1fd38cd8b7c4db1fca",
+          "tokenizer.json": "62c24cdc13d4c9952d63718d6c9fa4c287974249e16b7ade6d5a85e7bbb75626"
+        }
+      },
+      "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1": {
+        "revisao": "1427fd652930e4ba29e8149678df786c240d8825",
+        "arquivos": {
+          "onnx/model.onnx": "3e9a03ed1e966f7c5288dd4230e3d6a9bf5e3a170a06f1f4241c5bca12c6487c",
+          "onnx/model_quint8_avx2.onnx": "6c2513767fb63d008a4377bef7a7a3555433d9436342bb53e35a3a72ffc52d4b",
+          "tokenizer.json": "62c24cdc13d4c9952d63718d6c9fa4c287974249e16b7ade6d5a85e7bbb75626"
+        }
+      }
+    },
+    "espelhos": {
+      "intfloat/multilingual-e5-small": "Xenova/multilingual-e5-small",
+      "intfloat/multilingual-e5-base": "Xenova/multilingual-e5-base",
+      "intfloat/multilingual-e5-large": "Xenova/multilingual-e5-large"
+    },
+    "arquivo_consulta": "onnx/model.onnx"
+  },
   "acertos": {
     "new_code_sem_cabecalho": 3059,
     "referencia_refeita": 130,

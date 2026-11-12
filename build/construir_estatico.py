@@ -4,7 +4,10 @@ Entrada : app_dados/documentos.parquet (depois do `construir_app.py`)
 Saída   : app_dados/estatico/ (meta.json, tokenizer.json, matriz.f16.npy, vetores.i8.npy)
 
     pip install model2vec==0.10.0
-    python build/construir_estatico.py
+    python build/construir_estatico.py [--revisao <commit>]
+
+`scripts/reconstruir.sh` passa a revisão gravada em `app_dados/estatico/meta.json`, para que a
+reconstrução use o mesmo commit do modelo no Hugging Face.
 
 Corta o vocabulário do modelo aos pedaços que o corpus usa, mais os caracteres soltos (para que
 qualquer palavra da consulta ainda se decomponha em algo conhecido), e codifica os documentos
@@ -68,12 +71,12 @@ def cortar(tokenizer_json: dict, manter: set[int]) -> tuple[dict, np.ndarray]:
     return novo, antigos
 
 
-def construir(pasta_app: Path, modelo: str = MODELO_PADRAO) -> dict:
+def construir(pasta_app: Path, modelo: str = MODELO_PADRAO, revisao: str | None = None) -> dict:
     from huggingface_hub import snapshot_download
     from model2vec import StaticModel
     from tokenizers import Tokenizer
 
-    caminho = Path(snapshot_download(modelo))
+    caminho = Path(snapshot_download(modelo, revision=revisao))
     original = StaticModel.from_pretrained(str(caminho))
     if original.weights is not None or original.token_mapping is not None:
         raise SystemExit("Modelo com pesos ou mapeamento de tokens: o corte não sabe tratar.")
@@ -117,8 +120,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--app-dados", type=Path, default=RAIZ / "app_dados")
     ap.add_argument("--modelo", default=MODELO_PADRAO)
+    ap.add_argument("--revisao", default=None, help="revisão (hash do commit) no Hugging Face")
     args = ap.parse_args()
-    print(json.dumps(construir(args.app_dados, args.modelo), ensure_ascii=False, indent=2))
+    print(json.dumps(construir(args.app_dados, args.modelo, args.revisao), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
