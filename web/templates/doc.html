@@ -41,7 +41,7 @@
                 <a href="{{ ficha.links.digitarq }}" target="_blank" class="btn">{{ ficha.links.digitarq_rotulo }}</a>
                 {% endif %}
                 {% if ficha.links.resgate %}
-                <a href="{{ ficha.links.resgate }}" target="_blank" class="btn">Portal do Projeto Resgate</a>
+                <a href="{{ ficha.links.resgate }}" target="_blank" class="btn">{{ ficha.links.resgate_rotulo or "Portal do Projeto Resgate" }}</a>
                 {% endif %}
             </div>
         </div>
