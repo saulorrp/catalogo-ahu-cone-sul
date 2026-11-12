@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Pessoas - Catálogo AHU{% endblock %}
+{% block aba %}pessoas{% endblock %}
+{% block title %}Pessoas · Catálogo AHU{% endblock %}
 {% block content %}
 <h1>Pessoas</h1>
 <form method="get" action="{{ url_for('pessoas') }}" class="filtros-form">
@@ -16,13 +17,14 @@
     <button type="submit">Filtrar</button>
 </form>
 
-<p>{{ lista|length }} resultados</p>
+<p class="rotulo">{{ lista|length | milhar }} {{ "pessoas" if tipo == "pessoas" else "coletivos e instituições" }}</p>
+<div class="tabela-rolagem">
 
-<table class="tabela-resultados">
+<table class="tabela">
     <thead>
         <tr>
             <th>Nome</th>
-            <th>Nº de documentos</th>
+            <th class="num">Documentos</th>
             <th>Período</th>
             {% if tipo == 'pessoas' %}
             <th>Nascimento</th>
@@ -43,8 +45,8 @@
                 {{ item.nome }}
                 {% endif %}
             </td>
-            <td>{{ item.n_documentos }}</td>
-            <td>{{ item.periodo }}</td>
+            <td class="num">{{ item.n_documentos }}</td>
+            <td class="nowrap numero">{{ item.periodo }}</td>
             {% if tipo == 'pessoas' %}
             <td>{{ item.nascimento or '—' }}</td>
             <td>{{ item.nivel or '—' }}</td>
@@ -56,4 +58,5 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% endblock %}

@@ -223,3 +223,124 @@ def test_campos_vazios_do_formulario_nao_zeram_a_consulta():
     consulta = parse_consulta(Request({"type": "http", "query_string": qs, "headers": []}))
     assert consulta.texto == "domingos Brito Peixoto"
     assert consulta.filtros.ano_de is None
+
+
+# ---------------------------------------------------------------------------
+# Redesenho (abas, gaveta da seleção, linha do tempo no Sobre) e busca em dois tempos
+# ---------------------------------------------------------------------------
+
+def _reranker_invertido(consulta, textos):
+    """Um reranker de mentira: prefere os textos mais curtos. Basta para mudar a ordem."""
+    import numpy as np
+    return np.array([-len(t) for t in textos], dtype=np.float32)
+
+
+def test_abas_no_topo_e_aba_atual(client):
+    html = client.get("/sobre").text
+    assert 'class="abas"' in html
+    assert re.search(r'class="aba atual"[^>]*aria-current="page"[^>]*>Sobre', html)
+    # A linha do tempo saiu da busca e está no Sobre, com os números por década.
+    assert 'id="linha-do-tempo"' in html
+    assert "histograma-svg-container" not in client.get("/").text
+
+
+def test_gaveta_da_selecao_na_busca(client, corpus_busca):
+    uid = corpus_busca.documentos.iloc[0]["doc_uid"]
+    html = client.get("/busca?q=soldados").text
+    assert 'id="gaveta-selecao"' in html
+    assert "Pôr na seleção" in html
+
+    # Pôr: a resposta traz o botão marcado, a gaveta e o número da aba, de uma vez.
+    resp = client.post(f"/selecao/adicionar/{uid}")
+    assert "Na seleção" in resp.text
+    assert 'id="gaveta-selecao" hx-swap-oob="true"' in resp.text
+    assert re.search(r'id="aba-conta"[^>]*hx-swap-oob="true"[^>]*>1<', resp.text)
+
+    # A busca seguinte já mostra o documento como marcado e a gaveta com ele.
+    html = client.get("/busca?q=soldados").text
+    assert "btn-sel marcado" in html
+    assert "sel-lista" in html
+
+    # Tirar pela gaveta devolve o botão do documento fora do lugar clicado.
+    resp = client.post(f"/selecao/remover/{uid}?de=gaveta")
+    assert 'hx-swap-oob="outerHTML"' in resp.text
+    assert "btn-sel marcado" not in resp.text
+    assert "btn-sel marcado" not in client.get("/busca?q=soldados").text
+
+
+def test_selecao_cheia_nao_apaga_o_que_ja_estava(client, corpus_busca, monkeypatch):
+    """Passado o teto do cookie, o documento novo não entra e os anteriores ficam."""
+    import ahu.selecao as selecao
+
+    uids = list(corpus_busca.documentos["doc_uid"][:3])
+    client.post(f"/selecao/adicionar/{uids[0]}")
+    client.post(f"/selecao/adicionar/{uids[1]}")
+    monkeypatch.setattr(selecao, "LIMITE_URL", 15)
+    resp = client.post(f"/selecao/adicionar/{uids[2]}")
+    assert "A seleção está cheia" in resp.text
+    assert client.get("/selecao").text.count("<tr>") == 3      # cabeçalho + os dois de antes
+
+
+def test_busca_em_dois_tempos(corpus_busca, monkeypatch):
+    import web.main as main_module
+    from ahu import busca
+    from web import cache
+
+    cache.limpar()
+    client = TestClient(criar_app(dados_injetados=corpus_busca))
+    monkeypatch.setattr(main_module, "reranker_app", _reranker_invertido)
+
+    # Primeiro tempo: a lista sai na hora, com o pedido da ordem fina embutido.
+    html = client.get("/busca?q=soldados").text
+    assert "fino=1" in html
+    # Segundo tempo: a ordem é a mesma de `buscar` com o reranker.
+    fino = client.get("/resultados?q=soldados&fino=1").text
+    esperado = busca.buscar(corpus_busca, "soldados", reranker=_reranker_invertido)
+    ordem = re.findall(r'/doc/([^"]+)" class="link-ficha"', fino)
+    assert ordem == [r.doc_uid for r in esperado.resultados[:25]]
+    # Daí em diante a resposta relida está guardada: a página já sai na ordem fina.
+    assert "fino=1" not in client.get("/busca?q=soldados").text
+    # No modo Exata e na ordenação por ano o reranker não entra.
+    assert "fino=1" not in client.get("/busca?q=soldados&m=exata").text
+    assert "fino=1" not in client.get("/busca?q=soldados&o=ano_asc").text
+    cache.limpar()
+
+
+def test_refinar_da_o_mesmo_que_buscar_com_reranker(corpus_busca):
+    from ahu import busca
+
+    for texto in ("soldados", "deserção da tropa", "AHU_ACL_CU_021, Cx. 6, D. 390 obras do porto"):
+        direto = busca.buscar(corpus_busca, texto, reranker=_reranker_invertido)
+        base = busca.buscar(corpus_busca, texto)
+        antes = [r.doc_uid for r in base.resultados]
+        fino = busca.refinar(corpus_busca, texto, base, _reranker_invertido)
+        assert [r.doc_uid for r in fino.resultados] == [r.doc_uid for r in direto.resultados]
+        assert [r.posicao for r in fino.resultados] == list(range(1, len(fino.resultados) + 1))
+        # A resposta de origem fica como estava: ela está na memória de buscas.
+        assert [r.doc_uid for r in base.resultados] == antes
+        assert all("reranker" not in r.posicoes for r in base.resultados)
+
+
+def test_reranker_com_memoria_so_le_os_pares_novos():
+    from ahu.reranker import com_memoria
+
+    lidos = []
+
+    def falso(consulta, textos):
+        lidos.extend(textos)
+        return [float(len(t)) for t in textos]
+
+    rr = com_memoria(falso)
+    assert list(rr("gado", ["a", "bbb"])) == [1.0, 3.0]
+    assert list(rr("gado", ["bbb", "cc", "a"])) == [3.0, 2.0, 1.0]
+    assert lidos == ["a", "bbb", "cc"]
+    rr("outra consulta", ["a"])
+    assert lidos == ["a", "bbb", "cc", "a"]
+
+
+def test_pagina_da_pessoa_com_campos_vazios(client, corpus_busca):
+    """A página quebrava (erro 500) quando um documento da pessoa não tinha tipologia."""
+    for uid in corpus_busca.pessoas["pessoa_uid"].dropna():
+        resp = client.get(f"/pessoa/{uid}")
+        assert resp.status_code == 200
+        assert "/busca?v=2" in resp.text      # "Ver os documentos" leva à busca, não à própria página

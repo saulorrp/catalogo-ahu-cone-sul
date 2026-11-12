@@ -1,0 +1,7 @@
+<div id="carregar-mais-container" {% if fora %}hx-swap-oob="true"{% endif %}>
+    {% if pagina_atual < total_paginas %}
+    <button type="button" class="btn btn-carregar-mais" hx-get="{{ url_for('resultados') }}?{{ query }}{{ '&' if query }}p={{ pagina_atual + 1 }}" hx-target="#lista-resultados" hx-swap="beforeend" hx-select="unset" hx-push-url="false" hx-indicator="#carregando">Carregar mais 25 <span class="rotulo">(mostrando {{ [pagina_atual * 25, resposta.total] | min | milhar }} de {{ resposta.total | milhar }})</span></button>
+    {% elif resposta.total > 25 %}
+    <p class="fim-da-lista">Fim da lista: {{ resposta.total | milhar }} documentos.</p>
+    {% endif %}
+</div>

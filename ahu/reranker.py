@@ -22,8 +22,11 @@ import numpy as np
 
 from ahu import consulta_onnx as onnx
 
-MAXIMO_TOKENS = 192           # consulta + resumo: 99 % dos pares cabem (medido: p99 = 189)
-LOTE = 16                     # pares por chamada ao onnxruntime
+# Consulta + resumo: com 192, 99 % dos pares cabem inteiros (medido: p99 = 189). Cortar mais
+# apressa a releitura e custa qualidade; as medidas estão em docs/plano_busca_servidor.md.
+MAXIMO_TOKENS = int(os.environ.get("AHU_RERANKER_TOKENS", "192"))
+LOTE = 8                      # pares por chamada: lotes curtos, de tamanho parecido, leem menos enchimento
+MEMORIA_PARES = 20000         # notas guardadas por `com_memoria`
 
 MODELO_PADRAO = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
 ARQUIVO_PADRAO = "onnx/model_quint8_avx2.onnx"   # int8 para CPU com AVX2, como a do agiulfo
@@ -64,7 +67,10 @@ def criar_reranker(modelo: str | None = None, arquivo: str | None = None, thread
 
     tokenizador = Tokenizer.from_file(str(caminho_tok))
     tokenizador.enable_truncation(max_length=MAXIMO_TOKENS)
-    tokenizador.enable_padding()
+    tokenizador.no_padding()      # o enchimento é feito por lote, abaixo
+    enchimento = tokenizador.token_to_id("<pad>")
+    if enchimento is None:
+        enchimento = tokenizador.token_to_id("[PAD]") or 0
 
     opcoes = ort.SessionOptions()
     # No servidor há núcleos de sobra para uma consulta de cada vez.
@@ -85,15 +91,47 @@ def criar_reranker(modelo: str | None = None, arquivo: str | None = None, thread
         notas = np.zeros(len(textos), dtype=np.float32)
         for inicio in range(0, len(ordem), LOTE):
             indices = ordem[inicio: inicio + LOTE]
-            codificados = tokenizador.encode_batch([(consulta, textos[i]) for i in indices])
-            ids = np.array([c.ids for c in codificados], dtype=np.int64)
-            entradas = {
-                "input_ids": ids,
-                "attention_mask": np.array([c.attention_mask for c in codificados], dtype=np.int64),
-                "token_type_ids": np.array([c.type_ids for c in codificados], dtype=np.int64),
-            }
+            largura = len(todos[indices[-1]].ids)
+            ids = np.full((len(indices), largura), enchimento, dtype=np.int64)
+            mascara = np.zeros((len(indices), largura), dtype=np.int64)
+            tipos = np.zeros((len(indices), largura), dtype=np.int64)
+            for linha, i in enumerate(indices):
+                n = len(todos[i].ids)
+                ids[linha, :n] = todos[i].ids
+                mascara[linha, :n] = 1
+                tipos[linha, :n] = todos[i].type_ids
+            entradas = {"input_ids": ids, "attention_mask": mascara, "token_type_ids": tipos}
             saida = sessao.run(None, {k: v for k, v in entradas.items() if k in esperados})[0]
             notas[indices] = np.asarray(saida, dtype=np.float32).reshape(len(indices), -1)[:, 0]
         return notas
 
     return reranker
+
+
+def com_memoria(reranker, maximo: int = MEMORIA_PARES):
+    """Guarda a nota de cada par (consulta, documento) já lido.
+
+    A nota de um par não depende dos outros pares do lote. Quando a mesma consulta volta com um
+    filtro a mais, com outro rigor ou noutra página, quase todo o topo já foi lido: só os pares
+    novos vão ao modelo.
+    """
+    import threading
+    from collections import OrderedDict
+
+    memoria: OrderedDict = OrderedDict()
+    tranca = threading.Lock()
+
+    def com_cache(consulta: str, textos: list[str]) -> np.ndarray:
+        chaves = [(consulta, hash(t)) for t in textos]
+        with tranca:
+            faltam = [i for i, k in enumerate(chaves) if k not in memoria]
+        novas = reranker(consulta, [textos[i] for i in faltam]) if faltam else []
+        with tranca:
+            for i, nota in zip(faltam, novas):
+                memoria[chaves[i]] = float(nota)
+            saida = np.array([memoria.get(k, 0.0) for k in chaves], dtype=np.float32)
+            while len(memoria) > maximo:
+                memoria.popitem(last=False)
+        return saida
+
+    return com_cache

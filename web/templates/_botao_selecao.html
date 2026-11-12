@@ -1,0 +1,12 @@
+{# O botão de cada documento: põe na seleção ou tira dela. Troca a si mesmo pela resposta. #}
+<button type="button" id="sel-{{ uid | id_seguro }}" class="btn btn-sel{% if marcado %} marcado{% endif %}"
+        {% if botao_fora %}hx-swap-oob="outerHTML"{% endif %}
+        hx-post="{{ url_for('remover_selecao' if marcado else 'adicionar_selecao', doc_uid=uid) }}"
+        hx-swap="outerHTML" hx-target="this" hx-select="unset" hx-push-url="false" hx-indicator="this" aria-pressed="{{ 'true' if marcado else 'false' }}"
+        title="{% if marcado %}Tirar este documento da seleção{% else %}Guardar este documento na seleção, para a lista que você leva ao arquivo{% endif %}">
+    {%- if marcado -%}
+    <span class="sel-sim">✓ Na seleção</span><span class="sel-tirar">✕ Tirar da seleção</span>
+    {%- else -%}
+    <span class="capitulo">⸿</span> Pôr na seleção
+    {%- endif -%}
+</button>

@@ -1,41 +1,46 @@
 {% extends "base.html" %}
-{% block title %}Seleção - Catálogo AHU{% endblock %}
+{% block aba %}selecao{% endblock %}
+{% block title %}Seleção · Catálogo AHU{% endblock %}
 {% block content %}
-<h1>Seleção — {{ total }} documento(s)</h1>
-
-<div class="doc-actions" style="margin-bottom: 20px;">
-    <form method="post" action="{{ url_for('limpar_selecao') }}" style="display: inline;">
-        <button type="submit" {% if not total %}disabled{% endif %}>Limpar seleção</button>
-    </form>
-    <a href="{{ url_for('selecao_pdf') }}" class="btn" {% if not total %}style="pointer-events: none; opacity: 0.5;"{% endif %}>Gerar PDF da seleção</a>
-</div>
+<h1>Seleção</h1>
+<p class="lide">Os documentos que você marcou na busca, na ordem em que foram marcados. É esta lista que sai no PDF para levar ao Arquivo Histórico Ultramarino. Ela fica guardada neste navegador, não no servidor.</p>
 
 {% if total %}
-<table class="tabela-resultados">
+<div class="doc-actions">
+    <a href="{{ url_for('selecao_pdf') }}" class="btn btn-primario">Baixar a lista em PDF</a>
+    <a href="{{ url_for('busca') }}" class="btn">Voltar à busca</a>
+    <form method="post" action="{{ url_for('limpar_selecao') }}" onsubmit="return confirm('Esvaziar a seleção?')">
+        <button type="submit" class="btn-texto">Esvaziar a seleção</button>
+    </form>
+    <span class="rotulo empurra">{{ total }} de até {{ maximo }} documentos</span>
+</div>
+
+<div class="tabela-rolagem">
+<table class="tabela">
     <thead>
-        <tr>
-            <th>Nº</th>
-            <th>Ano</th>
-            <th>Cota</th>
-            <th>Resumo</th>
-            <th>Ação</th>
-        </tr>
+        <tr><th class="num">Nº</th><th class="num">Ano</th><th>Cota</th><th>Resumo</th><th><span class="so-leitor">Tirar</span></th></tr>
     </thead>
     <tbody>
         {% for linha in linhas %}
-        <tr id="sel-{{ linha.uid }}">
-            <td>{{ linha.n }}</td>
-            <td>{{ linha.ano or '—' }}</td>
-            <td class="cota">{{ linha.cota or '—' }}</td>
-            <td>{{ linha.resumo }}</td>
+        <tr>
+            <td class="num">{{ linha.n }}</td>
+            <td class="num">{{ linha.ano or '—' }}</td>
+            <td class="cota nowrap">{{ linha.cota or '—' }}{% if linha.referencia %}<br><span class="rotulo">{{ linha.referencia }}</span>{% endif %}</td>
+            <td class="resumo"><a class="resumo-link" href="{{ url_for('doc', doc_uid=linha.uid) }}">{{ linha.resumo }}</a></td>
             <td>
-                <button hx-post="{{ url_for('remover_selecao', doc_uid=linha.uid) }}" hx-target="#sel-{{ linha.uid }}" hx-swap="outerHTML">✕</button>
+                <form method="post" action="{{ url_for('remover_selecao', doc_uid=linha.uid) }}?volta=1">
+                    <button type="submit" class="sel-x" aria-label="Tirar da seleção" title="Tirar da seleção">✕</button>
+                </form>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% else %}
-<p>Seleção vazia.</p>
+<div class="vazio">
+    <p><strong>A seleção está vazia.</strong></p>
+    <p>Na <a href="{{ url_for('busca') }}">busca</a>, use <strong><span class="capitulo">⸿</span> Pôr na seleção</strong> em cada documento que quiser consultar no arquivo. Eles aparecem aqui e na gaveta “Seleção” da própria busca.</p>
+</div>
 {% endif %}
 {% endblock %}

@@ -2,14 +2,14 @@ import pandas as pd
 from fastapi import APIRouter, HTTPException, Request
 
 import web.main as main_module
-from ahu.consulta import executar
 from ahu.ficha import montar
+from web import cache
 from web.core import parse_consulta
 
 router = APIRouter()
 
 @router.get("/saude", name="saude")
-async def saude():
+def saude():
     dados = main_module.dados_app
     if not dados:
         raise HTTPException(status_code=503, detail="Dados não carregados")
@@ -17,10 +17,11 @@ async def saude():
     return {"status": "ok", "documentos": len(dados.documentos), "versao": versao}
 
 @router.get("/api/busca", name="api_busca")
-async def api_busca(request: Request):
+def api_busca(request: Request):
     dados = main_module.dados_app
     consulta = parse_consulta(request)
-    resposta = executar(dados, consulta, encoder=main_module.encoder_app, **main_module.extra_busca())
+    resposta, _, _ = cache.buscar(dados, consulta, encoder=main_module.encoder_app,
+                                  reranker=main_module.reranker_app)
 
     resultados = []
     for r in resposta.pagina(consulta.pagina, 25):
@@ -39,7 +40,7 @@ async def api_busca(request: Request):
     }
 
 @router.get("/api/doc/{doc_uid}", name="api_doc")
-async def api_doc(doc_uid: str):
+def api_doc(doc_uid: str):
     dados = main_module.dados_app
     try:
         ficha = montar(dados, doc_uid)
@@ -55,7 +56,7 @@ async def api_doc(doc_uid: str):
     }
 
 @router.get("/api/sugerir", name="api_sugerir")
-async def api_sugerir(campo: str, q: str = ""):
+def api_sugerir(campo: str, q: str = ""):
     dados = main_module.dados_app
     q = q.lower()
     sugestoes = []

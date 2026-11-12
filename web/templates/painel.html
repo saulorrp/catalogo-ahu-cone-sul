@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Painel - Catálogo AHU{% endblock %}
+{% block aba %}painel{% endblock %}
+{% block title %}Painel · Catálogo AHU{% endblock %}
 {% block head %}
 <script src="{{ url_for('static', path='plotly.min.js') }}"></script>
 {% endblock %}
@@ -11,31 +12,44 @@
     <label><input type="radio" name="por" value="pessoa" {% if por == 'pessoa' %}checked{% endif %} onchange="this.form.submit()"> Por pessoa</label>
 </form>
 
-<div style="display: flex; gap: 20px; margin-top: 20px;">
-    <div class="metric">Total: {{ painel.total }}</div>
-    <div class="metric">Com origem: {{ painel.total - painel.sem_origem }}</div>
-    <div class="metric">Sem origem: {{ painel.sem_origem }}</div>
+<div class="metricas">
+    <div class="metric"><span class="rotulo">Total</span><br><strong>{{ painel.total | milhar }}</strong></div>
+    <div class="metric"><span class="rotulo">Com origem conhecida</span><br><strong>{{ (painel.total - painel.sem_origem) | milhar }}</strong></div>
+    <div class="metric"><span class="rotulo">Sem origem</span><br><strong>{{ painel.sem_origem | milhar }}</strong></div>
 </div>
 <p class="aviso">{{ painel.nota }}</p>
 
-<div style="display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px;">
-    <div style="flex: 1; min-width: 300px;" id="grafico-pais"></div>
-    <div style="flex: 1; min-width: 300px;">
-        <table class="tabela-resultados">
-            <tr><th>País</th><th>{{ 'Documentos' if por == 'documento' else 'Pessoas' }}</th></tr>
+<div class="painel-duplo">
+    <div class="grafico" id="grafico-pais"></div>
+    <div>
+        <table class="tabela">
+            <tr><th>País</th><th class="num">{{ 'Documentos' if por == 'documento' else 'Pessoas' }}</th></tr>
             {% for row in paises_records %}
-            <tr><td>{{ row.pais }}</td><td>{{ row.contagem }}</td></tr>
+            <tr><td>{{ row.pais }}</td><td class="num">{{ row.contagem | milhar }}</td></tr>
             {% endfor %}
         </table>
     </div>
 </div>
 
-<div style="margin-top: 40px;" id="grafico-decada"></div>
+<div class="grafico" id="grafico-decada"></div>
 
 <script>
     const figPais = {{ fig_pais_json | safe }};
     const figDecada = {{ fig_decada_json | safe }};
-    Plotly.newPlot('grafico-pais', figPais.data, figPais.layout, {responsive: true});
-    Plotly.newPlot('grafico-decada', figDecada.data, figDecada.layout, {responsive: true});
+    // Os gráficos foram desenhados para o Streamlit: aqui ganham margem para os rótulos, fundo
+    // transparente e, no de países (uma série só), o bordô da interface.
+    const vinho = getComputedStyle(document.documentElement).getPropertyValue('--accent-marca').trim();
+    const tinta = getComputedStyle(document.documentElement).getPropertyValue('--txt-secondary').trim();
+    [figPais, figDecada].forEach(function (fig) {
+        fig.layout.paper_bgcolor = 'rgba(0,0,0,0)';
+        fig.layout.plot_bgcolor = 'rgba(0,0,0,0)';
+        fig.layout.font = Object.assign({}, fig.layout.font, {color: tinta});
+        fig.layout.xaxis = Object.assign({}, fig.layout.xaxis, {automargin: true});
+        fig.layout.yaxis = Object.assign({}, fig.layout.yaxis, {automargin: true});
+    });
+    figPais.data.forEach(function (t) { t.marker = Object.assign({}, t.marker, {color: vinho}); });
+    const opcoes = {responsive: true, displayModeBar: false};
+    Plotly.newPlot('grafico-pais', figPais.data, figPais.layout, opcoes);
+    Plotly.newPlot('grafico-decada', figDecada.data, figDecada.layout, opcoes);
 </script>
 {% endblock %}

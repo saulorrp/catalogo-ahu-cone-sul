@@ -1,6 +1,3 @@
 {% include "_resultados_itens.html" %}
-<div id="carregar-mais-container" hx-swap-oob="true">
-    {% if pagina_atual < total_paginas %}
-    <button type="button" class="btn-carregar-mais" hx-get="{{ url_for('resultados') }}" hx-include="#form-busca" hx-vals='{"p": {{ pagina_atual + 1 }}}' hx-target="#lista-resultados" hx-swap="beforeend">Carregar mais</button>
-    {% endif %}
-</div>
+{% set fora = true %}
+{% include "_carregar_mais.html" %}

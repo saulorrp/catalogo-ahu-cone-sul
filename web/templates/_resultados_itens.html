@@ -1,24 +1,29 @@
 {% for r, f in fichas %}
-<div class="resultado-card">
-    <div class="resultado-header">
-        <span class="ano-destaque">{{ f.ano or 'S/D' }}</span>
+{% set uid = f.doc_uid %}
+{% set marcado = f.doc_uid in na_selecao %}
+<article class="resultado-card">
+    <header class="resultado-header">
+        <span class="ano-destaque">{{ f.ano or 's/d' }}</span>
+        {% if f.pasta %}<span class="resultado-pasta">{{ f.pasta }}</span>{% endif %}
         <span class="cota">{{ f.cotas.get('Código de referência', f.cotas.get('Código atual', f.cotas.get('Código antigo', ''))) }}</span>
+    </header>
+    <a class="resumo resumo-link" href="{{ url_for('doc', doc_uid=f.doc_uid) }}">{{ f.resumo_marcado | marcas | safe }}</a>
+    {% set remetentes = f.pessoas | selectattr("tipo", "equalto", "remetente") | map(attribute="nome") | list %}
+    {% set destinatarios = f.pessoas | selectattr("tipo", "equalto", "destinatario") | map(attribute="nome") | list %}
+    {% if remetentes or destinatarios %}
+    <div class="remetente-destinatario">
+        {% if remetentes %}<span class="rotulo">De</span> {{ remetentes | join(', ') }}{% endif %}
+        {% if destinatarios %}<span class="rotulo">{{ 'para' if remetentes else 'Para' }}</span> {{ destinatarios | join(', ') }}{% endif %}
     </div>
-    <div class="resumo">{{ f.resumo_marcado | marcas | safe }}</div>
-    <div class="resultado-meta">
-        {% set remetentes = f.pessoas | selectattr("tipo", "equalto", "remetente") | map(attribute="nome") | list %}
-        {% set destinatarios = f.pessoas | selectattr("tipo", "equalto", "destinatario") | map(attribute="nome") | list %}
-        {% if remetentes or destinatarios %}
-        <div class="remetente-destinatario">
-            {{ remetentes | join(', ') if remetentes else '?' }} ➔ {{ destinatarios | join(', ') if destinatarios else '?' }}
-        </div>
-        {% endif %}
-    </div>
+    {% endif %}
     <div class="resultado-acoes">
-        <a href="{{ url_for('doc', doc_uid=f.doc_uid) }}" class="btn">Ver ficha completa</a>
-        <button type="button" hx-post="{{ url_for('adicionar_selecao', doc_uid=f.doc_uid) }}" hx-swap="none" class="btn">Pôr na seleção</button>
+        {% include "_botao_selecao.html" %}
+        <a href="{{ url_for('doc', doc_uid=f.doc_uid) }}" class="link-ficha">Ver a ficha completa →</a>
     </div>
-</div>
+</article>
 {% else %}
-<div class="aviso">Nenhum documento encontrado.</div>
+<div class="vazio">
+    <p><strong>Nenhum documento encontrado.</strong></p>
+    <p>Tente menos palavras, outra grafia, ou o modo <em>Conceitual</em>, que procura pelo sentido. Se há filtros marcados, experimente tirar algum.</p>
+</div>
 {% endfor %}
