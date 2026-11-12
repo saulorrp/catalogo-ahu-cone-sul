@@ -27,8 +27,8 @@ from ahu.texto import normalizar_busca
 
 # Faixas do slider do SRSP (§6.2). O intervalo em si é um dado da camada, lido do manifesto.
 FAIXAS_SRSP = {"baixo": (1, 3), "medio": (4, 6), "alto": (7, 9)}
-NOTA_SRSP = ("SRSP do DeepSeek v3, camada exploratória, auditada no preprint §3.1: MAE 1,13, pior que "
-             "prever sempre \"2\" (MAE 0,97); ordena de forma fraca a moderada (Spearman 0,37 · "
+NOTA_SRSP = ("SRSP do DeepSeek v3, camada exploratória, auditada no preprint §3.1: ordena "
+             "de forma fraca a moderada (Spearman 0,37 · "
              "QWK 0,44 · r = 0,48) · viés +0,59 · N = 716 · um avaliador. "
              "Diferenças de ±1 ponto não são distinguíveis.")
 

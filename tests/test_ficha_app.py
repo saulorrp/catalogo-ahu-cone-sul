@@ -315,7 +315,7 @@ def test_app_sobe_sem_excecao_e_tem_as_abas():
     # A aba Sobre mostra as camadas lidas do manifesto, não escritas no código.
     textos = " ".join(m.value for m in at.markdown)
     assert "Camadas e versões ativas" in textos
-    assert "MAE 1.13" in textos or "MAE 1,13" in textos
+    assert "Spearman 0.37" in textos or "Spearman 0,37" in textos
     # O catálogo geral não mostra os filtros da coleção enriquecida.
     assert "O que são as inferências" not in textos
 

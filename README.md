@@ -98,7 +98,7 @@ Nomes e escalas usados em todo o projeto, iguais aos do preprint:
 
 | Termo | Significado |
 |---|---|
-| **SRSP** | Índice de registro sociolinguístico, **inteiro de 1 a 9** (nunca dividido por 10). Estimado pelo DeepSeek v3; camada **exploratória**. Auditoria do preprint §3.1 (N = 716, avaliador único): MAE 1,13, **pior que a linha de base de prever sempre "2" (MAE 0,97)**; o modelo só ordena os documentos, de forma fraca a moderada (Spearman 0,37, QWK 0,44, r = 0,48), com viés de +0,59 |
+| **SRSP** | Índice de registro sociolinguístico, **inteiro de 1 a 9** (nunca dividido por 10). Estimado pelo DeepSeek v3; camada **exploratória**. Auditoria do preprint §3.1 (N = 716, avaliador único): o modelo só ordena os documentos, de forma fraca a moderada (Spearman 0,37, QWK 0,44, r = 0,48), com viés de +0,59 |
 | **`doc_uid`** | Identificador estável de documento (ex.: `ahu-sul:d7f3a9c21e`), interno: não aparece na interface |
 | **`pessoa_uid`** | Identificador permanente de pessoa (ex.: `pes:4b81c02d`), também interno |
 
