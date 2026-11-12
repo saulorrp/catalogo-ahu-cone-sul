@@ -1,4 +1,4 @@
-# Catálogo AHU no servidor próprio (CasaOS ou qualquer Docker).
+# Catálogo AHU no servidor próprio (agiulfo, ou qualquer Docker).
 # Passo a passo em deploy/SERVIDOR.md. Uso: docker compose up -d
 name: catalogo-ahu
 
@@ -7,14 +7,22 @@ services:
     image: ghcr.io/saulorrp/catalogo-ahu:latest
     restart: unless-stopped
     ports:
-      - "8501:7860"            # na rede de casa: http://IP-DO-SERVIDOR:8501
+      # Só na própria máquina: o endereço público vem do Tailscale Funnel, que entrega
+      # https://<máquina>.<tailnet>.ts.net/ahu/ a este porto (deploy/SERVIDOR.md).
+      - "127.0.0.1:8502:7860"
     volumes:
-      - modelo:/home/usuario/.cache/ahu-onnx   # o modelo da busca semântica, baixado uma vez
+      - modelo:/home/usuario/.cache/ahu-onnx   # e5 e reranker, baixados uma vez
     environment:
       AHU_ONNX_CACHE: /home/usuario/.cache/ahu-onnx
+      # A versão completa: e5 em fp32 e o reranker relendo o topo (docs/plano_busca_servidor.md).
+      AHU_RERANKER: "1"
+      # O app mora em /ahu/ no endereço do Funnel, ao lado de outros sites da máquina.
+      # AHU_ROOT_PATH vale para a interface web (padrão); a outra, para AHU_FRONT=streamlit.
+      AHU_ROOT_PATH: /ahu
+      STREAMLIT_SERVER_BASE_URL_PATH: ahu
     labels:
       com.centurylinklabs.watchtower.enable: "true"
-    mem_limit: 3g
+    mem_limit: 4g
 
   # Confere a cada hora se o GitHub publicou uma imagem nova e reinicia o app com ela.
   watchtower:
@@ -23,15 +31,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --label-enable --cleanup --interval 3600
-
-  # Endereço público https sem abrir portas no roteador. Precisa do token do túnel criado
-  # no painel da Cloudflare (Zero Trust → Networks → Tunnels), num arquivo .env ao lado:
-  #   CF_TUNNEL_TOKEN=eyJ...
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    restart: unless-stopped
-    command: tunnel --no-autoupdate run --token ${CF_TUNNEL_TOKEN}
-    depends_on: [ app ]
 
 volumes:
   modelo:
