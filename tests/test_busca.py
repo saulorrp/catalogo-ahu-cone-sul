@@ -24,6 +24,41 @@ def test_as_tres_formas_da_cota_dao_a_mesma_chave():
     assert chaves == {"cu|21|6|390"}
 
 
+# Uma cota com subsérie e intervalo de documentos, nas formas em que aparece e é digitada.
+FORMAS_COM_SUBSERIE = [
+    "PT/AHU/CU/017-001/0057/13257",
+    "AHU_CU_017-01, Cx. 57, D. 13257-13259.",
+    "AHU_CU_017-01, Cx. 57, D. 13257",
+    "AHU_ACL_CU_017-01, Cx. 57, D. 13257.",
+    "ahu cu 017 01 cx 57 d 13257",
+]
+
+
+@pytest.mark.parametrize("forma", FORMAS_COM_SUBSERIE)
+def test_subserie_entra_na_chave(forma):
+    """`017-01`/`017-001` é outra série: antes a subsérie virava a caixa (`cu|17|1|57`)."""
+    assert busca.chave_cota(forma) == "cu|17-1|57|13257"
+
+
+def test_subserie_nao_colide_com_a_serie_comum():
+    assert busca.chave_cota("PT/AHU/CU/017/0057/13257") == "cu|17|57|13257"
+    assert busca.chave_cota("AHU_CU_023_01, Cx. 17, D. 1672") == "cu|23-1|17|1672"
+
+
+def test_intervalo_responde_por_cada_documento():
+    assert busca.chaves_do_campo("AHU_CU_017-01, Cx. 57, D. 13257-13259.") == [
+        "cu|17-1|57|13257", "cu|17-1|57|13258", "cu|17-1|57|13259"]
+
+
+def test_milhar_com_ponto():
+    assert busca.chave_cota("AHU_CU_005-01, Cx. 105, D. 20.367-20.369") == "cu|5-1|105|20367"
+
+
+def test_cota_antiga_com_varios_pares():
+    assert busca.chaves_do_campo("AHU-Rio de Janeiro, cx. 183, doc. 60; cx. 188, doc. 39.") == [
+        "reg|rio de janeiro|183|60", "reg|rio de janeiro|188|39"]
+
+
 def test_cota_antiga_com_regiao():
     assert busca.chave_cota("AHU-Santa Catarina, cx. 8, doc. 14") == "reg|santa catarina|8|14"
     assert busca.chave_cota("AHU-Rio de Janeiro, cx. 287, doc. 85.") == "reg|rio de janeiro|287|85"
@@ -123,6 +158,13 @@ def test_a3_as_formas_da_cota_devolvem_o_mesmo_documento_em_primeiro(corpus_busc
     assert r.total == 1
     assert r.resultados[0].posicoes == {"cota": 1}
     assert "obras do porto" in descricoes(corpus_busca, r)[0]
+
+
+@pytest.mark.parametrize("forma", FORMAS_COM_SUBSERIE + ["AHU_CU_017-01, Cx. 57, D. 13258"])
+def test_cota_com_subserie_e_intervalo_acha_o_documento(corpus_busca, forma):
+    r = busca.buscar(corpus_busca, forma, modo="exata")
+    assert r.total == 1
+    assert "demarcação de limites" in descricoes(corpus_busca, r)[0]
 
 
 def test_a3_consulta_17_nao_usa_a_rota_de_cotas(corpus_busca):
@@ -234,6 +276,36 @@ def test_a3_nos_dados_reais():
     r = busca.buscar(d, "17", modo="exata")
     assert r.cota is None
     assert all("cota" not in x.posicoes for x in r.resultados)
+
+
+@pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
+def test_toda_cota_da_base_acha_o_proprio_documento():
+    """Ida e volta: cada cota de cada documento, e a referência e o Resgate que o conversor
+    escreve a partir dela, levam de volta ao documento. Pega a classe inteira do bug da subsérie
+    (`PT/AHU/CU/017-001/0057/13257` sumia da busca)."""
+    from ahu import conversor
+
+    d = carregar_sem_cache(APP_DADOS)
+    tabela = busca.tabela_de_cotas(d)
+    falhas = []
+    for coluna in ("reference_code", "new_code", "old_code"):
+        for i, valor in enumerate(d.documentos[coluna]):
+            if not isinstance(valor, str):
+                continue
+            formas = [valor]
+            cota = conversor.reconhecer(valor) if coluna == "reference_code" else None
+            # Seis dígitos no documento são erro de catálogo (ver conversor._RE_REFERENCIA).
+            if cota and cota.documento < 100000:
+                formas += [conversor.para_resgate(cota), conversor.para_referencia(cota)]
+            for forma in formas:
+                chave = busca.chave_cota(forma)
+                if chave is not None and i not in tabela.get(chave, []):
+                    falhas.append((coluna, valor, forma, chave))
+    assert not falhas, falhas[:10]
+
+    r = busca.buscar(d, "PT/AHU/CU/017-001/0057/13257", modo="exata")
+    assert r.total == 1
+    assert "Francisco Pinto Bandeira" in str(d.documentos.iloc[r.resultados[0].linha]["description"])
 
 
 @pytest.mark.skipif(not tem_artefatos, reason="app_dados/ ainda não construído")
