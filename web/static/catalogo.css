@@ -444,6 +444,9 @@ textarea { width: 100%; font-family: var(--mono); margin-bottom: 8px; }
 .linha-do-tempo .titulo-eixo { fill: var(--txt-muted); }
 .linha-do-tempo figcaption { margin: 8px 0; color: var(--txt-secondary); font-size: 0.88rem; }
 
+/* Rodapé: o crédito que a LICENSE-DATA.md pede a quem hospeda o catálogo. */
+.rodape { max-width: 1480px; margin: 24px auto 0; padding: 16px 24px 28px; border-top: 1px solid var(--border); color: var(--txt-muted); font-size: 0.8rem; }
+
 /* ---------- Telas estreitas ---------- */
 
 @media (max-width: 1180px) {

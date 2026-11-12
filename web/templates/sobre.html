@@ -58,6 +58,8 @@
     <li><strong>Sentido (semântica).</strong> Compara o significado da consulta com o de cada resumo, com o modelo multilíngue <code>multilingual-e5-small</code>. Acha documentos que tratam do assunto com outras palavras. O <strong>rigor</strong> define até onde, abaixo do documento mais próximo, um resultado ainda entra.</li>
 </ul>
 
+<p>No servidor próprio há um quarto passo: um <strong>reranker</strong> (o cross-encoder multilíngue <code>mmarco-mMiniLMv2-L12</code>) lê a consulta e cada um dos 30 primeiros resumos <em>juntos</em> e reordena esse topo. Por isso a lista aparece primeiro e, um instante depois, a ordem do topo pode mudar. Ele não tira nem acrescenta documentos, e não entra no modo <em>Exata</em> nem na ordenação por ano.</p>
+
 <h3 id="camadas">3. A coleção AHU-Sul e as camadas de análise</h3>
 <p>A <strong>ahu-sul</strong> reúne os documentos do AHU sobre o Sul do Brasil e a região do Prata (Rio Grande, Santa Catarina, Colônia do Sacramento, Montevidéu, Buenos Aires, e os papéis do Rio de Janeiro e de São Paulo sobre o Sul). Sobre o resumo do catálogo, ela tem camadas que o resto do banco não tem:</p>
 <ul>
@@ -69,7 +71,8 @@
 
 <p>Método completo: Rocha, S. R. P. <em>Desenvolvimento de um Classificador do Catálogo do AHU…</em> SciELO Preprints, 2026. <a href="https://doi.org/10.1590/SciELOPreprints.16461" target="_blank">doi:10.1590/SciELOPreprints.16461</a>.</p>
 
-<h3>Licença</h3>
-<p>Código: MIT. Dados derivados: CC BY 4.0 (provisório). Resumos e cotas: AHU e Projeto Resgate "Barão do Rio Branco".</p>
+<h3 id="licenca">Licença e crédito</h3>
+<p>Cada camada tem a sua licença (<a href="https://github.com/saulorrp/catalogo-ahu-cone-sul/blob/main/LICENSE-DATA.md" target="_blank" rel="noopener">LICENSE-DATA.md</a>). Código: MIT. Cotas, datas e outros fatos: CC0. Camadas próprias (tipologia, pessoas, biografias, SRSP): CC BY 4.0. Os <strong>resumos</strong> são do catálogo do AHU publicado no ACTD e ficam fora da licença aberta: uso livre só para fins pessoais, educativos e de investigação, com crédito. Os textos do Projeto Resgate seguem a licença do portal gov.br (CC BY-ND 3.0).</p>
+<p>Dados derivados: Rocha, S. R. P. <em>Catálogo AHU-Brasil</em> (2026), doi:10.5281/zenodo.18772666, CC BY 4.0. Catálogo de origem: Arquivo Histórico Ultramarino (Lisboa), catálogos publicados no Arquivo Científico Tropical Digital (ACTD/IICT), e Projeto Resgate "Barão do Rio Branco" (Biblioteca Nacional / Ministério da Cultura).</p>
 </div>
 {% endblock %}
