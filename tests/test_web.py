@@ -210,3 +210,16 @@ def test_amostras_plano_erro(client):
     # Sem pessoa_uid válido
     resp = client.get("/amostras/plano?tipo=diacronica&pessoa_uid=invalido")
     assert resp.status_code == 400
+
+
+def test_campos_vazios_do_formulario_nao_zeram_a_consulta():
+    """O formulário manda a1=&a2=&fu=…; vazio é "sem filtro", não um link inválido."""
+    from starlette.requests import Request
+
+    from web.core import parse_consulta
+
+    qs = (b"v=2&q=domingos%20Brito%20Peixoto&m=automatico&r=medio&a1=&a2=&sd=1&fu=&fd="
+          b"&s1=&s2=&o=relevancia")
+    consulta = parse_consulta(Request({"type": "http", "query_string": qs, "headers": []}))
+    assert consulta.texto == "domingos Brito Peixoto"
+    assert consulta.filtros.ano_de is None
