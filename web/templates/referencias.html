@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Referências - Catálogo AHU{% endblock %}
+{% block content %}
+<h1>Referências</h1>
+
+<h3>Arquivo Histórico Ultramarino (AHU)</h3>
+<p>Arquivo em Lisboa, criado em 1931, que guarda a documentação da administração ultramarina portuguesa. O núcleo usado aqui é o fundo do <strong>Conselho Ultramarino</strong> (1642–1833), o órgão que despachava os assuntos das colônias: requerimentos, ofícios, consultas, cartas de governadores e de câmaras. Os documentos avulsos estão organizados por <strong>série</strong> (em geral, uma capitania), <strong>caixa</strong> e <strong>documento</strong>, e é isso que a cota registra. Hoje o AHU faz parte da Direção-Geral do Livro, dos Arquivos e das Bibliotecas (DGLAB).</p>
+<ul>
+    <li>Site do AHU: <a href="https://ahu.dglab.gov.pt/" target="_blank">https://ahu.dglab.gov.pt/</a></li>
+    <li>Catálogo do AHU no DigitArq, onde se busca pelo código de referência (<code>PT/AHU/CU/…</code>): <a href="https://digitarq.ahu.arquivos.pt/" target="_blank">https://digitarq.ahu.arquivos.pt/</a></li>
+</ul>
+
+<h3>Catálogos do AHU no ACTD</h3>
+<p>O <strong>Arquivo Científico Tropical Digital</strong> (ACTD), do antigo Instituto de Investigação Científica Tropical (IICT, hoje Universidade de Lisboa), publica os catálogos dos documentos avulsos do Conselho Ultramarino, série por série, em PDF com texto. É a <strong>fonte principal</strong> dos resumos e das cotas da coleção ahu-brasil.</p>
+<ul>
+    <li>ACTD: <a href="https://actd.iict.pt/" target="_blank">https://actd.iict.pt/</a></li>
+    <li>Ficha de uma série: <code>https://actd.iict.pt/view/actd:CUc&lt;série&gt;</code> (ex.: <code>actd:CUc015</code>, Pernambuco)</li>
+</ul>
+
+<h3>Projeto Resgate "Barão do Rio Branco"</h3>
+<p>Projeto brasileiro, criado nos anos 1990, que localizou, catalogou e <strong>microfilmou</strong> a documentação sobre o Brasil colonial guardada em arquivos estrangeiros, sobretudo no AHU. Os catálogos, um por capitania, dão a cada documento a cota <code>AHU_ACL_CU_…</code>, usada neste app. As imagens dos microfilmes foram digitalizadas e estão na internet.</p>
+<ul>
+    <li>Página do projeto: <a href="https://www.gov.br/bn/pt-br/central-de-conteudos/projeto-resgate" target="_blank">https://www.gov.br/bn/pt-br/central-de-conteudos/projeto-resgate</a></li>
+    <li><strong>Documentos digitalizados (microfilmes):</strong> <a href="https://resgate.bn.gov.br/docreader/docmulti.aspx?bib=resgate" target="_blank">https://resgate.bn.gov.br/docreader/docmulti.aspx?bib=resgate</a>. O servidor costuma recusar acessos de fora do Brasil.</li>
+</ul>
+
+<h3>Biblioteca Nacional (BN)</h3>
+<p>A Fundação Biblioteca Nacional, no Rio de Janeiro, mantém o portal do Projeto Resgate e as imagens digitalizadas. Na sua Hemeroteca Digital estão os <em>Anais da Biblioteca Nacional</em>, onde saiu o inventário de Castro e Almeida dos documentos sobre o Brasil no antigo Arquivo de Marinha e Ultramar, base das séries "Castro e Almeida" da Bahia e do Rio de Janeiro.</p>
+<ul>
+    <li>Biblioteca Nacional: <a href="https://www.gov.br/bn/pt-br" target="_blank">https://www.gov.br/bn/pt-br</a></li>
+    <li>BN Digital: <a href="https://bndigital.bn.gov.br/" target="_blank">https://bndigital.bn.gov.br/</a></li>
+    <li>Hemeroteca Digital: <a href="https://memoria.bn.gov.br/" target="_blank">https://memoria.bn.gov.br/</a></li>
+</ul>
+
+<h3>As três formas de cota</h3>
+<ul>
+    <li><strong>Cota do Resgate:</strong> <code>AHU_ACL_CU_017, Cx. 69, D. 6420</code>. Série 017 (Rio de Janeiro), caixa 69, documento 6420.</li>
+    <li><strong>Código de referência:</strong> <code>PT/AHU/CU/017/0069/06420</code>. O mesmo documento, no padrão do DigitArq.</li>
+    <li><strong>Cota antiga:</strong> <code>AHU-Rio de Janeiro, cx. 76, doc. 41</code>. A numeração anterior ao Resgate, que aparece em trabalhos mais antigos. Só se converte pela base, porque a numeração mudou.</li>
+</ul>
+
+<h3>Este projeto</h3>
+<ul>
+    <li>Rocha, S. R. P. <em>Desenvolvimento de um Classificador do Catálogo do AHU…</em> SciELO Preprints, 2026. <a href="https://doi.org/10.1590/SciELOPreprints.16461" target="_blank">https://doi.org/10.1590/SciELOPreprints.16461</a></li>
+    <li>Código e dados: <a href="https://github.com/saulorrp/catalogo-ahu-cone-sul" target="_blank">https://github.com/saulorrp/catalogo-ahu-cone-sul</a></li>
+    <li>Método de coleta, transcrição e cura das cotas: <a href="https://github.com/saulorrp/catalogo-ahu-cone-sul/blob/main/docs/METODO_COLETA.md" target="_blank">https://github.com/saulorrp/catalogo-ahu-cone-sul/blob/main/docs/METODO_COLETA.md</a></li>
+</ul>
+{% endblock %}

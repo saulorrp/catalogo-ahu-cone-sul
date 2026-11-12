@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Catálogo AHU-Brasil{% endblock %}</title>
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', path='catalogo.css') }}">
+    <script src="{{ url_for('static', path='htmx.min.js') }}" defer></script>
+    <script src="{{ url_for('static', path='catalogo.js') }}" defer></script>
+</head>
+<body>
+    <div class="layout">
+        <aside class="rail" id="main-rail">
+            <div class="logo-container" style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="logo">❧ AHU-Brasil</div>
+                <button class="menu-toggle" onclick="document.getElementById('main-rail').classList.toggle('open')" aria-label="Menu">☰</button>
+            </div>
+            <nav>
+                <a href="{{ url_for('busca') }}">Busca</a>
+                <a href="{{ url_for('pessoas') }}">Pessoas</a>
+                <a href="{{ url_for('amostras') }}">Amostras</a>
+                <a href="{{ url_for('painel') }}">Painel</a>
+                <a href="{{ url_for('conversor') }}">Conversor</a>
+                <a href="{{ url_for('selecao') }}">Seleção</a>
+                <a href="{{ url_for('sobre') }}">Sobre</a>
+            </nav>
+        </aside>
+        <main class="content">
+            {% block content %}
+            {{ conteudo }}
+            {% endblock %}
+        </main>
+    </div>
+</body>
+</html>

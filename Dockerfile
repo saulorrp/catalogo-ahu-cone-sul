@@ -18,5 +18,6 @@ ENV AHU_ONNX_CACHE=/home/usuario/.cache/ahu-onnx \
     STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
 EXPOSE 7860
-CMD ["streamlit", "run", "app.py", "--server.port=7860", "--server.address=0.0.0.0", \
-     "--server.headless=true", "--server.enableXsrfProtection=false"]
+# AHU_FRONT=web (padrão): FastAPI + HTMX (web/); AHU_FRONT=streamlit: o app.py de antes.
+ENV AHU_FRONT=web
+CMD ["sh", "deploy/iniciar.sh"]

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Pessoas - Catálogo AHU{% endblock %}
+{% block content %}
+<h1>Pessoas</h1>
+<form method="get" action="{{ url_for('pessoas') }}" class="filtros-form">
+    <label><input type="radio" name="tipo" value="pessoas" {% if tipo == 'pessoas' %}checked{% endif %} onchange="this.form.submit()"> Pessoas</label>
+    <label><input type="radio" name="tipo" value="coletivos" {% if tipo == 'coletivos' %}checked{% endif %} onchange="this.form.submit()"> Coletivos e instituições</label>
+    <br>
+    <input type="text" name="q" value="{{ q }}" placeholder="Nome, variante ou título">
+    <select name="ordem">
+        <option value="documentos" {% if ordem == 'documentos' %}selected{% endif %}>Nº de documentos</option>
+        <option value="nome" {% if ordem == 'nome' %}selected{% endif %}>Nome</option>
+        <option value="inicio" {% if ordem == 'inicio' %}selected{% endif %}>Início da atividade</option>
+        <option value="fim" {% if ordem == 'fim' %}selected{% endif %}>Fim da atividade</option>
+    </select>
+    <button type="submit">Filtrar</button>
+</form>
+
+<p>{{ lista|length }} resultados</p>
+
+<table class="tabela-resultados">
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Nº de documentos</th>
+            <th>Período</th>
+            {% if tipo == 'pessoas' %}
+            <th>Nascimento</th>
+            <th>Confiança</th>
+            {% else %}
+            <th>Tipo</th>
+            <th>Outras grafias</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in lista %}
+        <tr>
+            <td>
+                {% if tipo == 'pessoas' and item.pessoa_uid %}
+                <a href="{{ url_for('pessoa', pessoa_uid=item.pessoa_uid) }}">{{ item.nome }}</a>
+                {% else %}
+                {{ item.nome }}
+                {% endif %}
+            </td>
+            <td>{{ item.n_documentos }}</td>
+            <td>{{ item.periodo }}</td>
+            {% if tipo == 'pessoas' %}
+            <td>{{ item.nascimento or '—' }}</td>
+            <td>{{ item.nivel or '—' }}</td>
+            {% else %}
+            <td>{{ 'Instituição' if item.tipo == 'instituicao' else 'Coletivo' }}</td>
+            <td>{{ item.grafias|join('; ') or '—' }}</td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

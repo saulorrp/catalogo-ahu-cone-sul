@@ -1,0 +1,24 @@
+{% for r, f in fichas %}
+<div class="resultado-card">
+    <div class="resultado-header">
+        <span class="ano-destaque">{{ f.ano or 'S/D' }}</span>
+        <span class="cota">{{ f.cotas.get('Código de referência', f.cotas.get('Código atual', f.cotas.get('Código antigo', ''))) }}</span>
+    </div>
+    <div class="resumo">{{ f.resumo_marcado | marcas | safe }}</div>
+    <div class="resultado-meta">
+        {% set remetentes = f.pessoas | selectattr("tipo", "equalto", "remetente") | map(attribute="nome") | list %}
+        {% set destinatarios = f.pessoas | selectattr("tipo", "equalto", "destinatario") | map(attribute="nome") | list %}
+        {% if remetentes or destinatarios %}
+        <div class="remetente-destinatario">
+            {{ remetentes | join(', ') if remetentes else '?' }} ➔ {{ destinatarios | join(', ') if destinatarios else '?' }}
+        </div>
+        {% endif %}
+    </div>
+    <div class="resultado-acoes">
+        <a href="{{ url_for('doc', doc_uid=f.doc_uid) }}" class="btn">Ver ficha completa</a>
+        <button type="button" hx-post="{{ url_for('adicionar_selecao', doc_uid=f.doc_uid) }}" hx-swap="none" class="btn">Pôr na seleção</button>
+    </div>
+</div>
+{% else %}
+<div class="aviso">Nenhum documento encontrado.</div>
+{% endfor %}

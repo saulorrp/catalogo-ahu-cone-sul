@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ pagina.pessoa.nome }} - Catálogo AHU{% endblock %}
+{% block content %}
+<a href="{{ url_for('pessoas') }}">← Voltar à lista</a>
+<h1>{{ pagina.pessoa.nome }}</h1>
+<p><span class="rotulo">{{ pagina.pessoa.n_documentos }} documento(s) · atividade <span class="numero">{{ pagina.pessoa.periodo }}</span></span></p>
+
+{% if pagina.pessoa.titulos %}<p><strong>Títulos:</strong> {{ pagina.pessoa.titulos|join(' · ') }}</p>{% endif %}
+{% if pagina.pessoa.cargos %}<p><strong>Cargos:</strong> {{ pagina.pessoa.cargos|join(' · ') }}</p>{% endif %}
+{% if pagina.pessoa.variantes %}<p><strong>Variantes do nome:</strong> {{ pagina.pessoa.variantes|join(' · ') }}</p>{% endif %}
+
+{% if pagina.pessoa.exibe_nascimento %}
+<p><strong>Nascimento:</strong> {{ pagina.pessoa.nascimento or '—' }} · confiança {{ pagina.pessoa.nivel }}
+{% if pagina.pessoa.pais_epoca %} · à época: {{ pagina.pessoa.pais_epoca }}{% endif %}
+{% if pagina.pessoa.origem_do_dado %} · origem do dado: {{ pagina.pessoa.origem_do_dado }}{% endif %}
+{% if pagina.pessoa.fonte %} · <a href="{{ pagina.pessoa.fonte }}" target="_blank">fonte</a>{% endif %}
+</p>
+{% elif pagina.pessoa.rotulo %}
+<p><strong>Nascimento:</strong> {{ pagina.pessoa.rotulo }}</p>
+{% endif %}
+
+<div class="doc-actions">
+    <a href="{{ pagina.url_documentos }}" class="btn">Ver documentos</a>
+    <a href="{{ url_for('amostras') }}?tipo=diacronica&pessoa_uid={{ pagina.pessoa.pessoa_uid }}" class="btn">Gerar amostra diacrônica</a>
+    <a href="{{ pagina.url_issue }}" target="_blank" class="btn">Reportar erro</a>
+</div>
+
+<h3>Linha do tempo</h3>
+{% if pagina.linha_do_tempo.empty %}
+<p>Nenhum documento com data.</p>
+{% else %}
+<table class="tabela-resultados">
+    <tr><th>Ano</th><th>Documentos</th></tr>
+    {% for row in pagina.linha_do_tempo.itertuples() %}
+    <tr><td>{{ row.ano }}</td><td>{{ row.documentos }}</td></tr>
+    {% endfor %}
+</table>
+{% endif %}
+{% if pagina.sem_data %}<p>{{ pagina.sem_data }} documento(s) sem data.</p>{% endif %}
+
+<div style="display: flex; gap: 20px;">
+    <div>
+        <h3>Tipologias</h3>
+        <table class="tabela-resultados">
+            <tr><th>Tipologia</th><th>Documentos</th></tr>
+            {% for t, c in pagina.tipologias %}
+            <tr><td>{{ t }}</td><td>{{ c }}</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+    <div>
+        <h3>Destinatários</h3>
+        <table class="tabela-resultados">
+            <tr><th>Destinatário</th><th>Documentos</th></tr>
+            {% for d, c in pagina.destinatarios %}
+            <tr><td>{{ d }}</td><td>{{ c }}</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<h3>Documentos em ordem cronológica</h3>
+<table class="tabela-resultados">
+    <tr><th>Ano</th><th>Tipologia</th><th>Destinatário</th><th>Autoria verificada</th></tr>
+    {% for row in pagina.documentos.itertuples() %}
+    <tr>
+        <td>{{ row.ano if not row.ano != row.ano else '—' }}</td>
+        <td>{{ row.tipologia if row.tipologia else '—' }}</td>
+        <td>{{ row.destinatario if row.destinatario else '—' }}</td>
+        <td>{{ 'Sim' if row.autoria_verificada else 'Não' }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
