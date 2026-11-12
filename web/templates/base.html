@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Catálogo AHU-Brasil{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', path='icone.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ url_for('static', path='icone-escuro.svg') }}" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="icon" href="{{ url_for('static', path='icone-32.png') }}" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="{{ url_for('static', path='apple-touch-icon.png') }}">
+    <script>try { var t = localStorage.getItem('ahu-tema'); if (t) document.documentElement.dataset.tema = t; } catch (e) {}</script>
     {% block head %}{% endblock %}
     <link rel="stylesheet" href="{{ url_for('static', path='catalogo.css') }}">
     <script src="{{ url_for('static', path='htmx.min.js') }}" defer></script>
@@ -15,7 +20,7 @@
 <body data-url-sugerir="{{ url_for('api_sugerir') }}">
     <div id="carregando" class="barra-carregando" aria-hidden="true"></div>
     <header class="topo">
-        <a class="marca" href="{{ url_for('busca') }}"><span class="fleurao">❧</span> Catálogo AHU-Brasil</a>
+        <a class="marca" href="{{ url_for('busca') }}"><span class="fleurao" aria-hidden="true">❦</span> Catálogo AHU-Brasil</a>
         <nav class="abas" aria-label="Seções">
             <a href="{{ url_for('busca') }}" class="aba {% if aba == 'busca' %}atual{% endif %}" {% if aba == 'busca' %}aria-current="page"{% endif %}>Busca</a>
             <a href="{{ url_for('selecao') }}" class="aba {% if aba == 'selecao' %}atual{% endif %}" {% if aba == 'selecao' %}aria-current="page"{% endif %}>Seleção {% include "_conta_aba.html" %}</a>
@@ -25,6 +30,14 @@
             <a href="{{ url_for('conversor') }}" class="aba {% if aba == 'conversor' %}atual{% endif %}" {% if aba == 'conversor' %}aria-current="page"{% endif %}>Conversor</a>
             <a href="{{ url_for('sobre') }}" class="aba {% if aba == 'sobre' %}atual{% endif %}" {% if aba == 'sobre' %}aria-current="page"{% endif %}>Sobre</a>
         </nav>
+        <label class="tema">Tema
+            <select id="escolha-tema" aria-label="Tema da página">
+                <option value="">Automático</option>
+                <option value="papel">Papel</option>
+                <option value="branco">Branco</option>
+                <option value="escuro">Escuro</option>
+            </select>
+        </label>
     </header>
     <main class="conteudo {% block classe_conteudo %}{% endblock %}">
         {% block content %}{% endblock %}
