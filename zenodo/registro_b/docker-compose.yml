@@ -1,0 +1,22 @@
+# Catálogo AHU - Docker Compose (Registro B)
+name: catalogo-ahu
+
+services:
+  app:
+    image: ghcr.io/saulorrp/catalogo-ahu:latest
+    restart: unless-stopped
+    ports:
+      - "8080:7860"
+    volumes:
+      - modelos:/home/usuario/.cache/ahu-onnx
+    environment:
+      AHU_ONNX_CACHE: /home/usuario/.cache/ahu-onnx
+      AHU_FRONT: web
+      # Perfil leve por padrao: sem reranker. Altere para "1" no perfil completo.
+      AHU_RERANKER: "0"
+      # AHU_ROOT_PATH: /ahu
+      # AHU_LOG_DIR: /home/usuario/logs
+    mem_limit: 3g
+
+volumes:
+  modelos:
