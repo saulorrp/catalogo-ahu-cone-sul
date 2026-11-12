@@ -14,7 +14,10 @@ Este plano é o contrato para quem implementa (o agy). Leia antes `AGENTS.md` e 
 - O **Streamlit (`app.py`) continua** como está: é a versão leve do Streamlit Cloud e o plano B.
   Não apague nem quebre nada dele.
 - Servidor: `uvicorn web.main:app`. Prefixo configurável por `AHU_ROOT_PATH` (no agiulfo o site
-  fica em `/ahu/` atrás do Tailscale Funnel); todos os links usam `url_for`/`request.scope["root_path"]`.
+  fica em `/ahu/` atrás do Tailscale Funnel). **O Funnel NÃO remove o prefixo**: a requisição
+  chega como `/ahu/doc/...`. Logo, com `AHU_ROOT_PATH=/ahu` o app deve de fato **servir sob /ahu**
+  (montar as rotas e o `/static` sob o prefixo, p. ex. `APIRouter(prefix=...)` ou um app pai que
+  faz `mount("/ahu", app)`), e todos os links usam `url_for`. Testar com TestClient pedindo `/ahu/`.
 - Dependências novas, fixadas (R2): `fastapi`, `uvicorn[standard]`, `jinja2`, `python-multipart`.
   Para testes: `httpx` em requirements-dev.
 
@@ -74,7 +77,11 @@ grupo "Inferências (DeepSeek)" fechado por padrão, com o "saiba mais" atual.
 ## Desempenho
 - Carregar `Dados` uma vez no início (lifespan do FastAPI); encoder semântico carregado preguiçoso
   como hoje (`encoder_preguicoso` em app.py: extrair para `ahu/` se preciso). Respeitar
-  `AHU_SEM_SEMANTICA` e o reranker do outro ramo (`AHU_RERANKER`) se existir em `ahu/`.
+  `AHU_SEM_SEMANTICA`. Reranker (PR da frente de hospedagem, pode ainda não estar no main):
+  `ahu/reranker.py`, `ligado()` lê `AHU_RERANKER`, `criar_reranker()` devolve
+  `reranker(consulta, textos) -> notas`; criar **um por processo** (cache) e passar a
+  `consulta.executar(..., reranker=rr)`. Importar com `try/except ImportError` e só passar o
+  argumento se o módulo existir, para funcionar antes e depois do merge.
 - Meta: página de busca < 1 s no agiulfo para consulta léxica.
 
 ## Container
