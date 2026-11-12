@@ -139,8 +139,8 @@ def test_resgate_com_quadro_abre_a_imagem_do_documento():
 
     doc = {"new_code": "AHU_ACL_CU_021, Cx. 1, D. 4.", "resgate_docreader": "021_SC#37"}
     destino = links.do_documento(doc)
-    assert destino["resgate"] == ("https://resgate.bn.br/docreader/DocReader.aspx"
-                                  "?bib=021_SC&pagfis=37")
+    assert destino["resgate"] == ("https://resgate.bn.gov.br/docreader/DocReader.aspx"
+                                  "?bib=021_SC&hf=resgate.bn.gov.br&pagfis=37")
     assert destino["resgate_rotulo"] == "Imagem no Projeto Resgate"
 
 

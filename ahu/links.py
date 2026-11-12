@@ -33,7 +33,11 @@ from urllib.parse import quote, urlencode
 
 DIGITARQ = "https://digitarq.arquivos.pt/search?query={cota}&isAdvancedSearch=false"
 RESGATE = "https://resgate.bn.gov.br/"
-DOCREADER = "https://resgate.bn.br/docreader/DocReader.aspx?bib={bib}&pagfis={pagfis}"
+# O domínio antigo (resgate.bn.br, que as páginas de verbetes do gov.br ainda usam) hoje resolve
+# num servidor de redirecionamento da BN (redirect-bn-br.bn.br), e o link não abria. O portal já
+# está em resgate.bn.gov.br; o `hf` diz ao DocReader em que host ele está, como nas páginas do gov.br.
+DOCREADER = ("https://resgate.bn.gov.br/docreader/DocReader.aspx"
+             "?bib={bib}&hf=resgate.bn.gov.br&pagfis={pagfis}")
 
 
 def limpar_cota(texto) -> str:
