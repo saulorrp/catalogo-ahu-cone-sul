@@ -34,7 +34,14 @@ Precisa de: Docker, ~3 GB de RAM livres para o app, ~2 GB de disco.
 
     cd ~/catalogo-ahu && sudo docker compose up -d
 
-Para conferir: `curl -s https://agiulfo.tailc278e6.ts.net/ahu/_stcore/health` responde `ok`.
+Para conferir: `curl -s https://agiulfo.tailc278e6.ts.net/ahu/saude` responde
+`{"status":"ok",…}` com o número de documentos. (Com `AHU_FRONT=streamlit`, o endereço é
+`/ahu/_stcore/health`, que responde `ok`.)
+
+Ao subir, o app carrega os modelos e faz uma busca de aquecimento em segundo plano, para a
+primeira pessoa não pagar a carga (`AHU_SEM_AQUECIMENTO=1` desliga). `AHU_RERANKER_TOPO`
+(padrão 30) e `AHU_RERANKER_TOKENS` (padrão 192) ajustam o reranker sem mexer no código; as
+medidas estão em `docs/plano_busca_servidor.md`.
 
 ## Tirar do ar
 

@@ -46,13 +46,20 @@ app.
 
 ## O que o app faz
 
+No ar em **<https://agiulfo.tailc278e6.ts.net/ahu/>** (servidor próprio, versão completa). A
+versão leve, sem reranker e com a interface antiga em Streamlit, segue em
+<https://catalogo-ahu-sul.streamlit.app>.
+
 - **Busca híbrida**: rota de cotas (as três formas do catálogo levam ao mesmo documento), BM25 por
-  campos e busca semântica com `multilingual-e5-small`, fundidas por posição.
+  campos e busca semântica com `multilingual-e5-small`, fundidas por posição. No servidor, um
+  reranker (cross-encoder mMiniLM) relê os 30 primeiros; a lista aparece antes e se reordena
+  quando ele termina.
 - **Filtros**: período, pasta, tipologia, pessoa, destinatário, e os do DeepSeek (categoria social,
   vetor, SRSP), que começam desligados.
 - **Pessoas**: lista de pessoas e lista separada de coletivos e instituições, página da pessoa com
   linha do tempo, tipologias e destinatários, e um painel diatópico por país de nascimento.
-- **Seleção** que atravessa buscas e sobrevive a um recarregamento (ela viaja na URL).
+- **Seleção** que atravessa buscas e sobrevive a um recarregamento: na interface web, uma gaveta ao
+  lado dos resultados, guardada num cookie do navegador; no Streamlit, na URL.
 - **Conversor de cotas**: código de referência (`PT/AHU/CU/…`), cota do Resgate (`AHU_ACL_CU_…`)
   e cota antiga (`AHU-<região>, cx., doc.`) convertidos entre si, também para cotas de fora do
   catálogo. A cota antiga só se converte pela base, salvo Castro e Almeida e Mendes Gouveia, que
@@ -68,11 +75,13 @@ Python 3.11 (3.12 também funciona).
 
 ```
 pip install -r requirements.txt
-python -m streamlit run app.py
+python -m uvicorn web.main:app --port 8000      # interface web (FastAPI + HTMX)
+python -m streamlit run app.py                  # ou a interface antiga, em Streamlit
 ```
 
-O app abre em <http://localhost:8501>. Ele lê só a pasta `app_dados/`, que já vem no repositório —
-não é preciso reconstruir nada para usá-lo.
+A interface web abre em <http://localhost:8000> e a do Streamlit em <http://localhost:8501>. As
+duas leem só a pasta `app_dados/`, que já vem no repositório: não é preciso reconstruir nada para
+usá-las. O reranker liga com `AHU_RERANKER=1`; sem ele, a busca é a híbrida.
 
 Para reconstruir o corpus a partir das camadas, e para os detalhes de manutenção, veja
 [`AGENTS.md`](AGENTS.md) e [`docs/HANDOFF.md`](docs/HANDOFF.md).

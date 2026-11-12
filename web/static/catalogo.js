@@ -107,6 +107,21 @@
         }, 250);
     });
 
+    // Tema: automático (segue o sistema), papel, branco ou escuro. Guardado neste navegador.
+    document.addEventListener('DOMContentLoaded', function () {
+        const escolha = document.getElementById('escolha-tema');
+        if (!escolha) return;
+        escolha.value = document.documentElement.dataset.tema || '';
+        escolha.addEventListener('change', function () {
+            if (escolha.value) document.documentElement.dataset.tema = escolha.value;
+            else delete document.documentElement.dataset.tema;
+            try {
+                if (escolha.value) localStorage.setItem('ahu-tema', escolha.value);
+                else localStorage.removeItem('ahu-tema');
+            } catch (_) { /* sem armazenamento: vale só nesta página */ }
+        });
+    });
+
     // A gaveta da seleção lembra, nesta aba do navegador, se a pessoa a fechou ou abriu.
     const CHAVE = 'ahu-gaveta-selecao';
     function lembrar() { try { return sessionStorage.getItem(CHAVE); } catch (_) { return null; } }

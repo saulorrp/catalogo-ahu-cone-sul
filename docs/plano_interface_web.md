@@ -50,6 +50,26 @@ Este plano é o contrato para quem implementa (o agy). Leia antes `AGENTS.md` e 
 Busca enriquecida (DeepSeek) deixa de ser uma "seção" separada: os filtros enriquecidos ficam num
 grupo "Inferências (DeepSeek)" fechado por padrão, com o "saiba mais" atual.
 
+## Estado depois do redesenho (PR #28, 12/11/2026)
+
+O plano abaixo foi feito pelo Gemini (PR #20) e revisto no PR #28. Onde o código diverge do plano,
+vale o código:
+
+- **Navegação**: abas no topo, como as de um navegador, no lugar da coluna lateral. A aba Seleção
+  mostra quantos documentos há nela. Referências virou uma subaba de Sobre.
+- **Seleção**: gaveta própria ao lado dos resultados da busca (`_gaveta_selecao.html`), botão
+  "Pôr na seleção" / "Na seleção" em cada resultado e na ficha. Guardada no cookie `selecao`
+  (o mesmo espelho curto de `Selecao.para_url`); passado o teto, o documento novo não entra e a
+  interface avisa. Sem CSV (D7).
+- **Período**: o histograma grande saiu de cima da lista. Ficou uma miniatura por década dentro
+  do filtro de período, que filtra pela década clicada. A linha do tempo do catálogo inteiro,
+  legível e com os números, está na aba Sobre.
+- **Busca em dois tempos** (`web/cache.py`): a fusão responde primeiro e o reranker reordena num
+  segundo pedido; respostas e notas de pares ficam em memória. Ver `docs/plano_busca_servidor.md`.
+- **Visual**: acento único bordô `#800000` nos dois temas, tokens em `web/static/catalogo.css`.
+- Pendentes do plano: paginação numerada (há "Carregar mais"), ordenação por cota, `j`/`k`, posição
+  clicada no registro de buscas, capturas em `docs/capturas/web_*.png`.
+
 ## Melhorias pedidas (parecer do consultor, 12/11/2026)
 1. **Filtro por período** (ano de / até, com "incluir sem data") sempre visível, com histograma
    de anos dos resultados acima da lista (clicar numa barra filtra a década).

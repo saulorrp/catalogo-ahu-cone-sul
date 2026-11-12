@@ -3,7 +3,7 @@
 **Leia este arquivo primeiro.** Ele existe para que outro agente de código — sem acesso à conversa
 que produziu este repositório — consiga continuar o trabalho só com o que está aqui dentro.
 
-Última atualização: **20/10/2026**.
+Última atualização: **12/11/2026**.
 
 > **Regra de manutenção:** este arquivo é atualizado **no mesmo commit** da mudança que ele
 > descreve, nunca num commit à parte. Um HANDOFF desatualizado é pior que nenhum.
@@ -11,6 +11,12 @@ que produziu este repositório — consiga continuar o trabalho só com o que es
 ---
 
 ## 1. Estado atual, em um parágrafo
+
+> **12/11/2026.** O banco tem **167.344 documentos** (ahu-sul + ahu-brasil). A versão completa roda
+> no servidor próprio (agiulfo) em <https://agiulfo.tailc278e6.ts.net/ahu/>, com a interface web
+> em `web/` (FastAPI + Jinja2 + HTMX), e5-small e reranker, atualizada sozinha a partir do `main`
+> (`deploy/SERVIDOR.md`). O Streamlit (`app.py`) continua como versão leve no Streamlit Cloud. O
+> parágrafo abaixo descreve o estado de 20/10 e vale para o Streamlit.
 
 O app v3.0.0 está **publicado no GitHub** (branches `main` e `v3` sincronizados no commit `e906922`),
 com deploy automático ativo no Streamlit Community Cloud (`catalogo-ahu-sul.streamlit.app`).
@@ -64,6 +70,8 @@ Datas em 2026. "Verificado por" nomeia o teste ou a medição, não a impressão
 | 11/10 | `e906922` | **WP 0.3 & F4**: busca v2 de referência (`avaliacao/busca_v2.py`), 30 consultas de ouro, métricas de avaliação (`avaliar_busca.py`), ferramenta cega de julgamento (`julgar.py`), CI (`.github/workflows/ci.yml`) e versão 3.0.0 (`pyproject.toml`, `CITATION.cff`, `docs/notas_de_versao_v3.md`) | `tests/test_busca_v2.py`, `tests/test_avaliacao.py` (474 testes) |
 | 20/10 | `83ad46c` | **Aba Conversor**: `ahu/conversor.py` converte código de referência, cota do Resgate e cota antiga entre si, em três níveis (formatação; numeração igual de Castro e Almeida e Mendes Gouveia; concordância da base); `referencia_crav` passa a usar a mesma regra, e o corpus fica com 7.051/7.051 cotas com CRAV | `tests/test_conversor.py`: 7.038 pares referência × Resgate sem diferença, 98 cotas de numeração igual, cifra conferida contra as pastas |
 | 20/10 | *(este)* | **Conversor, revisão do autor**: separadores colados (`Cx. 10\Doc. 955`, `/`, `Documento`) aceitos; a aba virou entrada única no formato da ficha (tipo reconhecido, três códigos com botão de copiar, Item e data, links), com o lote numa gaveta | `tests/test_conversor.py`: `AHU_ACL_CU_089, Cx. 10\Doc. 955` → `PT/AHU/CU/089/0010/00955`; `AppTest` da entrada única e do lote |
+| 12/11 | `692a11d` | **Interface web** (`web/`, FastAPI + HTMX), escrita pelo Gemini (PR #20) | `tests/test_web.py` |
+| 12/11 | `10c79b2` | **Redesenho da interface web** (PR #28): abas, gaveta da seleção, bordô, linha do tempo no Sobre, busca em dois tempos | `tests/test_web.py`; nDCG@10 do reranker 0,926 → 0,927 com lotes ordenados, ver `docs/plano_busca_servidor.md` |
 | 12/11 | *(este)* | **Busca completa no servidor próprio**: reranker cross-encoder (`ahu/reranker.py`, mMiniLM int8 por ONNX) relê os 30 primeiros do híbrido, ligado por `AHU_RERANKER=1`; app no agiulfo em `https://agiulfo.tailc278e6.ts.net/ahu/` pelo Tailscale Funnel (`deploy/`) | `tests/test_reranker.py`; `avaliacao/comparar_motores.py`: nDCG@10 0,863 → 0,929 (24 consultas, juiz Gemini), ver `docs/plano_busca_servidor.md` |
 
 **Medidas que valem hoje** (máquina do autor, Windows 11, 8 núcleos, cache do HF quente):
