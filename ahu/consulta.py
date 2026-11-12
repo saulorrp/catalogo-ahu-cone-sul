@@ -245,11 +245,21 @@ def _primeiro(valor):
 # Execução
 # ---------------------------------------------------------------------------
 
+def sem_duplicatas(dados, filtro):
+    """O filtro sem os verbetes repetidos (coluna `duplicata_de`, de corpus/duplicatas.ignore).
+    Eles continuam nos dados, por transparência; só a busca não os devolve."""
+    coluna = dados.documentos.get("duplicata_de")
+    if coluna is None or not coluna.notna().any():
+        return filtro
+    fora = coluna.notna().to_numpy()
+    return ~fora if filtro is None else (filtro & ~fora)
+
+
 def executar(dados, consulta: Consulta, encoder=None, **extra) -> busca.Resposta:
     """Roda a busca da consulta já com os filtros aplicados, e ordena como ela pede."""
     resposta = busca.buscar(
         dados, consulta.texto, modo=consulta.modo, rigor=consulta.rigor, encoder=encoder,
-        filtro=consulta.filtros.mascara(dados), **extra,
+        filtro=sem_duplicatas(dados, consulta.filtros.mascara(dados)), **extra,
     )
     if consulta.ordenacao != "relevancia":
         anos = dados.documentos["ano_isolado"]

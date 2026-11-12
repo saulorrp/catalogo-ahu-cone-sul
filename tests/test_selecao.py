@@ -180,7 +180,7 @@ def test_url_com_espacos_e_vazios_e_tolerada(corpus_busca):
 def test_o_prefixo_no_corpus_real_nao_colide(corpus_real):
     tamanho = mod.tamanho_do_prefixo(corpus_real)
     prefixos = {mod._parte_variavel(u)[:tamanho] for u in corpus_real.documentos["doc_uid"]}
-    assert len(prefixos) == len(corpus_real.documentos) == 167332
+    assert len(prefixos) == len(corpus_real.documentos) == 167344
     assert tamanho == 9                      # medido: 9 caracteres bastam para 167.344 documentos
 
 

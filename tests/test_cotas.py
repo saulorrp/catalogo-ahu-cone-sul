@@ -81,15 +81,15 @@ def test_ajustar_acertos_da_auditoria():
                         "Carta.", "Ofício.", "Consulta."],
     })
     saida, contagem = cotas.ajustar(base, None)
-    # o par repetido entre coleções perde a cópia do ahu-brasil
-    assert saida["doc_uid"].tolist() == ["ahu-sul:a", "ahu-brasil:c", "ahu-brasil:d",
-                                         "ahu-brasil:e", "ahu-brasil:f"]
-    assert contagem["duplicata_entre_colecoes_removida"] == 1
+    # nada sai da base: o par repetido só é apontado por duplicatas()
+    assert len(saida) == len(base)
+    assert cotas.duplicatas(saida).tolist() == [None, "ahu-sul:a", None, None, None, None]
     assert saida["folder"].tolist()[0] == "Montevidéu"
     # "1399. 1401" é intervalo de documentos, não data; "1402. 1660" e "2950. 1701" têm ano
     # e o ano entre colchetes, quando há, é o que vale
-    assert pd.isna(saida["ano_isolado"][1])
-    assert saida["ano_isolado"].tolist()[2:] == [1660, 1701, 1660]
+    assert saida["ano_isolado"].tolist()[1] == 1722
+    assert pd.isna(saida["ano_isolado"][2])
+    assert saida["ano_isolado"].tolist()[3:] == [1660, 1701, 1660]
     assert contagem["ano_falso_corrigido"] == 2
 
 
@@ -108,3 +108,11 @@ def test_bloco_de_cota_repetida_curado_pelo_digitarq():
     assert saida["reference_code"].tolist()[0] == "PT/AHU/CU/011/0013/01066"
     # sem prova no DigitArq, o bloco fica como veio
     assert saida["new_code"].tolist()[4:] == ["AHU_CU_022, Cx. 1, D. 3."] * 3
+
+
+def test_lista_ignore(tmp_path):
+    arq = tmp_path / "duplicatas.ignore"
+    arq.write_text("# cabeçalho\nahu-brasil:b  # repete ahu-sul:a | AHU_CU_012, Cx. 1, D. 36.\n"
+                   "ahu-brasil:x\n\n", encoding="utf-8")
+    assert cotas.ler_ignorados(arq) == {"ahu-brasil:b": "ahu-sul:a", "ahu-brasil:x": ""}
+    assert cotas.ler_ignorados(tmp_path / "nao_existe.ignore") == {}
