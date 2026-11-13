@@ -8,8 +8,9 @@ Dois destinos:
   documentos são imagens de manuscrito, sem texto), mas abre num quadro dado:
   `DocReader.aspx?bib=<rolo>&pagfis=<quadro>`. As páginas de verbetes do gov.br ligam cada número a
   esse quadro, e a coluna `resgate_docreader` (`021_SC#37`, do `build/cotas.py`) o guarda. Com
-  ela o link abre a imagem do documento; sem ela (catálogos em PDF, como o do Rio de Janeiro), o
-  link vai ao portal e o `new_code` é oferecido para copiar. O servidor da BN recusa acessos de
+  ela o link abre a imagem do documento; sem ela, o link vai ao portal e o `new_code` é oferecido
+  para copiar. Rio de Janeiro, São Paulo, Sacramento e Brasil Geral, cujos catálogos não estão em
+  HTML, ganharam o quadro pela varredura do próprio DocReader (`coleta/scripts/varrer_docreader.py`). O servidor da BN recusa acessos de
   fora do Brasil.
 
 E, desde o WP 2.4, um terceiro: o **"Reportar erro"** da §7.1, uma *issue* do GitHub já preenchida

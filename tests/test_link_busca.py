@@ -163,3 +163,14 @@ def test_ajustar_encaixa_o_quadro_pela_referencia():
     saida, contagem = cotas.ajustar(base, None, {"PT/AHU/CU/021/0001/00004": "021_SC#37"})
     assert saida["resgate_docreader"].tolist() == ["021_SC#37", None]
     assert contagem["resgate_com_quadro"] == 1
+
+
+def test_indice_do_resgate_tem_o_quadro_achado_pela_varredura():
+    """RJ não tem catálogo em HTML: o quadro vem da varredura do DocReader (conferido no navegador)."""
+    from pathlib import Path
+
+    from build import cotas
+
+    indice = cotas.ler_docreader(Path(__file__).resolve().parents[1] / "corpus" / "resgate_docreader.tsv.gz")
+    assert indice["PT/AHU/CU/017/0069/06420"] == "017_RJ_AV#49044"
+    assert indice["PT/AHU/CU/021/0001/00004"] == "021_SC#37"
