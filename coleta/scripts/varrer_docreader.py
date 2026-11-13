@@ -104,7 +104,14 @@ def trabalhador(bib, i, a, b, mx):
     feito = os.path.join(PASTA, f'parcial_{bib}_w{i}.ok')
     if os.path.exists(feito):
         return
-    linhas = [l.rstrip('\n').split('\t') for l in open(arq, encoding='utf-8')] if os.path.exists(arq) else []
+    linhas = []
+    if os.path.exists(arq):  # ignora uma última linha cortada, se a janela fechou no meio da gravação
+        linhas = [c for c in (l.rstrip('\n').split('\t') for l in open(arq, encoding='utf-8'))
+                  if len(c) == 3 and c[0].isdigit() and c[2].isdigit()]
+        with open(arq, 'w', encoding='utf-8') as g:
+            g.write(''.join('\t'.join(c) + '\n' for c in linhas))
+        if linhas:
+            log(f'{bib} trecho {i}: retomando depois de Cx. {linhas[-1][0]} Doc. {linhas[-1][1]}')
     f = open(arq, 'a', encoding='utf-8')
     passo = 3
     if linhas:  # retoma do último documento gravado
