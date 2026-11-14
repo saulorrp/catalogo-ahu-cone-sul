@@ -41,8 +41,10 @@ o app oferece a busca pela caixa.
 E outro encaixe, o **`resgate_docreader`**: o quadro do visualizador de imagens do Projeto Resgate
 (Biblioteca Nacional) em que o documento começa, como `021_SC#37` (rolo e quadro). Vem do índice
 `corpus/resgate_docreader.tsv.gz` (gerado por `coleta/scripts/extrair_docreader.py` a partir dos
-links que as páginas de verbetes do gov.br põem em cada número) e só existe para as capitanias
-cujos catálogos estão em HTML no gov.br. Sem quadro, o app aponta para o portal.
+links que as páginas de verbetes do gov.br põem em cada número) e, para as coleções sem catálogo em
+HTML (RJ, SP, Sacramento, Brasil Geral...), da varredura do DocReader, que lê o rótulo "Cx. N\\Doc. N"
+de cada página (`coleta/scripts/varrer_docreader.py` e `juntar_docreader.py`). Sem quadro, o app
+aponta para o portal.
 """
 from __future__ import annotations
 
