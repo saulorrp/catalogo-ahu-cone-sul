@@ -3,7 +3,7 @@
 **Leia este arquivo primeiro.** Ele existe para que outro agente de código — sem acesso à conversa
 que produziu este repositório — consiga continuar o trabalho só com o que está aqui dentro.
 
-Última atualização: **12/11/2026**.
+Última atualização: **14/11/2026**.
 
 > **Regra de manutenção:** este arquivo é atualizado **no mesmo commit** da mudança que ele
 > descreve, nunca num commit à parte. Um HANDOFF desatualizado é pior que nenhum.
@@ -12,6 +12,8 @@ que produziu este repositório — consiga continuar o trabalho só com o que es
 
 ## 1. Estado atual, em um parágrafo
 
+> **14/11/2026.** O catálogo em produção tem **141.298 / 167.344 documentos (84,4%)** com link direto para a imagem no Projeto Resgate (`resgate_com_quadro = 141298`, commit `9f6d9ff` / PR `#35`) e endurecimento web ativo (`/docs` desativado por padrão; teto de 100 documentos por PDF).
+>
 > **12/11/2026.** O banco tem **167.344 documentos** (ahu-sul + ahu-brasil). A versão completa roda
 > no servidor próprio (agiulfo) em <https://agiulfo.tailc278e6.ts.net/ahu/>, com a interface web
 > em `web/` (FastAPI + Jinja2 + HTMX), e5-small e reranker, atualizada sozinha a partir do `main`
@@ -72,13 +74,14 @@ Datas em 2026. "Verificado por" nomeia o teste ou a medição, não a impressão
 | 20/10 | *(este)* | **Conversor, revisão do autor**: separadores colados (`Cx. 10\Doc. 955`, `/`, `Documento`) aceitos; a aba virou entrada única no formato da ficha (tipo reconhecido, três códigos com botão de copiar, Item e data, links), com o lote numa gaveta | `tests/test_conversor.py`: `AHU_ACL_CU_089, Cx. 10\Doc. 955` → `PT/AHU/CU/089/0010/00955`; `AppTest` da entrada única e do lote |
 | 12/11 | `692a11d` | **Interface web** (`web/`, FastAPI + HTMX), escrita pelo Gemini (PR #20) | `tests/test_web.py` |
 | 12/11 | `10c79b2` | **Redesenho da interface web** (PR #28): abas, gaveta da seleção, bordô, linha do tempo no Sobre, busca em dois tempos | `tests/test_web.py`; nDCG@10 do reranker 0,926 → 0,927 com lotes ordenados, ver `docs/plano_busca_servidor.md` |
-| 12/11 | *(este)* | **Busca completa no servidor próprio**: reranker cross-encoder (`ahu/reranker.py`, mMiniLM int8 por ONNX) relê os 30 primeiros do híbrido, ligado por `AHU_RERANKER=1`; app no agiulfo em `https://agiulfo.tailc278e6.ts.net/ahu/` pelo Tailscale Funnel (`deploy/`) | `tests/test_reranker.py`; `avaliacao/comparar_motores.py`: nDCG@10 0,863 → 0,929 (24 consultas, juiz Gemini), ver `docs/plano_busca_servidor.md` |
+| 12/11 | `3ab3abd` | **Busca completa no servidor próprio**: reranker cross-encoder (`ahu/reranker.py`, mMiniLM int8 por ONNX) relê os 30 primeiros do híbrido, ligado por `AHU_RERANKER=1`; app no agiulfo em `https://agiulfo.tailc278e6.ts.net/ahu/` pelo Tailscale Funnel (`deploy/`) | `tests/test_reranker.py`; `avaliacao/comparar_motores.py`: nDCG@10 0,863 → 0,929 (24 consultas, juiz Gemini), ver `docs/plano_busca_servidor.md` |
+| 14/11 | `9f6d9ff` | **Resgate DocReader (19 rolos + Sergipe gov.br) e endurecimento web** (PR `#35`): varredura do DocReader (`coleta/scripts/varrer_docreader.py`, `juntar_docreader.py`, 127.520 linhas mapeadas em `coleta/docreader/`), `corpus/resgate_docreader.tsv.gz` (142.057 entradas), reconstrução de `app_dados/` (141.298 docs com quadro), `/docs` desligado por padrão (`AHU_DEV_DOCS`) e `MAX_DOCS_PDF=100` (`web/`). Detalhes em [`docs/registro_resgate_docreader_2026-11-14.md`](registro_resgate_docreader_2026-11-14.md) | `scripts/gate.py` (**595 passed, 6 skipped, 1 warning**); imagem `43598372351` no ar em `agiulfo` (`141.298` no Parquet, HTTPS `200` com `bib=003_BG_AV&pagfis=4644`, `011_MG#1`, `022_SE#1023`; `/ahu/docs` → `404`) |
 
 **Medidas que valem hoje** (máquina do autor, Windows 11, 8 núcleos, cache do HF quente):
 
 - pico de RSS numa consulta semântica: **630 MiB** (era 948 com `torch`);
 - abrir o app e buscar por cota: **229 MiB**, ~4 s — o modelo só carrega quando é preciso;
-- gate completo: ~4 min, **474 testes**, 1 pulado.
+- gate completo em `14/11/2026` (`9f6d9ff`): **595 testes**, 6 pulados (`scripts/gate.py`).
 
 ---
 
@@ -97,6 +100,8 @@ Ordem decidida pelo autor em 09/10. Cada etapa tem de deixar o `main` **publicá
 - [x] **Deploy / Publicação no GitHub:** executado `git push origin main` e `git push origin v3` (commit `e906922`). O Streamlit Cloud já constrói a partir do `main`.
 - [ ] **A10 em produção:** validar latência e cold start diretamente em `catalogo-ahu-sul.streamlit.app` após a conclusão do deploy no Streamlit Cloud.
 - [ ] **Julgamento humano do conjunto de ouro (opcional para artigo):** rodar `python avaliacao/julgar.py` (~1h de trabalho do autor para marcar 0/1/2 nos candidatos cegos) e emitir a tabela final com `python avaliacao/avaliar_busca.py`.
+- [x] **Links diretos no DocReader (19 rolos + Sergipe gov.br):** `141.298 / 167.344` documentos vinculados e em produção (`9f6d9ff`, ver [`registro_resgate_docreader_2026-11-14.md`](registro_resgate_docreader_2026-11-14.md)).
+- [ ] **Recuperação das capilhas agrupadas (`017-1_RJ` e `005_BA_CA`):** em execução via `andeca` + OCR/Gemini no `agiulfo` para cobrir os `~10.536` documentos omitidos pelo HTML do DocReader em capilhas multi-documento, além dos Códices no `gov.br` (`2.125` sem `reference_code`).
 - [ ] **WP 5.2 — Mapa das cidades de nascimento com Wikidata (P625):** extensão planejada com detalhes técnicos, arquitetura offline (zero custo no runtime) e roteiro em [`plano_mapa_wikidata_wp5_2.md`](plano_mapa_wikidata_wp5_2.md).
 
 Documentos de referência: [`plano_remodelacao_v3_1.md`](plano_remodelacao_v3_1.md) (o que vale
