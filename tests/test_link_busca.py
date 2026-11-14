@@ -179,3 +179,5 @@ def test_indice_do_resgate_tem_o_quadro_achado_pela_varredura():
     assert indice["PT/AHU/CU/023-001/0001/00001"] == "023-1_SP_MG#186"
     assert indice["PT/AHU/CU/035/0001/00001"] == "089_UL_AV#1"
     assert indice["PT/AHU/CU/089/0001/00001"] == "089_CU#1"
+    assert indice["PT/AHU/CU/022/0001/00001"] == "022_SE#1"
+    assert indice["PT/AHU/CU/022/0001/00004"] == "022_SE#64"

@@ -25,7 +25,7 @@ FILA = [
     "017_RJ_AV", "023_SP_AV", "012_CSRP", "003_BG_AV", "011_MG",
     "015_PE", "005_BA_AV", "005_BA_CA", "005_BA_LF", "009_MA",
     "013_PA", "050_CS_AV", "084_OU_AV", "030_SP_AV", "089_UL_AV",
-    "017-1_RJ", "023-1_SP_MG", "089_CU",
+    "017-1_RJ", "023-1_SP_MG", "089_CU", "022_SE",
 ]
 TRABALHADORES = 8
 PARTES = 8
