@@ -133,6 +133,20 @@ registro do DigitArq que tem o seu número: o mesmo início, ou um intervalo que
 preferência na mesma caixa. Quando o DigitArq não tem registro com aquele número, o link do app
 leva à caixa ("Caixa no DigitArq"), e não a uma busca vazia.
 
+### Varredura do DocReader (`resgate_docreader.tsv.gz`)
+
+Para as coleções sem tabela de quadros em HTML no `gov.br`, `coleta/scripts/varrer_docreader.py`
+percorre os 19 rolos oficiais do DocReader da BN (`127.029` linhas em
+`coleta/docreader/resgate_pagfis_<bib>.tsv.gz`), lendo a etiqueta `Cx. N\Doc. N` e `hPagFis` por
+salto exponencial e busca binária (ver [`../coleta/docreader/LEIA-ME.md`](../coleta/docreader/LEIA-ME.md)).
+Em seguida, `coleta/scripts/juntar_docreader.py` consolida os TSVs (junto dos `491` pares de
+Sergipe no `gov.br` em `sergipe_govbr_pagfis.tsv.gz`) em `corpus/resgate_docreader.tsv.gz`
+(`142.057` entradas), mapeando casos especiais (`089_UL_AV → 035`, `011_MG` via `old_code` e
+`022_SE` pela combinação de `document_id_and_date`, `old_code` e caixas locais). Na construção do
+app (`build/cotas.py`), **141.298** dos **167.344** documentos recebem a coluna `resgate_docreader`.
+Os pormenores da entrega de 14/11/2026 estão em
+[`registro_resgate_docreader_2026-11-14.md`](registro_resgate_docreader_2026-11-14.md).
+
 A mesma etapa faz dois acertos mecânicos nas cotas, contados em `app_dados/manifest.json`
 (`acertos`):
 
