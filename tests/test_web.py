@@ -344,3 +344,16 @@ def test_pagina_da_pessoa_com_campos_vazios(client, corpus_busca):
         resp = client.get(f"/pessoa/{uid}")
         assert resp.status_code == 200
         assert "/busca?v=2" in resp.text      # "Ver os documentos" leva à busca, não à própria página
+
+
+def test_docs_desligados_por_padrao_e_limite_pdf(client, corpus_busca, monkeypatch):
+    assert client.get("/docs").status_code == 404
+    assert client.get("/redoc").status_code == 404
+    assert client.get("/openapi.json").status_code == 404
+
+    import web.rotas_paginas as rp
+    monkeypatch.setattr(rp, "MAX_DOCS_PDF", 1)
+    uids = list(corpus_busca.documentos["doc_uid"][:2])
+    client.post(f"/selecao/adicionar/{uids[0]}")
+    client.post(f"/selecao/adicionar/{uids[1]}")
+    assert client.get("/selecao/pdf").status_code == 400

@@ -102,7 +102,9 @@ def criar_app(dados_injetados=None):
     if dados_injetados:
         dados_app = dados_injetados
 
-    inner_app = FastAPI(lifespan=lifespan if not dados_injetados else None)
+    dev_docs = os.environ.get("AHU_DEV_DOCS", "").strip().lower() in ("1", "sim", "true")
+    docs_kwargs = {} if dev_docs else {"docs_url": None, "redoc_url": None, "openapi_url": None}
+    inner_app = FastAPI(lifespan=lifespan if not dados_injetados else None, **docs_kwargs)
     # As páginas são HTML repetitivo (a de resultados passa de 100 kB): comprimidas, viajam em
     # um quinto do tamanho.
     inner_app.add_middleware(GZipMiddleware, minimum_size=1024)
@@ -119,7 +121,7 @@ def criar_app(dados_injetados=None):
     root_path = os.environ.get("AHU_ROOT_PATH", "").rstrip("/")
     if root_path:
         # O Starlette não roda o lifespan de um app montado: o pai o assume.
-        app = FastAPI(lifespan=lifespan if not dados_injetados else None)
+        app = FastAPI(lifespan=lifespan if not dados_injetados else None, **docs_kwargs)
         app.mount(root_path, inner_app)
         return app
     return inner_app

@@ -137,6 +137,10 @@ def adicionar_selecao(request: Request, doc_uid: str):
     dados = main_module.dados_app
     sel = get_selecao(request, dados)
     aviso = ""
+    if doc_uid not in sel and len(sel) >= 100:
+        aviso = (f"A seleção atingiu o limite de {len(sel)} documentos. Baixe a lista em PDF e esvazie "
+                 "a seleção para continuar.")
+        return _resposta_da_selecao(request, dados, sel, doc_uid, aviso)
     sobraram = sel.adicionar(doc_uid)
     if sobraram or sel.para_url(dados) is None:
         # A seleção viaja no cookie do navegador, e ele tem um teto. Passou do teto, o documento
@@ -169,10 +173,19 @@ def limpar_selecao(request: Request):
     return response
 
 
+MAX_DOCS_PDF = 100
+
+
 @router.get("/selecao/pdf", name="selecao_pdf")
 def selecao_pdf(request: Request):
     dados = main_module.dados_app
     sel = get_selecao(request, dados)
+    if len(sel) > MAX_DOCS_PDF:
+        return Response(
+            content=f"Máximo de {MAX_DOCS_PDF} documentos por PDF.".encode("utf-8"),
+            status_code=400,
+            media_type="text/plain; charset=utf-8",
+        )
     pdf_bytes = pdf_da_selecao(dados, sel)
     return Response(content=pdf_bytes, media_type="application/pdf", headers={
         "Content-Disposition": "attachment; filename=lista_consulta_AHU.pdf"
