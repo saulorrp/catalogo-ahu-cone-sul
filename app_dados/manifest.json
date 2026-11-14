@@ -1,10 +1,10 @@
 {
   "versao_artefatos": "1",
-  "gerado_em": "2026-11-13T10:08:45+00:00",
+  "gerado_em": "2026-11-14T10:47:58+00:00",
   "processo": {
     "script": "build/construir_app.py",
     "versao_script": "1.0.0",
-    "commit": "8a1ba40"
+    "commit": "c927ca2"
   },
   "corpus": {
     "versao_corpus": "0.1.0",
@@ -222,7 +222,7 @@
     "digitarq_com_registro": 157353,
     "digitarq_sem_registro": 221,
     "digitarq_registro_diferente": 17079,
-    "resgate_com_quadro": 42407,
+    "resgate_com_quadro": 140762,
     "duplicatas_ignoradas_na_busca": 207
   },
   "contagens": {
@@ -238,7 +238,7 @@
   "doc_uids_sha256": "5be37bc6892c62310b2920d65771e4c3a666e81642b806bd6c4d6011ba364ac0",
   "pessoa_uids_sha256": "2dd49951f9c52450ce669f21e83d50781dd6517ba345c0192950125e054fc752",
   "artefatos": {
-    "documentos.parquet": "112c100f62cdb158fbed3b5f5f00ddd18e147ab04f3635a73b7ebaa7986b0d5a",
+    "documentos.parquet": "0ac6d83976a6db09be894bb085d1304251c88dd75412966b1dadc57b56469b41",
     "pessoas.parquet": "2657543cf15c3968a676dc9c71bd2146af513070f885742fa4f730be92c0011e",
     "doc_pessoa.parquet": "424a7387ddb0af7d3c1d91e36b9e43fbed9f77d177fe83bf305e230b783da22b",
     "pdf_extra.parquet": "b6f30e776ec1675df02e55785e1bb412b7a2f9c9234656166bb748fed8481e86",

@@ -6,23 +6,98 @@ começa: `coleta/docreader/resgate_pagfis_<bib>.tsv.gz` (bib, caixa, doc, pagfis
 vira uma referência CRAV (`PT/AHU/CU/017/0069/06420`). Quando um documento aparece em mais de um
 trecho, vale a primeira página. As referências que o índice do gov.br já tem ficam como estão.
 
+Casos especiais:
+  - `089_UL_AV`: o HTML da BN traz o cabeçalho errado `AHU_ACL_CU_089`, mas as imagens pertencem à
+    série `035` (Ultramar/Geral), enquanto `089_CU` é de fato a Secretaria do Conselho Ultramarino
+    (`089`).
+  - `011_MG`: os rótulos do DocReader em Minas Gerais numeram `Doc.` reiniciando dentro de cada
+    caixa (`cx. N, doc. M`, como no `old_code`), enquanto `reference_code` usa a numeração contínua
+    do catálogo novo. O mapeamento `(caixa, doc) -> reference_code` é resolvido pelo `old_code` do
+    corpus em `corpus/colecoes/*/documentos.parquet`.
+
 Uso: python coleta/scripts/juntar_docreader.py
 """
+from __future__ import annotations
+
 import csv
 import gzip
 import io
+import re
 import sys
+from collections import defaultdict
 from pathlib import Path
 
+import pyarrow.parquet as pq
+
 RAIZ = Path(__file__).resolve().parents[2]
+if str(RAIZ) not in sys.path:
+    sys.path.insert(0, str(RAIZ))
+
+from build import cotas  # noqa: E402
+
 INDICE = RAIZ / "corpus" / "resgate_docreader.tsv.gz"
 VARREDURA = RAIZ / "coleta" / "docreader"
-# Série do Conselho Ultramarino de cada rolo do DocReader (lista oficial em docmulti.aspx?bib=resgate).
-SERIE = {"003_BG_AV": "003", "004_AL": "004", "005_BA_AV": "005", "005_BA_CA": "005-001",
-         "005_BA_LF": "005-002", "006_CE": "006", "007_ES": "007", "008_GO": "008", "009_MA": "009",
-         "010_MT": "010", "011_MG": "011", "012_CSRP": "012", "013_PA": "013", "014_PB": "014",
-         "015_PE": "015", "016_PI": "016", "017_RJ_AV": "017", "018_RN": "018", "019_RS": "019",
-         "020_AM_RN": "020", "021_SC": "021", "022_SE": "022", "023_SP_AV": "023"}
+COLECOES = RAIZ / "corpus" / "colecoes"
+
+# Série do Conselho Ultramarino (CRAV) de cada rolo do DocReader.
+SERIE = {
+    "003_BG_AV": "003",
+    "004_AL": "004",
+    "005_BA_AV": "005",
+    "005_BA_CA": "005-001",
+    "005_BA_LF": "005-002",
+    "006_CE": "006",
+    "007_ES": "007",
+    "008_GO": "008",
+    "009_MA": "009",
+    "010_MT": "010",
+    "011_MG": "011",
+    "012_CSRP": "012",
+    "013_PA": "013",
+    "014_PB": "014",
+    "015_PE": "015",
+    "016_PI": "016",
+    "017_RJ_AV": "017",
+    "017-1_RJ": "017-001",
+    "018_RN": "018",
+    "019_RS": "019",
+    "020_AM_RN": "020",
+    "021_SC": "021",
+    "022_SE": "022",
+    "023_SP_AV": "023",
+    "023-1_SP_MG": "023-001",
+    "030_SP_AV": "030",
+    "050_CS_AV": "050",
+    "084_OU_AV": "084",
+    "089_CU": "089",
+    "089_UL_AV": "035",
+}
+
+RE_DOC_INICIAL = re.compile(r"\s*(\d+)")
+RE_OLD_MG = re.compile(r"cx\.\s*(\d+)\s*,\s*doc\.\s*(\d+)", re.IGNORECASE)
+
+
+def carregar_mapa_mg() -> dict[tuple[int, int], str]:
+    """Constrói `(caixa, doc_por_caixa) -> PT/AHU/CU/011/...` via `old_code` do corpus."""
+    candidatos: dict[tuple[int, int], list[str]] = defaultdict(list)
+    for arq in sorted(COLECOES.glob("*/documentos.parquet")):
+        tabela = pq.read_table(arq, columns=["reference_code", "old_code", "new_code"])
+        for r, o, n in zip(tabela["reference_code"], tabela["old_code"], tabela["new_code"]):
+            ref = cotas.referencia(cotas.limpar_new_code(n.as_py()), r.as_py())
+            if not ref or not ref.startswith("PT/AHU/CU/011/"):
+                continue
+            m = RE_OLD_MG.search(o.as_py() or "")
+            if m:
+                candidatos[(int(m.group(1)), int(m.group(2)))].append(ref)
+
+    mapa: dict[tuple[int, int], str] = {}
+    for (cx, dc), refs in candidatos.items():
+        if len(refs) == 1:
+            mapa[(cx, dc)] = refs[0]
+        else:
+            mesma_cx = [ref for ref in refs if int(ref.split("/")[4]) == cx]
+            mapa[(cx, dc)] = mesma_cx[0] if mesma_cx else refs[0]
+    return mapa
 
 
 def main():
@@ -30,20 +105,31 @@ def main():
         linhas = [l.rstrip("\n").split("\t") for l in f if l.strip()]
     cabecalho, corpo = linhas[0], linhas[1:]
     existentes = {l[0] for l in corpo}
-    novos = {}
+    mapa_mg = carregar_mapa_mg()
+    novos: dict[str, tuple[str, int]] = {}
+
     for arquivo in sorted(VARREDURA.glob("resgate_pagfis_*.tsv.gz")):
         with gzip.open(arquivo, "rt", encoding="utf-8") as f:
             for r in csv.DictReader(f, delimiter="\t"):
-                serie = SERIE.get(r["bib"])
-                doc = "".join(c for c in r["doc"].split("(")[0] if c.isdigit())
-                if not serie or not r["caixa"].isdigit() or not doc:
+                bib = r["bib"]
+                serie = SERIE.get(bib)
+                m_doc = RE_DOC_INICIAL.match(r["doc"])
+                if not serie or not r["caixa"].isdigit() or not m_doc:
                     continue
-                ref = f"PT/AHU/CU/{serie}/{int(r['caixa']):04d}/{int(doc):05d}"
+                cx = int(r["caixa"])
+                doc = int(m_doc.group(1))
+                if bib == "011_MG":
+                    ref = mapa_mg.get((cx, doc))
+                    if not ref:
+                        continue
+                else:
+                    ref = f"PT/AHU/CU/{serie}/{cx:04d}/{doc:05d}"
                 if ref in existentes:
                     continue
                 pagfis = int(r["pagfis"])
                 if ref not in novos or pagfis < novos[ref][1]:
-                    novos[ref] = (r["bib"], pagfis)
+                    novos[ref] = (bib, pagfis)
+
     corpo += [[ref, bib, str(p)] for ref, (bib, p) in novos.items()]
     corpo.sort()
     texto = io.StringIO()
