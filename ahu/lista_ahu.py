@@ -6,14 +6,14 @@ conferir e fotografar.
 
 O que ele tem, e nada mais:
 
-| Nº | Ano | Cota | Resumo | DigitArq | caixa |
-|---|---|---|---|---|---|
+| Nº | Ano | Cota | Resumo | DigitArq | Resgate | caixa |
+|---|---|---|---|---|---|---|
 
 * **Nº** liga a linha à fotografia;
-* **Cota** traz a cota do Resgate na primeira linha e o código `PT/AHU/CU/…` abaixo, em corpo
-  menor;
+* **Cota** traz a cota do Resgate (com link para o Resgate) na primeira linha e o código
+  `PT/AHU/CU/…` (com link para o DigitArq) abaixo, em corpo menor;
 * **Resumo** sai inteiro, com quebra de linha — não cortado;
-* **DigitArq** é um "abrir" clicável, não a URL crua;
+* **DigitArq** e **Resgate** são um "abrir" clicável, não a URL crua;
 * a **caixa** é desenhada, para marcar à mão.
 
 Sem explicação, sem proveniência, sem tipologia, sem remetente, sem SRSP e sem a inferência de
@@ -42,7 +42,7 @@ from datetime import date
 import pandas as pd
 
 from ahu import pdf as mod_pdf
-from ahu.links import digitarq, digitarq_do_documento, referencia_crav
+from ahu.links import digitarq, digitarq_do_documento, referencia_crav, resgate
 from ahu.links import limpar_cota as _limpar_cota
 
 TITULO = "Lista para consulta no AHU"
@@ -50,9 +50,9 @@ TITULO = "Lista para consulta no AHU"
 # Medidas da página (A4 paisagem, 297 × 210, margens de 12).
 MARGEM = 12
 LARGURA_UTIL = 297 - 2 * MARGEM         # 273 mm
-# Nº · Ano · Cota · Resumo · DigitArq · caixa — soma 273.
-COLUNAS = (("Nº", 10), ("Ano", 14), ("Cota", 60), ("Resumo", 152),
-           ("DigitArq", 18), ("", 19))
+# Nº · Ano · Cota · Resumo · DigitArq · Resgate · caixa — soma 273.
+COLUNAS = (("Nº", 10), ("Ano", 14), ("Cota", 58), ("Resumo", 142),
+           ("DigitArq", 18), ("Resgate", 18), ("", 13))
 CORPO_PT = 9
 ENTRELINHA = 1.35
 ALTURA_LINHA = CORPO_PT * ENTRELINHA / 2.8346      # 9 pt × 1,35, em mm ≈ 4,29
@@ -243,9 +243,10 @@ def relatorio(grupos: list[Grupo]) -> dict:
 # ---------------------------------------------------------------------------
 
 def _dados_da_linha(dados, item: Item, numero: int) -> dict:
-    """O que vai na linha do PDF: número, ano, cota, referência, resumo e link."""
+    """O que vai na linha do PDF: número, ano, cota, referência, resumo e links."""
     ano, resumo = "", ""
     link = digitarq(item.referencia) if item.referencia else None
+    link_resgate = item.link_resgate
     if item.linhas:
         linha = dados.documentos.iloc[item.linhas[0]]
         link = digitarq_do_documento(linha)[0] or link
@@ -254,6 +255,10 @@ def _dados_da_linha(dados, item: Item, numero: int) -> dict:
             v = linha.get(campo)
             return "" if v is None or pd.isna(v) else v
 
+        if not link_resgate:
+            quadro = valor("resgate_docreader")
+            link_resgate = resgate(str(quadro) if quadro else None)
+
         bruto = valor("ano_isolado")
         ano = "" if bruto == "" else str(int(bruto))
         resumo = str(valor("description") or "")
@@ -261,6 +266,8 @@ def _dados_da_linha(dados, item: Item, numero: int) -> dict:
             resumo += f" [{len(item.linhas)} documentos no catálogo com esta cota]"
     else:
         resumo = "não consta no catálogo AHU-Sul"
+    if not link_resgate and item.referencia:
+        link_resgate = resgate(None)
     if item.nota:
         resumo = (resumo + " " if resumo else "") + f"— {item.nota}"
     return {
@@ -270,7 +277,7 @@ def _dados_da_linha(dados, item: Item, numero: int) -> dict:
         "referencia": item.referencia or "",
         "resumo": resumo,
         "digitarq": link,
-        "resgate": item.link_resgate,
+        "resgate": link_resgate,
     }
 
 
@@ -320,9 +327,9 @@ def _altura_da_linha(pdf, dados_linha: dict) -> float:
 
 
 def _desenhar_linha(pdf, dados_linha: dict, altura: float) -> None:
-    """Uma linha da lista, com a caixa desenhada e o "abrir" clicável."""
+    """Uma linha da lista, com a caixa desenhada e os "abrir" clicáveis."""
     larguras = dict(COLUNAS)
-    x_numero, x_ano, x_cota, x_resumo, x_link, x_caixa = _x_das_colunas()
+    x_numero, x_ano, x_cota, x_resumo, x_digitarq, x_resgate, x_caixa = _x_das_colunas()
     y = pdf.get_y()
 
     pdf.set_font(mod_pdf.FAMILIA, "B", CORPO_PT)
@@ -344,7 +351,8 @@ def _desenhar_linha(pdf, dados_linha: dict, altura: float) -> None:
         pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT - 1.5)
         pdf.set_text_color(105, 105, 105)
         pdf.multi_cell(larguras["Cota"] - 2.4, ALTURA_LINHA - 0.6, dados_linha["referencia"],
-                       align="L", new_x="LEFT", new_y="NEXT")
+                       align="L", new_x="LEFT", new_y="NEXT",
+                       link=dados_linha["digitarq"] or "")
         pdf.set_text_color(0, 0, 0)
         pdf.set_font(mod_pdf.FAMILIA, "", CORPO_PT)
 
@@ -352,12 +360,15 @@ def _desenhar_linha(pdf, dados_linha: dict, altura: float) -> None:
     pdf.multi_cell(larguras["Resumo"] - 2.4, ALTURA_LINHA, dados_linha["resumo"] or "—",
                    new_x="LEFT", new_y="NEXT")
 
-    if dados_linha["digitarq"]:
-        pdf.set_xy(x_link + 1.2, y)
-        pdf.set_text_color(45, 85, 125)
-        pdf.cell(larguras["DigitArq"] - 2.4, ALTURA_LINHA, "abrir",
-                 link=dados_linha["digitarq"])
-        pdf.set_text_color(0, 0, 0)
+    for x_col, nome_col, url in (
+        (x_digitarq, "DigitArq", dados_linha["digitarq"]),
+        (x_resgate, "Resgate", dados_linha["resgate"]),
+    ):
+        if url:
+            pdf.set_xy(x_col + 1.2, y)
+            pdf.set_text_color(45, 85, 125)
+            pdf.cell(larguras[nome_col] - 2.4, ALTURA_LINHA, "abrir", link=url)
+            pdf.set_text_color(0, 0, 0)
 
     mod_pdf.caixa_de_marcar(pdf, x_caixa + 3, y + 0.6)
 

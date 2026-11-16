@@ -223,7 +223,7 @@ def test_o_alto_da_pagina_tem_so_o_titulo_e_a_data(pdf_do_corpus):
 
 def test_as_colunas_sao_as_seis_do_plano(pdf_do_corpus):
     texto = _sem_espacos(texto_do_pdf(pdf_do_corpus))
-    assert "NºAnoCotaResumoDigitArq" in texto
+    assert "NºAnoCotaResumoDigitArqResgate" in texto
 
 
 def test_cada_documento_tem_numero_ano_cota_e_resumo(corpus_busca, pdf_do_corpus):
@@ -264,6 +264,12 @@ def test_o_digitarq_e_um_rotulo_clicavel_e_nao_a_url(pdf_do_corpus):
     assert "https://digitarq" not in texto          # a URL crua não vai impressa
     # mas o link está lá, como anotação do PDF
     assert b"digitarq.arquivos.pt" in pdf_do_corpus
+
+
+def test_o_resgate_tambem_vai_linkado_no_pdf(pdf_do_corpus):
+    texto = texto_do_pdf(pdf_do_corpus)
+    assert "https://resgate" not in texto           # a URL crua não vai impressa
+    assert b"resgate.bn.gov.br" in pdf_do_corpus
 
 
 def test_o_rodape_e_a_linha_do_plano(pdf_do_corpus):
