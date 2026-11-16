@@ -42,14 +42,14 @@ def test_rotas_basicas(client, corpus_busca):
     else:
         assert client.get("/pessoa/P9999").status_code == 404
 
-    # /conversor
+    # /converso
     assert client.get("/conversor").status_code == 200
     assert client.get("/conversor?q=AHU_ACL_CU_019, Cx. 3, D. 246").status_code == 200
 
     # /selecao
     assert client.get("/selecao").status_code == 200
 
-    # /selecao/adicionar e remover
+    # /selecao/adicionar e remove
     resp = client.post(f"/selecao/adicionar/{uid}")
     assert resp.status_code == 200
     assert "selecao" in resp.cookies
@@ -81,7 +81,7 @@ def test_rotas_basicas(client, corpus_busca):
     # /api/doc/{uid}
     assert client.get(f"/api/doc/{uid}").status_code == 200
 
-    # /api/sugerir
+    # /api/sugeri
     assert client.get("/api/sugerir?campo=remetente&q=junta").status_code == 200
 
 
@@ -400,3 +400,42 @@ def test_resultado_como_gaveta_eins(client):
     assert "#cf1f21" not in icone_svg
     assert "#ffffff" in icone_escuro_svg
     assert "#cf1f21" not in icone_escuro_svg
+
+
+def test_api_cota_e_doc_enriquecido(client, corpus_busca):
+    """GET /api/cota aceita os formatos AHU (inclusive cota curta) e expõe links e metadados."""
+    for entrada in (
+        "PT/AHU/CU/021/0006/00390",
+        "AHU_ACL_CU_021, Cx. 6, D. 390.",
+        "021-0006-00390",
+        "021-0006-00390 obras do porto",
+    ):
+        resp = client.get("/api/cota", params={"cota": entrada})
+        assert resp.status_code == 200
+        dados = resp.json()
+        assert dados["total"] == 1
+        doc = dados["documento"]
+        assert doc["cotas"]["Código de referência"] == "PT/AHU/CU/021/0006/00390"
+        assert "digitarq.arquivos.pt" in doc["links"]["digitarq"]
+        assert "resgate.bn.gov.br" in doc["links"]["resgate"]
+        assert doc["links"]["catalogo"] == f"/ahu/doc/{doc['doc_uid']}"
+        assert "scribe_mediation_likely" not in resp.text
+
+    # Subsérie com ponto/traço e barra invertida do DocReader
+    for entrada in ("017.001-0057-13257", "AHU_CU_017-01, Cx. 57\\Doc. 13257"):
+        resp = client.get("/api/cota", params={"cota": entrada})
+        assert resp.status_code == 200
+        assert resp.json()["documento"]["cotas"]["Código de referência"] == "PT/AHU/CU/017-001/0057/13257"
+
+    # Cota inválida vs. válida ausente
+    assert client.get("/api/cota", params={"cota": "pasta qualquer"}).status_code == 400
+    assert client.get("/api/cota", params={"cota": "099-9999-99999"}).status_code == 404
+
+    # /api/doc/{uid} mantém campos anteriores e inclui links e metadados
+    uid = corpus_busca.documentos.iloc[4]["doc_uid"]
+    doc_resp = client.get(f"/api/doc/{uid}")
+    assert doc_resp.status_code == 200
+    doc_json = doc_resp.json()
+    assert doc_json["doc_uid"] == uid
+    assert "links" in doc_json and "digitarq" in doc_json["links"]
+    assert "resumo" in doc_json and "cotas" in doc_json and "pessoas" in doc_json
