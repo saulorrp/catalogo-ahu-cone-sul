@@ -367,6 +367,8 @@ def test_resultado_como_gaveta_eins(client):
 
     assert '<details class="gaveta resultado-gaveta">' in html
     assert '<table class="cota-sheet">' in html
+    assert '<div class="links-sheet">' in html
+    assert 'class="links-sheet-btn"' in html
     assert 'class="link-ficha"' not in html
     assert 'class="resumo resumo-link"' not in html
     assert 'data-copiar="PT/AHU/CU/021/0006/00390"' in html

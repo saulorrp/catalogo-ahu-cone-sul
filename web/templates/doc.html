@@ -48,12 +48,12 @@
         
         <div class="meta-section">
             <h3>Onde ver o documento</h3>
-            <div class="links-list">
+            <div class="links-sheet">
                 {% if ficha.links.digitarq %}
-                <a href="{{ ficha.links.digitarq }}" target="_blank" rel="noopener" class="btn">{{ ficha.links.digitarq_rotulo }}</a>
+                <a href="{{ ficha.links.digitarq }}" target="_blank" rel="noopener" class="links-sheet-btn">{{ ficha.links.digitarq_rotulo }}</a>
                 {% endif %}
                 {% if ficha.links.resgate %}
-                <a href="{{ ficha.links.resgate }}" target="_blank" rel="noopener" class="btn">{{ ficha.links.resgate_rotulo or "Portal do Projeto Resgate" }}</a>
+                <a href="{{ ficha.links.resgate }}" target="_blank" rel="noopener" class="links-sheet-btn">{{ ficha.links.resgate_rotulo or "Portal do Projeto Resgate" }}</a>
                 {% endif %}
             </div>
         </div>

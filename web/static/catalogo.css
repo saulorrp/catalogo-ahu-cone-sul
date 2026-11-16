@@ -518,6 +518,38 @@ fieldset { border: none; padding: 0; margin: 0; min-width: 0; }
 .cota-list dt { text-align: right; }
 .cota-list dd { margin: 0; }
 .links-list { display: flex; gap: 10px; flex-wrap: wrap; }
+.links-sheet {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--raio);
+    overflow: hidden;
+    background: var(--bg-card);
+}
+.links-sheet-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    font-weight: 400;
+    line-height: 1.35;
+    color: var(--txt-primary);
+    background: var(--bg-card);
+    text-align: center;
+    text-decoration: none;
+    border-left: 1px solid var(--border);
+    transition: background-color 0.12s, color 0.12s;
+}
+.links-sheet-btn:first-child { border-left: none; }
+.links-sheet-btn:hover,
+.links-sheet-btn:focus-visible {
+    background: var(--bg-hover);
+    color: var(--accent-texto);
+    text-decoration: none;
+}
 .pessoas-list { list-style: none; padding: 0; margin: 0; }
 .pessoas-list li { padding: 6px 0; border-bottom: 1px dashed var(--border); }
 .pessoas-list li:last-child { border-bottom: none; }

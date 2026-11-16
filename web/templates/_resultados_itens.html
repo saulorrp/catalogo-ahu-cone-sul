@@ -50,12 +50,12 @@
             {% if f.links.digitarq or f.links.resgate %}
             <div class="resultado-secao">
                 <h4>Onde ver o documento</h4>
-                <div class="links-list">
+                <div class="links-sheet">
                     {% if f.links.digitarq %}
-                    <a href="{{ f.links.digitarq }}" target="_blank" rel="noopener" class="btn">{{ f.links.digitarq_rotulo }}</a>
+                    <a href="{{ f.links.digitarq }}" target="_blank" rel="noopener" class="links-sheet-btn">{{ f.links.digitarq_rotulo }}</a>
                     {% endif %}
                     {% if f.links.resgate %}
-                    <a href="{{ f.links.resgate }}" target="_blank" rel="noopener" class="btn">{{ f.links.resgate_rotulo or "Portal do Projeto Resgate" }}</a>
+                    <a href="{{ f.links.resgate }}" target="_blank" rel="noopener" class="links-sheet-btn">{{ f.links.resgate_rotulo or "Portal do Projeto Resgate" }}</a>
                     {% endif %}
                 </div>
             </div>
