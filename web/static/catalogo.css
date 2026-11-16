@@ -4,21 +4,22 @@
    3 px para "aqui estou" e para "selecionado". Tudo em tokens: nenhuma página define cor. */
 
 :root {
-    --bg-base: #f5f2eb;
-    --bg-panel: #ece8dd;
-    --bg-card: #ffffff;
-    --bg-hover: #e4dfd2;
-    --border: #d0c9b4;
-    --border-forte: #b0a890;
+    --bg-base: #ede4d1;
+    --bg-panel: #e2d6bc;
+    --bg-card: #f5efe2;
+    --bg-hover: #d8cab0;
+    --border: #c7b89a;
+    --border-forte: #aa9978;
     --txt-primary: #1c1b18;
-    --txt-secondary: #5a5548;
-    --txt-muted: #7a7264;
-    --accent: #800000;            /* o vinho do EINS */
-    --accent-hover: #5c0000;
+    --txt-secondary: #544d3e;
+    --txt-muted: #706755;
+    --accent: #8a1c1c;            /* o vinho do EINS Triagem */
+    --accent-hover: #6e1414;
     --accent-texto: #800000;      /* o acento quando é letra sobre o fundo */
-    --accent-suave: #f3e3e0;      /* fundo de "marcado" */
-    --accent-marca: #800000;      /* barras de gráfico e grifo dos termos */
+    --accent-suave: #ebd8d2;      /* fundo de "marcado" */
+    --accent-marca: #8a1c1c;      /* barras de gráfico e grifo dos termos */
     --sobre-accent: #ffffff;
+    --logo-cor: #111111;
     --raio: 4px;
     --raio-cartao: 6px;
     --serifa: "Noto Serif", Georgia, Cambria, "Times New Roman", serif;
@@ -29,60 +30,48 @@
     color-scheme: light dark;
 }
 
-/* Temas. Sem escolha, segue o sistema: papel de dia, escuro de noite. A escolha da pessoa fica em
-   <html data-tema="papel|branco|escuro"> (catalogo.js) e vale por cima do sistema. */
+/* Temas. Sem escolha, segue o sistema: papel quente de dia, escuro (estilo EINS Triagem) de
+   noite. A escolha da pessoa fica em <html data-tema="papel|escuro"> (catalogo.js). */
 @media (prefers-color-scheme: dark) {
     :root:not([data-tema]) {
-        --bg-base: #0d0d0d;
-        --bg-panel: #161616;
-        --bg-card: #1e1e1e;
-        --bg-hover: #2a2a2a;
-        --border: #333333;
-        --border-forte: #555555;
-        --txt-primary: #e0e0e0;
-        --txt-secondary: #aaaaaa;
-        --txt-muted: #888888;
-        --accent: #800000;
-        --accent-hover: #990000;
+        --bg-base: #111214;
+        --bg-panel: #17181b;
+        --bg-card: #1d1f23;
+        --bg-hover: #24262b;
+        --border: #2a2c31;
+        --border-forte: #34373d;
+        --txt-primary: #e6e6e6;
+        --txt-secondary: #a9abb0;
+        --txt-muted: #73767d;
+        --accent: #8a1c1c;
+        --accent-hover: #a32222;
         --accent-texto: #e0908c;
         --accent-suave: #3a1614;
         --accent-marca: #c0605c;
+        --logo-cor: #ffffff;
         color-scheme: dark;
     }
 }
 
 :root[data-tema="escuro"] {
-    --bg-base: #0d0d0d;
-    --bg-panel: #161616;
-    --bg-card: #1e1e1e;
-    --bg-hover: #2a2a2a;
-    --border: #333333;
-    --border-forte: #555555;
-    --txt-primary: #e0e0e0;
-    --txt-secondary: #aaaaaa;
-    --txt-muted: #888888;
-    --accent: #800000;
-    --accent-hover: #990000;
+    --bg-base: #111214;
+    --bg-panel: #17181b;
+    --bg-card: #1d1f23;
+    --bg-hover: #24262b;
+    --border: #2a2c31;
+    --border-forte: #34373d;
+    --txt-primary: #e6e6e6;
+    --txt-secondary: #a9abb0;
+    --txt-muted: #73767d;
+    --accent: #8a1c1c;
+    --accent-hover: #a32222;
     --accent-texto: #e0908c;
     --accent-suave: #3a1614;
     --accent-marca: #c0605c;
+    --logo-cor: #ffffff;
     color-scheme: dark;
 }
 
-/* Branco: o papel sem o amarelado, para tela muito clara ou para imprimir. */
-:root[data-tema="branco"] {
-    --bg-base: #ffffff;
-    --bg-panel: #f4f4f4;
-    --bg-card: #ffffff;
-    --bg-hover: #ececec;
-    --border: #dddddd;
-    --border-forte: #bbbbbb;
-    --txt-primary: #161616;
-    --txt-secondary: #555555;
-    --txt-muted: #767676;
-    --accent-suave: #f6e7e5;
-    color-scheme: light;
-}
 :root[data-tema="papel"] { color-scheme: light; }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -136,6 +125,9 @@ mark {
 }
 
 .marca {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
     font-family: var(--serifa);
     font-size: 1.1rem;
     font-weight: 700;
@@ -144,7 +136,13 @@ mark {
     white-space: nowrap;
 }
 .marca:hover { text-decoration: none; color: var(--accent-texto); }
-.marca .fleurao { color: var(--accent-texto); margin-right: 4px; }
+.marca-logo {
+    width: 18px;
+    height: 28px;
+    flex: none;
+    display: block;
+    color: var(--logo-cor);
+}
 
 .tema { margin-left: auto; align-self: center; display: flex; align-items: center; gap: 6px; padding-bottom: 6px; font-size: 0.82rem; color: var(--txt-secondary); }
 .tema select { padding: 2px 4px; font-size: 0.82rem; }
@@ -391,14 +389,20 @@ fieldset { border: none; padding: 0; margin: 0; min-width: 0; }
     line-height: 1.45;
 }
 .resultado-gaveta > summary.resultado-summary:hover .resumo { color: var(--accent-texto); }
-.resultado-sumario-corpo { min-width: 0; }
+.resultado-sumario-corpo { min-width: 0; font-weight: 400; }
 
 .resultado-header { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 6px; }
 .ano-destaque { font-weight: 700; font-size: 1.05rem; color: var(--accent-texto); font-variant-numeric: tabular-nums; }
+.resultado-card .ano-destaque,
+.resultado-card .resumo,
+.resultado-card .btn-sel,
+.resultado-card h4,
+.resultado-card strong,
+.resultado-card summary { font-weight: 400; }
 .resultado-pasta, .resultado-tipologia { color: var(--txt-secondary); font-size: 0.88rem; }
 .resultado-header .cota { margin-left: auto; color: var(--txt-secondary); font-size: 0.82rem; text-align: right; }
 
-.resumo { font-family: var(--serifa); font-size: 1rem; line-height: 1.6; color: var(--txt-primary); }
+.resumo { font-family: var(--serifa); font-size: 1rem; font-weight: 400; line-height: 1.6; color: var(--txt-primary); }
 
 .remetente-destinatario { margin-top: 8px; font-size: 0.88rem; color: var(--txt-secondary); }
 .resultado-detalhes {

@@ -124,11 +124,12 @@
         }, 250);
     });
 
-    // Tema: automático (segue o sistema), papel, branco ou escuro. Guardado neste navegador.
+    // Tema: automático (segue o sistema), papel ou escuro. Guardado neste navegador.
     document.addEventListener('DOMContentLoaded', function () {
         const escolha = document.getElementById('escolha-tema');
         if (!escolha) return;
-        escolha.value = document.documentElement.dataset.tema || '';
+        const salvo = document.documentElement.dataset.tema || '';
+        escolha.value = salvo === 'branco' ? 'papel' : salvo;
         escolha.addEventListener('change', function () {
             if (escolha.value) document.documentElement.dataset.tema = escolha.value;
             else delete document.documentElement.dataset.tema;

@@ -1,40 +1,49 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Catálogo AHU-Brasil{% endblock %}</title>
     <link rel="icon" href="{{ url_for('static', path='icone.svg') }}" type="image/svg+xml">
-    <link rel="icon" href="{{ url_for('static', path='icone-escuro.svg') }}" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+    <link rel="icon" href="{{ url_for('static', path='icone-escuro.svg') }}" type="image/svg+xml"
+        media="(prefers-color-scheme: dark)">
     <link rel="icon" href="{{ url_for('static', path='icone-32.png') }}" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="{{ url_for('static', path='apple-touch-icon.png') }}">
-    <script>try { var t = localStorage.getItem('ahu-tema'); if (t) document.documentElement.dataset.tema = t; } catch (e) {}</script>
+    <script>try { var t = localStorage.getItem('ahu-tema'); if (t === 'branco') t = 'papel'; if (t) document.documentElement.dataset.tema = t; } catch (e) { }</script>
     {% block head %}{% endblock %}
-    <link rel="stylesheet" href="{{ url_for('static', path='catalogo.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='catalogo.css') }}?v=3">
     <script src="{{ url_for('static', path='htmx.min.js') }}" defer></script>
-    <script src="{{ url_for('static', path='catalogo.js') }}" defer></script>
+    <script src="{{ url_for('static', path='catalogo.js') }}?v=3" defer></script>
 </head>
 {% set aba %}{% block aba %}{% endblock %}{% endset %}
 {% set aba = aba | trim %}
 {% if total_selecao is not defined %}{% set total_selecao = conta_selecao(request) %}{% endif %}
+
 <body data-url-sugerir="{{ url_for('api_sugerir') }}">
     <div id="carregando" class="barra-carregando" aria-hidden="true"></div>
     <header class="topo">
-        <a class="marca" href="{{ url_for('busca') }}"><span class="fleurao" aria-hidden="true">❦</span> Catálogo AHU-Brasil</a>
+        <a class="marca" href="{{ url_for('busca') }}">{% include "_logo_eins.html" %} Catálogo AHU-Brasil</a>
         <nav class="abas" aria-label="Seções">
-            <a href="{{ url_for('busca') }}" class="aba {% if aba == 'busca' %}atual{% endif %}" {% if aba == 'busca' %}aria-current="page"{% endif %}>Busca</a>
-            <a href="{{ url_for('selecao') }}" class="aba {% if aba == 'selecao' %}atual{% endif %}" {% if aba == 'selecao' %}aria-current="page"{% endif %}>Seleção {% include "_conta_aba.html" %}</a>
-            <a href="{{ url_for('pessoas') }}" class="aba {% if aba == 'pessoas' %}atual{% endif %}" {% if aba == 'pessoas' %}aria-current="page"{% endif %}>Pessoas</a>
-            <a href="{{ url_for('amostras') }}" class="aba {% if aba == 'amostras' %}atual{% endif %}" {% if aba == 'amostras' %}aria-current="page"{% endif %}>Amostras</a>
-            <a href="{{ url_for('painel') }}" class="aba {% if aba == 'painel' %}atual{% endif %}" {% if aba == 'painel' %}aria-current="page"{% endif %}>Painel</a>
-            <a href="{{ url_for('conversor') }}" class="aba {% if aba == 'conversor' %}atual{% endif %}" {% if aba == 'conversor' %}aria-current="page"{% endif %}>Conversor</a>
-            <a href="{{ url_for('sobre') }}" class="aba {% if aba == 'sobre' %}atual{% endif %}" {% if aba == 'sobre' %}aria-current="page"{% endif %}>Sobre</a>
+            <a href="{{ url_for('busca') }}" class="aba {% if aba == 'busca' %}atual{% endif %}" {% if aba=='busca'
+                %}aria-current="page" {% endif %}>Busca</a>
+            <a href="{{ url_for('selecao') }}" class="aba {% if aba == 'selecao' %}atual{% endif %}" {% if
+                aba=='selecao' %}aria-current="page" {% endif %}>Seleção {% include "_conta_aba.html" %}</a>
+            <a href="{{ url_for('pessoas') }}" class="aba {% if aba == 'pessoas' %}atual{% endif %}" {% if
+                aba=='pessoas' %}aria-current="page" {% endif %}>Pessoas</a>
+            <a href="{{ url_for('amostras') }}" class="aba {% if aba == 'amostras' %}atual{% endif %}" {% if
+                aba=='amostras' %}aria-current="page" {% endif %}>Amostras</a>
+            <a href="{{ url_for('painel') }}" class="aba {% if aba == 'painel' %}atual{% endif %}" {% if aba=='painel'
+                %}aria-current="page" {% endif %}>Painel</a>
+            <a href="{{ url_for('conversor') }}" class="aba {% if aba == 'conversor' %}atual{% endif %}" {% if
+                aba=='conversor' %}aria-current="page" {% endif %}>Conversor</a>
+            <a href="{{ url_for('sobre') }}" class="aba {% if aba == 'sobre' %}atual{% endif %}" {% if aba=='sobre'
+                %}aria-current="page" {% endif %}>Sobre</a>
         </nav>
         <label class="tema">Tema
             <select id="escolha-tema" aria-label="Tema da página">
                 <option value="">Automático</option>
                 <option value="papel">Papel</option>
-                <option value="branco">Branco</option>
                 <option value="escuro">Escuro</option>
             </select>
         </label>
@@ -43,7 +52,10 @@
         {% block content %}{% endblock %}
     </main>
     <footer class="rodape">
-        Resumos e cotas: Arquivo Histórico Ultramarino (Lisboa), catálogos publicados no ACTD/IICT, e Projeto Resgate "Barão do Rio Branco" (Biblioteca Nacional). Dados derivados: Rocha, S. R. P., <em>Catálogo AHU-Brasil</em> (2026), doi:10.5281/zenodo.18772666, CC BY 4.0. <a href="{{ url_for('sobre') }}#licenca">Licenças</a>
+        Resumos e cotas: Arquivo Histórico Ultramarino (Lisboa), catálogos publicados no ACTD/IICT, e Projeto Resgate
+        "Barão do Rio Branco" (Biblioteca Nacional). Dados derivados: Rocha, S. R. P., <em>Catálogo AHU-Brasil</em>
+        (2026), doi:10.5281/zenodo.18772666, CC BY 4.0. <a href="{{ url_for('sobre') }}#licenca">Licenças</a>
     </footer>
 </body>
+
 </html>

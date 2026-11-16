@@ -372,3 +372,16 @@ def test_resultado_como_gaveta_eins(client):
     assert 'data-copiar="AHU_ACL_CU_021, Cx. 6, D. 390."' in html
     assert "digitarq.arquivos.pt" in html
     assert 'target="_blank"' in html
+
+    # Logo do EINS (pássaro) no cabeçalho no lugar do fleurão e tema papel/escuro sem "branco"
+    assert 'class="marca-logo"' in html
+    assert '<span class="fleurao" aria-hidden="true">❦</span>' not in html
+    assert 'value="papel"' in html
+    assert 'value="escuro"' in html
+    assert 'value="branco"' not in html
+
+    css = (Path(__file__).parent.parent / "web" / "static" / "catalogo.css").read_text(encoding="utf-8")
+    assert "--logo-cor: #111111;" in css
+    assert "--logo-cor: #ffffff;" in css
+    assert ".resultado-card .ano-destaque" in css
+    assert "font-weight: 400;" in css
