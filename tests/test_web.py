@@ -296,7 +296,7 @@ def test_busca_em_dois_tempos(corpus_busca, monkeypatch):
     # Segundo tempo: a ordem é a mesma de `buscar` com o reranker.
     fino = client.get("/resultados?q=soldados&fino=1").text
     esperado = busca.buscar(corpus_busca, "soldados", reranker=_reranker_invertido)
-    ordem = re.findall(r'/doc/([^"]+)" class="link-ficha"', fino)
+    ordem = re.findall(r'/selecao/(?:adicionar|remover)/([^"]+)"', fino)
     assert ordem == [r.doc_uid for r in esperado.resultados[:25]]
     # Daí em diante a resposta relida está guardada: a página já sai na ordem fina.
     assert "fino=1" not in client.get("/busca?q=soldados").text
@@ -357,3 +357,18 @@ def test_docs_desligados_por_padrao_e_limite_pdf(client, corpus_busca, monkeypat
     client.post(f"/selecao/adicionar/{uids[0]}")
     client.post(f"/selecao/adicionar/{uids[1]}")
     assert client.get("/selecao/pdf").status_code == 400
+
+
+def test_resultado_como_gaveta_eins(client):
+    """Cada resultado abre numa gaveta do EINS com cópia de cotas e links externos."""
+    resp = client.get("/busca?q=PT/AHU/CU/021/0006/00390")
+    assert resp.status_code == 200
+    html = resp.text
+
+    assert '<details class="gaveta resultado-gaveta">' in html
+    assert 'class="link-ficha"' not in html
+    assert 'class="resumo resumo-link"' not in html
+    assert 'data-copiar="PT/AHU/CU/021/0006/00390"' in html
+    assert 'data-copiar="AHU_ACL_CU_021, Cx. 6, D. 390."' in html
+    assert "digitarq.arquivos.pt" in html
+    assert 'target="_blank"' in html

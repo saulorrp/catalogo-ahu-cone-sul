@@ -1,24 +1,105 @@
 {% for r, f in fichas %}
 {% set uid = f.doc_uid %}
 {% set marcado = f.doc_uid in na_selecao %}
+{% set cota_principal = f.cotas.get('Código de referência', f.cotas.get('Código atual', f.cotas.get('Código antigo', ''))) %}
 <article class="resultado-card">
-    <header class="resultado-header">
-        <span class="ano-destaque">{{ f.ano or 's/d' }}</span>
-        {% if f.pasta %}<span class="resultado-pasta">{{ f.pasta }}</span>{% endif %}
-        <span class="cota">{{ f.cotas.get('Código de referência', f.cotas.get('Código atual', f.cotas.get('Código antigo', ''))) }}</span>
-    </header>
-    <a class="resumo resumo-link" href="{{ url_for('doc', doc_uid=f.doc_uid) }}">{{ f.resumo_marcado | marcas | safe }}</a>
-    {% set remetentes = f.pessoas | selectattr("tipo", "equalto", "remetente") | map(attribute="nome") | list %}
-    {% set destinatarios = f.pessoas | selectattr("tipo", "equalto", "destinatario") | map(attribute="nome") | list %}
-    {% if remetentes or destinatarios %}
-    <div class="remetente-destinatario">
-        {% if remetentes %}<span class="rotulo">De</span> {{ remetentes | join(', ') }}{% endif %}
-        {% if destinatarios %}<span class="rotulo">{{ 'para' if remetentes else 'Para' }}</span> {{ destinatarios | join(', ') }}{% endif %}
-    </div>
-    {% endif %}
+    <details class="gaveta resultado-gaveta">
+        <summary class="resultado-summary">
+            <div class="resultado-sumario-corpo">
+                <header class="resultado-header">
+                    <span class="ano-destaque">{{ f.ano or 's/d' }}</span>
+                    {% if f.pasta %}<span class="resultado-pasta">{{ f.pasta }}</span>{% endif %}
+                    {% if f.tipologia %}<span class="resultado-tipologia">{{ f.tipologia }}</span>{% endif %}
+                    <span class="cota">{{ cota_principal }}</span>
+                </header>
+                <div class="resumo">{{ f.resumo_marcado | marcas | safe }}</div>
+                {% set remetentes = f.pessoas | selectattr("tipo", "equalto", "remetente") | map(attribute="nome") | list %}
+                {% set destinatarios = f.pessoas | selectattr("tipo", "equalto", "destinatario") | map(attribute="nome") | list %}
+                {% if remetentes or destinatarios or f.destinatario %}
+                <div class="remetente-destinatario">
+                    {% if remetentes %}<span class="rotulo">De</span> {{ remetentes | join(', ') }}{% endif %}
+                    {% if destinatarios %}
+                        <span class="rotulo">{{ 'para' if remetentes else 'Para' }}</span> {{ destinatarios | join(', ') }}
+                    {% elif f.destinatario %}
+                        <span class="rotulo">{{ 'para' if remetentes else 'Para' }}</span> {{ f.destinatario }}
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </summary>
+        <div class="gaveta-content resultado-detalhes">
+            {% if f.cotas %}
+            <div class="resultado-secao">
+                <h4>Cotas</h4>
+                <dl class="cota-list">
+                    {% for k, v in f.cotas.items() %}
+                    <dt class="rotulo">{{ k }}</dt>
+                    <dd class="cota-valor-acao">
+                        <span class="cota">{{ v }}</span>
+                        <button type="button" class="btn btn-copiar" data-copiar="{{ v }}" title="Copiar {{ k }}">Copiar</button>
+                    </dd>
+                    {% endfor %}
+                </dl>
+            </div>
+            {% endif %}
+
+            {% if f.links.digitarq or f.links.resgate %}
+            <div class="resultado-secao">
+                <h4>Onde ver o documento</h4>
+                <div class="links-list">
+                    {% if f.links.digitarq %}
+                    <a href="{{ f.links.digitarq }}" target="_blank" rel="noopener" class="btn">{{ f.links.digitarq_rotulo }}</a>
+                    {% endif %}
+                    {% if f.links.resgate %}
+                    <a href="{{ f.links.resgate }}" target="_blank" rel="noopener" class="btn">{{ f.links.resgate_rotulo or "Portal do Projeto Resgate" }}</a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if f.pessoas %}
+            <div class="resultado-secao">
+                <h4>Pessoas</h4>
+                <ul class="pessoas-list">
+                {% for p in f.pessoas %}
+                    <li>
+                        {% if p.pessoa_uid %}<a href="{{ url_for('pessoa', pessoa_uid=p.pessoa_uid) }}"><strong>{{ p.nome }}</strong></a>{% else %}<strong>{{ p.nome }}</strong>{% endif %} <span class="rotulo">— {{ p.tipo }}</span>
+                        {% if p.exibe_nascimento %}
+                            <span class="pessoa-meta">
+                            {% if p.nascimento %} · nasc. {{ p.nascimento }}{% endif %}
+                            {% if p.pais_epoca %} · à época: {{ p.pais_epoca }}{% endif %}
+                            {% if p.fonte %} · <a href="{{ p.fonte }}" target="_blank" rel="noopener">fonte</a>{% endif %}
+                            </span>
+                        {% elif p.rotulo %}
+                            <span class="pessoa-meta"> · {{ p.rotulo }}</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if f.inferencias %}
+            <details class="gaveta resultado-ia">
+                <summary>Inferências por IA (DeepSeek v3)</summary>
+                <div class="gaveta-content">
+                    <dl class="cota-list">
+                        {% for k, v in f.inferencias.items() %}
+                        <dt class="rotulo">{{ k }}</dt>
+                        <dd>{{ v }}</dd>
+                        {% endfor %}
+                    </dl>
+                </div>
+            </details>
+            {% endif %}
+
+            <div class="resultado-meta-acoes">
+                <a href="https://github.com/saulorrp/catalogo-ahu-cone-sul/issues/new?title=Correção+no+documento+{{ f.doc_uid }}&labels=correcao-de-dado" target="_blank" rel="noopener" class="btn-texto">Reportar erro</a>
+            </div>
+        </div>
+    </details>
     <div class="resultado-acoes">
         {% include "_botao_selecao.html" %}
-        <a href="{{ url_for('doc', doc_uid=f.doc_uid) }}" class="link-ficha">Ver a ficha completa →</a>
     </div>
 </article>
 {% else %}

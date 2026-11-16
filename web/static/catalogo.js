@@ -44,12 +44,29 @@
         }
         // Copiar a cota, com a confirmação no próprio botão.
         const copiar = e.target.closest('[data-copiar]');
-        if (copiar && navigator.clipboard) {
-            navigator.clipboard.writeText(copiar.dataset.copiar).then(function () {
-                const antes = copiar.textContent;
-                copiar.textContent = '✓ Cota copiada';
-                setTimeout(function () { copiar.textContent = antes; }, 1800);
-            });
+        if (copiar) {
+            const texto = copiar.dataset.copiar;
+            const confirmar = function () {
+                if (!copiar.dataset.antes) copiar.dataset.antes = copiar.textContent;
+                copiar.textContent = copiar.classList.contains('btn-copiar') ? '✓ Copiado' : '✓ Cota copiada';
+                clearTimeout(copiar._timerCopiar);
+                copiar._timerCopiar = setTimeout(function () {
+                    copiar.textContent = copiar.dataset.antes;
+                    delete copiar.dataset.antes;
+                }, 1800);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(texto).then(confirmar).catch(function () { });
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = texto;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try { if (document.execCommand('copy')) confirmar(); } catch (_) { }
+                document.body.removeChild(ta);
+            }
             return;
         }
         // Escolher uma sugestão do autocompletar.
