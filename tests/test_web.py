@@ -366,22 +366,35 @@ def test_resultado_como_gaveta_eins(client):
     html = resp.text
 
     assert '<details class="gaveta resultado-gaveta">' in html
+    assert '<table class="cota-sheet">' in html
     assert 'class="link-ficha"' not in html
     assert 'class="resumo resumo-link"' not in html
     assert 'data-copiar="PT/AHU/CU/021/0006/00390"' in html
     assert 'data-copiar="AHU_ACL_CU_021, Cx. 6, D. 390."' in html
+    assert ">⧉</button>" in html
     assert "digitarq.arquivos.pt" in html
     assert 'target="_blank"' in html
 
-    # Logo do EINS (pássaro) no cabeçalho no lugar do fleurão e tema papel/escuro sem "branco"
+    # Logo do EINS (pássaro) no cabeçalho e no favicon da aba, e tema papel/escuro sem "branco"
     assert 'class="marca-logo"' in html
     assert '<span class="fleurao" aria-hidden="true">❦</span>' not in html
+    assert 'icone.svg?v=4" type="image/svg+xml" sizes="any"' in html
+    assert 'icone-escuro.svg?v=4"' in html
+    assert 'sizes="any"' in html
     assert 'value="papel"' in html
     assert 'value="escuro"' in html
     assert 'value="branco"' not in html
 
-    css = (Path(__file__).parent.parent / "web" / "static" / "catalogo.css").read_text(encoding="utf-8")
+    static_dir = Path(__file__).parent.parent / "web" / "static"
+    css = (static_dir / "catalogo.css").read_text(encoding="utf-8")
     assert "--logo-cor: #111111;" in css
     assert "--logo-cor: #ffffff;" in css
     assert ".resultado-card .ano-destaque" in css
     assert "font-weight: 400;" in css
+
+    icone_svg = (static_dir / "icone.svg").read_text(encoding="utf-8")
+    icone_escuro_svg = (static_dir / "icone-escuro.svg").read_text(encoding="utf-8")
+    assert "#111111" in icone_svg and "#ffffff" in icone_svg
+    assert "#cf1f21" not in icone_svg
+    assert "#ffffff" in icone_escuro_svg
+    assert "#cf1f21" not in icone_escuro_svg

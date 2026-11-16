@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Catálogo AHU-Brasil{% endblock %}</title>
-    <link rel="icon" href="{{ url_for('static', path='icone.svg') }}" type="image/svg+xml">
-    <link rel="icon" href="{{ url_for('static', path='icone-escuro.svg') }}" type="image/svg+xml"
-        media="(prefers-color-scheme: dark)">
-    <link rel="icon" href="{{ url_for('static', path='icone-32.png') }}" type="image/png" sizes="32x32">
-    <link rel="apple-touch-icon" href="{{ url_for('static', path='apple-touch-icon.png') }}">
+    <link rel="icon" href="{{ url_for('static', path='icone.svg') }}?v=4" type="image/svg+xml" sizes="any">
+    <link rel="icon" href="{{ url_for('static', path='icone-escuro.svg') }}?v=4" type="image/svg+xml"
+        media="(prefers-color-scheme: dark)" sizes="any">
+    <link rel="icon" href="{{ url_for('static', path='icone-32.png') }}?v=4" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="{{ url_for('static', path='apple-touch-icon.png') }}?v=4">
     <script>try { var t = localStorage.getItem('ahu-tema'); if (t === 'branco') t = 'papel'; if (t) document.documentElement.dataset.tema = t; } catch (e) { }</script>
     {% block head %}{% endblock %}
-    <link rel="stylesheet" href="{{ url_for('static', path='catalogo.css') }}?v=3">
+    <link rel="stylesheet" href="{{ url_for('static', path='catalogo.css') }}?v=4">
     <script src="{{ url_for('static', path='htmx.min.js') }}" defer></script>
-    <script src="{{ url_for('static', path='catalogo.js') }}?v=3" defer></script>
+    <script src="{{ url_for('static', path='catalogo.js') }}?v=4" defer></script>
 </head>
 {% set aba %}{% block aba %}{% endblock %}{% endset %}
 {% set aba = aba | trim %}

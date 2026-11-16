@@ -48,10 +48,16 @@
             const texto = copiar.dataset.copiar;
             const confirmar = function () {
                 if (!copiar.dataset.antes) copiar.dataset.antes = copiar.textContent;
-                copiar.textContent = copiar.classList.contains('btn-copiar') ? '✓ Copiado' : '✓ Cota copiada';
+                if (copiar.classList.contains('btn-icone')) {
+                    copiar.textContent = '✓';
+                    copiar.classList.add('copiado');
+                } else {
+                    copiar.textContent = copiar.classList.contains('btn-copiar') ? '✓ Copiado' : '✓ Cota copiada';
+                }
                 clearTimeout(copiar._timerCopiar);
                 copiar._timerCopiar = setTimeout(function () {
                     copiar.textContent = copiar.dataset.antes;
+                    copiar.classList.remove('copiado');
                     delete copiar.dataset.antes;
                 }, 1800);
             };

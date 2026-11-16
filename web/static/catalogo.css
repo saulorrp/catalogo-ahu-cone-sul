@@ -398,6 +398,7 @@ fieldset { border: none; padding: 0; margin: 0; min-width: 0; }
 .resultado-card .btn-sel,
 .resultado-card h4,
 .resultado-card strong,
+.resultado-card th,
 .resultado-card summary { font-weight: 400; }
 .resultado-pasta, .resultado-tipologia { color: var(--txt-secondary); font-size: 0.88rem; }
 .resultado-header .cota { margin-left: auto; color: var(--txt-secondary); font-size: 0.82rem; text-align: right; }
@@ -419,9 +420,54 @@ fieldset { border: none; padding: 0; margin: 0; min-width: 0; }
     letter-spacing: 0.06em;
     color: var(--txt-secondary);
 }
-.cota-valor-acao { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
-.btn-copiar { padding: 2px 8px; font-size: 0.78rem; color: var(--txt-secondary); }
-.btn-copiar:hover { color: var(--accent-texto); border-color: var(--accent-texto); }
+.cota-sheet {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--raio);
+    overflow: hidden;
+    background: var(--bg-card);
+    font-size: 0.88rem;
+}
+.cota-sheet th, .cota-sheet td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+.cota-sheet tr:last-child th, .cota-sheet tr:last-child td { border-bottom: none; }
+.cota-sheet th.cota-rotulo {
+    width: 1%;
+    white-space: nowrap;
+    text-align: left;
+    font-weight: 500;
+    font-size: 0.84rem;
+    color: var(--txt-secondary);
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+}
+.cota-sheet td.cota-valor { width: 100%; word-break: break-word; }
+.cota-sheet td.cota-acao { width: 1%; white-space: nowrap; text-align: right; padding: 4px 8px; }
+.cota-sheet tbody tr:hover td { background: color-mix(in srgb, var(--bg-hover) 35%, transparent); }
+
+.btn-icone {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--raio);
+    background: transparent;
+    color: var(--txt-secondary);
+    font-family: var(--glifos);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+}
+.btn-icone:hover { background: var(--bg-hover); border-color: var(--border-forte); color: var(--accent-texto); }
+.btn-icone.copiado { color: var(--accent-texto); border-color: var(--accent-texto); background: var(--accent-suave); }
 .resultado-ia { margin-top: 12px; margin-bottom: 4px; }
 .resultado-meta-acoes { display: flex; justify-content: flex-end; margin-top: 8px; }
 .resultado-acoes { display: flex; align-items: center; gap: 16px; margin-top: 10px; padding-left: 24px; }
@@ -558,4 +604,6 @@ textarea { width: 100%; font-family: var(--mono); margin-bottom: 8px; }
     .painel-duplo { grid-template-columns: minmax(0, 1fr); }
     .cota-list { grid-template-columns: 1fr; gap: 2px; }
     .cota-list dt { text-align: left; margin-top: 6px; }
+    .cota-sheet th.cota-rotulo { white-space: normal; width: 36%; padding: 6px 10px; }
+    .cota-sheet td.cota-valor { width: auto; padding: 6px 10px; }
 }

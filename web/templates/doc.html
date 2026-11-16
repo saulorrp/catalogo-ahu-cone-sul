@@ -31,12 +31,19 @@
     <div class="doc-meta">
         <div class="meta-section">
             <h3>Cotas</h3>
-            <dl class="cota-list">
-                {% for k, v in ficha.cotas.items() %}
-                <dt class="rotulo">{{ k }}</dt>
-                <dd class="cota">{{ v }}</dd>
-                {% endfor %}
-            </dl>
+            <table class="cota-sheet">
+                <tbody>
+                    {% for k, v in ficha.cotas.items() %}
+                    <tr>
+                        <th scope="row" class="cota-rotulo">{{ k }}</th>
+                        <td class="cota-valor"><span class="cota">{{ v }}</span></td>
+                        <td class="cota-acao">
+                            <button type="button" class="btn-icone btn-copiar" data-copiar="{{ v }}" title="Copiar {{ k }}" aria-label="Copiar {{ k }}">⧉</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
         
         <div class="meta-section">

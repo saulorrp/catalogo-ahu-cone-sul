@@ -31,15 +31,19 @@
             {% if f.cotas %}
             <div class="resultado-secao">
                 <h4>Cotas</h4>
-                <dl class="cota-list">
-                    {% for k, v in f.cotas.items() %}
-                    <dt class="rotulo">{{ k }}</dt>
-                    <dd class="cota-valor-acao">
-                        <span class="cota">{{ v }}</span>
-                        <button type="button" class="btn btn-copiar" data-copiar="{{ v }}" title="Copiar {{ k }}">Copiar</button>
-                    </dd>
-                    {% endfor %}
-                </dl>
+                <table class="cota-sheet">
+                    <tbody>
+                        {% for k, v in f.cotas.items() %}
+                        <tr>
+                            <th scope="row" class="cota-rotulo">{{ k }}</th>
+                            <td class="cota-valor"><span class="cota">{{ v }}</span></td>
+                            <td class="cota-acao">
+                                <button type="button" class="btn-icone btn-copiar" data-copiar="{{ v }}" title="Copiar {{ k }}" aria-label="Copiar {{ k }}">⧉</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
             {% endif %}
 
