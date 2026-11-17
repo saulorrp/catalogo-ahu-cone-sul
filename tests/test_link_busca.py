@@ -183,3 +183,19 @@ def test_indice_do_resgate_tem_o_quadro_achado_pela_varredura():
     assert indice["PT/AHU/CU/089/0001/00001"] == "089_CU#1"
     assert indice["PT/AHU/CU/022/0001/00001"] == "022_SE#1"
     assert indice["PT/AHU/CU/022/0001/00004"] == "022_SE#64"
+
+
+def test_rolo_da_colonia_do_sacramento_separa_as_series_pelo_rotulo():
+    """O 012_CSRP mistura as séries 012, 059, 065, 066 e 071 com a mesma numeração (auditoria de
+    17/11/2026). Cada documento vai para a série do rótulo da BN, conferido no DocReader."""
+    from pathlib import Path
+
+    from build import cotas
+
+    indice = cotas.ler_docreader(Path(__file__).resolve().parents[1] / "corpus" / "resgate_docreader.tsv.gz")
+    # p. 30 é "AHU_ACL_CU_066, Cx. 1\Doc. 7": antes ia para a 012 por engano.
+    assert indice["PT/AHU/CU/066/0001/00007"] == "012_CSRP#30"
+    assert indice["PT/AHU/CU/012/0001/00007"] == "012_CSRP#2751"
+    assert indice["PT/AHU/CU/059/0001/00031"] == "012_CSRP#352"
+    series = {ref.split("/")[3] for ref, quadro in indice.items() if quadro.startswith("012_CSRP#")}
+    assert series == {"012", "059", "065", "066", "071"}

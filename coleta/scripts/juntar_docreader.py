@@ -18,6 +18,10 @@ Casos especiais:
     descola das 9 caixas locais do catálogo (`Cx. 1..9`, com `3-A`/`3-B`). O mapeamento combina
     `document_id_and_date`, `old_code` e os pares `(caixa, doc_local, sufixo)` extraídos da página
     de Sergipe no gov.br (`coleta/docreader/sergipe_govbr_pagfis.tsv.gz`).
+  - Rolos que misturam séries (`012_CSRP`, auditoria de 17/11/2026): o rolo da Colônia do
+    Sacramento traz também documentos das séries 059, 065, 066 e 071 com a mesma numeração de caixa e
+    documento. A varredura desses rolos grava a série do rótulo (coluna `serie_rotulo`); com ela,
+    cada linha vai para a série certa, e as linhas antigas do rolo no índice são refeitas.
 
 Uso: python coleta/scripts/juntar_docreader.py
 """
@@ -76,6 +80,11 @@ SERIE = {
     "089_CU": "089",
     "089_UL_AV": "035",
 }
+
+# Séries que o catálogo tem sem rolo próprio no DocReader, mas cujos documentos aparecem dentro de
+# outro rolo, com o próprio rótulo (no `012_CSRP`: 059 Brasil-Limites, 065 Montevidéu, 066 Buenos
+# Aires e 071).
+SERIES_SEM_ROLO = {"059", "065", "066", "071"}
 
 RE_DOC_INICIAL = re.compile(r"\s*(\d+)")
 RE_OLD_MG = re.compile(r"cx\.\s*(\d+)\s*,\s*doc\.\s*(\d+)", re.IGNORECASE)
@@ -163,10 +172,45 @@ def carregar_quadros_se() -> dict[str, int]:
     return mapa_ref
 
 
+def rolos_com_serie() -> set[str]:
+    """Rolos cuja varredura gravou a série do rótulo (coluna `serie_rotulo`)."""
+    rolos = set()
+    for arquivo in sorted(VARREDURA.glob("resgate_pagfis_*.tsv.gz")):
+        with gzip.open(arquivo, "rt", encoding="utf-8") as f:
+            leitor = csv.DictReader(f, delimiter="\t")
+            if "serie_rotulo" in (leitor.fieldnames or []):
+                rolos.update(r["bib"] for r in leitor)
+    return rolos
+
+
+def serie_da_linha(bib: str, serie: str, r: dict) -> str | None:
+    """Série CRAV da linha: a do rolo, ou a do rótulo quando o rolo mistura séries.
+
+    Sem `serie_rotulo`, vale a série do rolo. Com ela, a linha só vale se o rótulo trouxer a série do
+    rolo (comparada pelo número principal: `005-001` → `005`; `089_UL_AV` traz `089`) ou uma das
+    séries que o catálogo tem sem rolo próprio (`SERIES_SEM_ROLO`).
+    """
+    rot = (r.get("serie_rotulo") or "").strip()
+    if not rot:
+        return serie
+    esperada = "089" if bib == "089_UL_AV" else serie.split("-")[0]
+    if rot == esperada:
+        return serie
+    if rot in SERIES_SEM_ROLO:
+        return rot
+    return None
+
+
 def main():
     with gzip.open(INDICE, "rt", encoding="utf-8") as f:
         linhas = [l.rstrip("\n").split("\t") for l in f if l.strip()]
     cabecalho, corpo = linhas[0], linhas[1:]
+    refazer = rolos_com_serie()
+    if refazer:
+        antes = len(corpo)
+        corpo = [l for l in corpo if l[1] not in refazer]
+        print(f"refeitos pela série do rótulo: {sorted(refazer)} ({antes - len(corpo)} linhas retiradas)",
+              file=sys.stderr)
     existentes = {l[0] for l in corpo}
     mapa_mg = carregar_mapa_mg()
     novos: dict[str, tuple[str, int]] = {}
@@ -184,6 +228,9 @@ def main():
                 serie = SERIE.get(bib)
                 m_doc = RE_DOC_INICIAL.match(r["doc"])
                 if not serie or not r["caixa"].isdigit() or not m_doc:
+                    continue
+                serie = serie_da_linha(bib, serie, r)
+                if not serie:
                     continue
                 cx = int(r["caixa"])
                 doc = int(m_doc.group(1))

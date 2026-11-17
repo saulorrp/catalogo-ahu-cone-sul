@@ -100,6 +100,19 @@ Para resolver os blocos em `017-1_RJ` (`017-001`) e `005_BA_CA` (`005-001`) onde
 - **Fase 2 (`varrer_capilhas_fase2.py` no `andeca` + `processar_agiulfo_fase2.py` no `agiulfo`):** 1.643/1.643 pastas internas varridas (`52.362` páginas OCR/Gemini, gasto total de `$4,09` no teto de `$10,00`, apenas `1` imagem ausente na origem `005_BA_CA__p28431`).
 - **Integração conservadora (`juntar_capilhas.py`):** **9.468** referências únicas e sem ambiguidade (`4.546` da Fase 1 + `4.922` da Fase 2, incluindo `7` desambiguadas com exatidão pela caixa da pasta; `24` colisões ambíguas descartadas por segurança) incorporadas a `corpus/resgate_docreader.tsv.gz` (`142.057 → 151.525`) e `app_dados/documentos.parquet` (`141.298 → 150.790`, **+9.492** linhas sem alterar nenhum vínculo prévio). Todos os serviços de varredura/OCR no `agiulfo` e no `andeca` foram encerrados e desabilitados ao final.
 
+### Auditoria por amostragem e correção da Colônia do Sacramento (17/11/2026)
+
+Uma auditoria sorteou 850 links e os conferiu na BN, entre 16:59 e 17:52 de 17/11. Foram 100 do gov.br, 300 da varredura, 150 dos mapeamentos especiais e 300 das capilhas, estas guardadas para a revisão visual. A conferência olhou o rótulo da página, se ela é a primeira do documento e se o documento não reaparece adiante no rolo. O roteiro está em `~/resgate_varredura/auditar_links.py` e o painel do `andeca`, na aba 5. Fora o defeito abaixo, nenhum link errado apareceu nos 550 conferidos automaticamente.
+
+**Defeito achado:** o rolo `012_CSRP` mistura documentos das séries 012, 059 (Brasil-Limites), 065 (Montevidéu), 066 (Buenos Aires) e 071, todos com a mesma numeração de caixa e documento. A varredura não gravava a série, então tudo virou 012. Nos pares repetidos valia a primeira página, em geral a da outra série. Resultado: 146 dos 657 links da série 012 abriam o documento errado.
+
+**Correção (18:30–19:00 de 17/11):**
+1. Relemos na BN a série das 1.224 páginas de início do rolo. Agora `resgate_pagfis_012_CSRP.tsv.gz` traz as colunas `serie_rotulo` e `rotulo`: 662 páginas são da série 012, 289 da 059, 224 da 065, 22 da 066 e 27 da 071. As quatro séries extras batem 100% com cotas do catálogo.
+2. `juntar_docreader.py` refaz as linhas dos rolos que têm `serie_rotulo` e manda cada uma para a série do rótulo.
+3. `coleta/scripts/aplicar_indice_resgate.py` leva o índice à coluna `resgate_docreader` do `app_dados`, sem refazer os embeddings.
+
+Com isso, 146 links da 012 foram trocados e 563 documentos das séries 059, 065, 066 e 071 ganharam link pela primeira vez. O total passou de 150.790 para **151.353** de 167.344 documentos com link. Conferimos 40 dos links alterados na BN, e todos estavam certos.
+
 Ficam fora desta leva (e foram diagnosticados na Tab 2 via `varrer_govbr.py`):
 - **`AGRUPAMENTO_BN` (`10.634` antes da última integração, `10.602` em `005-001` + `017-001`):** imagens existem dentro de blocos rotulados por intervalo no DocReader (`p.4542–9918` na Cx. 9 de `017-1_RJ`, `p.17447–18085` na Cx. 36 de `005_BA_CA`).
 - **`ACERVO_EUROPEU_SEM_RESGATE` (`8.087`):** séries do catálogo vindas do ACTD/acervo europeu sem rolo no `docmulti.aspx` (`059`, `065`, `066`, `071`, `076`, `081`, além de caixas ausentes sem PDF correspondente).
