@@ -142,6 +142,7 @@ def test_resgate_com_quadro_abre_a_imagem_do_documento():
     assert destino["resgate"] == ("https://resgate.bn.gov.br/docreader/DocReader.aspx"
                                   "?bib=021_SC&hf=resgate.bn.gov.br&pagfis=37")
     assert destino["resgate_rotulo"] == "Imagem no Projeto Resgate"
+    assert destino["resgate_direto"] is True
 
 
 def test_resgate_sem_quadro_vai_ao_portal():
@@ -150,6 +151,7 @@ def test_resgate_sem_quadro_vai_ao_portal():
     destino = links.do_documento({"new_code": "AHU_ACL_CU_017, Cx. 69, D. 6420."})
     assert destino["resgate"] == links.RESGATE
     assert destino["resgate_rotulo"] == "Portal do Projeto Resgate"
+    assert destino["resgate_direto"] is False
     assert links.resgate("lixo") == links.RESGATE
 
 

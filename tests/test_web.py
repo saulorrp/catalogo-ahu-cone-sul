@@ -439,3 +439,9 @@ def test_api_cota_e_doc_enriquecido(client, corpus_busca):
     assert doc_json["doc_uid"] == uid
     assert "links" in doc_json and "digitarq" in doc_json["links"]
     assert "resumo" in doc_json and "cotas" in doc_json and "pessoas" in doc_json
+
+    # Sem link direto do Resgate: botão "Imagem no Projeto Resgate" aparece cinza/desativado (não clicável)
+    uid_sem = corpus_busca.documentos.iloc[0]["doc_uid"]
+    html_sem = client.get(f"/doc/{uid_sem}").text
+    assert 'class="links-sheet-btn desativado" aria-disabled="true"' in html_sem
+    assert ">Imagem no Projeto Resgate</span>" in html_sem

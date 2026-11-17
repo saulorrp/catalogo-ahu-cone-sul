@@ -162,13 +162,16 @@ def digitarq_do_documento(documento) -> tuple[str | None, bool]:
     return DIGITARQ.format(cota=quote(referencia, safe="")), False
 
 
-def do_documento(documento) -> dict[str, str | None]:
+def do_documento(documento) -> dict[str, str | bool | None]:
     """Os links de uma linha de `documentos.parquet`, e o rótulo do link do DigitArq."""
     link, so_caixa = digitarq_do_documento(documento)
     quadro = _valor(documento, "resgate_docreader")
+    url_resgate = resgate(quadro)
+    direto = bool(quadro) and url_resgate != RESGATE
     return {
         "digitarq": link,
         "digitarq_rotulo": "Caixa no DigitArq" if so_caixa else "Ficha no DigitArq",
-        "resgate": resgate(quadro),
-        "resgate_rotulo": "Imagem no Projeto Resgate" if quadro else "Portal do Projeto Resgate",
+        "resgate": url_resgate,
+        "resgate_rotulo": "Imagem no Projeto Resgate" if direto else "Portal do Projeto Resgate",
+        "resgate_direto": direto,
     }

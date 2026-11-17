@@ -91,7 +91,14 @@ Varredura concluída integralmente no `andeca`: **127.029** linhas mapeadas nos 
 \*\* *Em `011_MG`, a `resgate_com_quadro` inclui também a conversão por `old_code` (`cx. N, doc. M`) e 1 entrada já vinda do gov.br.*
 \*\*\* *Em `022_SE`, o rolo do DocReader usa 6 caixas e numeração contínua de verbete (`1..495`, incluindo `3-A`/`3-B`), enquanto o catálogo CRAV usa 9 caixas e numeração local por caixa. O casamento cruza `document_id_and_date` com `resgate_pagfis_022_SE.tsv.gz` e `(cx, doc, sufixo)` / `old_code` com a tabela HTML do `gov.br` (`sergipe_govbr_pagfis.tsv.gz`).*
 
-No catálogo completo (`app_dados/documentos.parquet`), `resgate_com_quadro` subiu de **15.783** (`main`, 9,4%) → **42.407** (PR #34, 25,3%) → **141.298** de **167.344** documentos (**84,4%**).
+No catálogo completo (`app_dados/documentos.parquet`), `resgate_com_quadro` subiu de **15.783** (`main`, 9,4%) → **42.407** (PR #34, 25,3%) → **141.298** (varredura de 19 rolos + Sergipe, 84,4%) → **150.790** de **167.344** documentos (**90,1%**) após o resgate por capilhas em `017-1_RJ` e `005_BA_CA`.
+
+### Recuperação de `AGRUPAMENTO_BN` por OCR de capilhas (Fases 1 e 2, concluída em 16–17/11/2026)
+
+Para resolver os blocos em `017-1_RJ` (`017-001`) e `005_BA_CA` (`005-001`) onde a BN agrupou dezenas/centenas de documentos sob um único rótulo HTML no DocReader (`coleta/scripts/juntar_capilhas.py`):
+- **Fase 1 (`andeca` + `agiulfo`):** 3.558/3.558 pastas de cabeçalho processadas (`017-1_RJ` e `005_BA_CA`).
+- **Fase 2 (`varrer_capilhas_fase2.py` no `andeca` + `processar_agiulfo_fase2.py` no `agiulfo`):** 1.643/1.643 pastas internas varridas (`52.362` páginas OCR/Gemini, gasto total de `$4,09` no teto de `$10,00`, apenas `1` imagem ausente na origem `005_BA_CA__p28431`).
+- **Integração conservadora (`juntar_capilhas.py`):** **9.468** referências únicas e sem ambiguidade (`4.546` da Fase 1 + `4.922` da Fase 2, incluindo `7` desambiguadas com exatidão pela caixa da pasta; `24` colisões ambíguas descartadas por segurança) incorporadas a `corpus/resgate_docreader.tsv.gz` (`142.057 → 151.525`) e `app_dados/documentos.parquet` (`141.298 → 150.790`, **+9.492** linhas sem alterar nenhum vínculo prévio). Todos os serviços de varredura/OCR no `agiulfo` e no `andeca` foram encerrados e desabilitados ao final.
 
 Ficam fora desta leva (e foram diagnosticados na Tab 2 via `varrer_govbr.py`):
 - **`AGRUPAMENTO_BN` (`10.634` antes da última integração, `10.602` em `005-001` + `017-001`):** imagens existem dentro de blocos rotulados por intervalo no DocReader (`p.4542–9918` na Cx. 9 de `017-1_RJ`, `p.17447–18085` na Cx. 36 de `005_BA_CA`).

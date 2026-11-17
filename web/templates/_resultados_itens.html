@@ -54,8 +54,10 @@
                     {% if f.links.digitarq %}
                     <a href="{{ f.links.digitarq }}" target="_blank" rel="noopener" class="links-sheet-btn">{{ f.links.digitarq_rotulo }}</a>
                     {% endif %}
-                    {% if f.links.resgate %}
-                    <a href="{{ f.links.resgate }}" target="_blank" rel="noopener" class="links-sheet-btn">{{ f.links.resgate_rotulo or "Portal do Projeto Resgate" }}</a>
+                    {% if f.links.resgate_direto %}
+                    <a href="{{ f.links.resgate }}" target="_blank" rel="noopener" class="links-sheet-btn">Imagem no Projeto Resgate</a>
+                    {% elif f.links.resgate %}
+                    <span class="links-sheet-btn desativado" aria-disabled="true" title="Link direto da imagem no Projeto Resgate ainda não registrado para este documento">Imagem no Projeto Resgate</span>
                     {% endif %}
                 </div>
             </div>
