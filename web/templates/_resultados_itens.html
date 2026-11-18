@@ -100,7 +100,7 @@
             {% endif %}
 
             <div class="resultado-meta-acoes">
-                <a href="https://github.com/saulorrp/catalogo-ahu-cone-sul/issues/new?title=Correção+no+documento+{{ f.doc_uid }}&labels=correcao-de-dado" target="_blank" rel="noopener" class="btn-texto">Reportar erro</a>
+                <a href="{{ email_de_documento(f.doc_uid, cota_principal, f.titulo) }}" class="btn-texto">Reportar erro</a>
             </div>
         </div>
     </details>

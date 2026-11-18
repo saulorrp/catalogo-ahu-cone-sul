@@ -424,6 +424,7 @@ class PaginaPessoa:
     sem_data: int = 0
     url_documentos: str = ""
     url_issue: str = ""
+    url_erro: str = ""
 
 
 def url_dos_documentos(pessoa_uid: str) -> str:
@@ -471,6 +472,8 @@ def pagina(dados, pessoa_uid: str) -> PaginaPessoa:
         url_documentos=url_dos_documentos(pessoa_uid),
         url_issue=links.issue_de_pessoa(pessoa_uid, pessoa.nome,
                                         dado=_dado_para_a_issue(pessoa), fonte=pessoa.fonte),
+        url_erro=links.email_de_pessoa(pessoa_uid, pessoa.nome,
+                                       dado=_dado_para_a_issue(pessoa), fonte=pessoa.fonte),
     )
 
 

@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from fastapi import Request
 from fastapi.templating import Jinja2Templates
 
+from ahu import links
 from ahu.consulta import Consulta
 from ahu.selecao import SEPARADOR_URL, Selecao
 
@@ -42,6 +43,7 @@ templates.env.filters["marcas"] = _marcas
 templates.env.filters["milhar"] = _milhar
 templates.env.filters["id_seguro"] = _id_seguro
 templates.env.globals["conta_selecao"] = conta_selecao
+templates.env.globals["email_de_documento"] = links.email_de_documento
 
 
 def selecao_do_pedido(request: Request, dados) -> Selecao:

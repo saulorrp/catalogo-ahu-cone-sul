@@ -77,6 +77,61 @@ def referencia_crav(texto: str | None) -> str | None:
 REPOSITORIO = os.environ.get("AHU_REPO_GITHUB", "saulorrp/catalogo-ahu-cone-sul")
 ETIQUETA_ISSUE = "correcao-de-dado"
 
+# "Reportar erro" abre o e-mail do leitor, endereçado ao autor (pedido do saulo, 18/11/2026): quem
+# lê o catálogo raramente tem conta no GitHub. `AHU_EMAIL_ERRO` deixa um fork trocar o endereço, e
+# `AHU_URL_PUBLICA` é o endereço do app citado na mensagem.
+EMAIL_ERRO = os.environ.get("AHU_EMAIL_ERRO", "saulorrp@gmail.com")
+URL_PUBLICA = os.environ.get("AHU_URL_PUBLICA", "https://agiulfo.tailc278e6.ts.net/ahu").rstrip("/")
+
+
+def _email(assunto: str, linhas: list[str], destino: str | None = None) -> str:
+    """Um `mailto:` com assunto e corpo, codificados com %20 (o `+` não vira espaço em `mailto:`)."""
+    return f"mailto:{destino or EMAIL_ERRO}?" + urlencode(
+        {"subject": assunto, "body": "\n".join(linhas)}, quote_via=quote)
+
+
+def email_de_documento(doc_uid: str, cota: str | None = None, titulo: str | None = None,
+                       destino: str | None = None) -> str:
+    """"Reportar erro" de um documento: o e-mail já diz qual documento é e onde ele está no app."""
+    rotulo = cota or doc_uid
+    return _email(f"Catálogo AHU: erro no documento {rotulo}", [
+        "Olá,",
+        "",
+        "Encontrei um erro neste documento do Catálogo AHU:",
+        "",
+        f"Cota: {cota or '—'}",
+        f"Título: {titulo or '—'}",
+        f"Identificador: {doc_uid}",
+        f"Página: {URL_PUBLICA}/doc/{doc_uid}",
+        "",
+        "O que está errado:",
+        "",
+        "",
+        "Qual seria o dado correto (e a fonte, se houver):",
+        "",
+    ], destino)
+
+
+def email_de_pessoa(pessoa_uid: str, nome: str, dado: str | None = None,
+                    fonte: str | None = None, destino: str | None = None) -> str:
+    """"Reportar erro" da aba Pessoas, por e-mail, com o mesmo conteúdo da *issue*."""
+    return _email(f"Catálogo AHU: erro na pessoa {nome}", [
+        "Olá,",
+        "",
+        "Encontrei um erro nesta pessoa do Catálogo AHU:",
+        "",
+        f"Pessoa: {nome}",
+        f"Identificador: {pessoa_uid}",
+        f"Dado exibido hoje: {dado or '—'}",
+        f"Fonte do dado: {fonte or '—'}",
+        "",
+        "O que está errado:",
+        "",
+        "",
+        "Qual é o dado correto, e com que fonte:",
+        "",
+    ], destino)
+
 
 def digitarq(cota: str | None) -> str | None:
     """Busca no DigitArq pelo código de referência. None quando não há cota reconhecível.

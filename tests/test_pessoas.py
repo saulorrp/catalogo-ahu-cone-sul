@@ -404,3 +404,25 @@ def test_a_tabela_traz_a_fonte_como_url(corpus_real):
     assert "Fonte" in tabela.columns
     fontes = [f for f in tabela["Fonte"] if f]
     assert fontes and all(f.startswith("http") for f in fontes)
+
+
+def test_reportar_erro_abre_um_email_com_o_documento():
+    """"Reportar erro" abre o e-mail do leitor, endereçado ao autor, já dizendo qual é o documento."""
+    from urllib.parse import parse_qs, urlparse
+
+    url = links.email_de_documento("ahu-brasil:3d279df961", "AHU_ACL_CU_010, Cx. 7, D. 434",
+                                   "1753 · CONSULTA")
+    assert url.startswith(f"mailto:{links.EMAIL_ERRO}?") and links.EMAIL_ERRO == "saulorrp@gmail.com"
+    assert "+" not in url  # em mailto: o + não vira espaço
+    campos = {k: v[0] for k, v in parse_qs(urlparse(url).query).items()}
+    assert "AHU_ACL_CU_010, Cx. 7, D. 434" in campos["subject"]
+    assert "ahu-brasil:3d279df961" in campos["body"] and "1753 · CONSULTA" in campos["body"]
+    assert f"{links.URL_PUBLICA}/doc/ahu-brasil:3d279df961" in campos["body"]
+
+
+def test_reportar_erro_da_pessoa_e_um_email(corpus_busca):
+    pessoa = mp.encontrar(corpus_busca, "Lavradio")[0]
+    pagina = mp.pagina(corpus_busca, pessoa.pessoa_uid)
+    assert pagina.url_erro.startswith(f"mailto:{links.EMAIL_ERRO}?")
+    from urllib.parse import unquote
+    assert "%20" in pagina.url_erro and pessoa.pessoa_uid in unquote(pagina.url_erro)

@@ -25,7 +25,7 @@
         {% set uid = ficha.doc_uid %}
         {% include "_botao_selecao.html" %}
         <button type="button" class="btn" data-copiar="{{ cota_principal }}">Copiar a cota</button>
-        <a href="https://github.com/saulorrp/catalogo-ahu-cone-sul/issues/new?title=Correção+no+documento+{{ ficha.doc_uid }}&labels=correcao-de-dado" target="_blank" rel="noopener" class="btn-texto empurra">Reportar erro</a>
+        <a href="{{ email_de_documento(ficha.doc_uid, cota_principal, ficha.titulo) }}" class="btn-texto empurra">Reportar erro</a>
     </div>
 
     <div class="doc-meta">
