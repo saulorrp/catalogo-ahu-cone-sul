@@ -148,3 +148,7 @@ Para publicar em produção (`https://agiulfo.tailc278e6.ts.net/ahu/`):
 - **Auditor `gov.br` (`resgate-govbr.service`):** `varrer_govbr.py` com 4 workers gentis, intervalo mínimo global (`0,28s` + jitter), cache em `govbr_raw/`, inventário de PDFs e cruzamento automático com `catalogo_resumo.json.gz` (`385` páginas mapeadas, `13` PDFs, `88.780` links DocReader, `erros=0`), gerando `govbr_arvore.json` e `diagnostico_faltantes.json`.
 - **Painel Web (`resgate-painel.service`):** `http://192.168.1.192:8080` (`painel.py`) com duas abas persistentes (**Tab 1 — Varredura DocReader** e **Tab 2 — Mapa `gov.br` & Faltantes**), saúde do Pi, IP/país da VPN e logs ao vivo.
 - **Backup automático:** tarefa agendada `ResgateVarreduraBackupAndeca` no Hermerico rodando `sync_backup_andeca.ps1` a cada 15 minutos, espelhando `.tsv`, `.ok`, `max_*.txt` e `varredura.log` para `Desktop\resgate_varredura\`.
+
+## Auditoria de 17–18/11/2026
+
+2.550 links foram conferidos por amostragem, entre o rótulo da BN e a leitura das capilhas. Os erros achados foram corrigidos: o rolo `012_CSRP` e a regra 6 de `juntar_capilhas.py`. Com 95% de confiança, a taxa de links errados fica abaixo de 0,23%. O registro completo está em [`auditoria_2026-11.md`](auditoria_2026-11.md).

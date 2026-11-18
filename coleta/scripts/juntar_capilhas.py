@@ -12,6 +12,14 @@ Regras estritas para zero erro:
      (preferindo Fase 2 sobre Fase 1 caso haja sobreposição).
   5. Confere que toda referência nova existe em `app_dados/documentos.parquet` e que nenhuma
      linha que já possuía `resgate_docreader` é alterada.
+  6. Quando o Gemini leu a página (`gem_json`), só aceita os números que ele confirma: os de
+     `docs_explicitos` ou os da faixa `faixa_inicio`–`faixa_fim`. O Tesseract às vezes lê na página
+     números que não são dela (a auditoria de 17/11/2026 achou capilhas de 20.300–20.303 ligadas
+     também ao doc. 20.308). Sem essa regra, a Fase 2 ligou 82 números a capilhas erradas.
+
+`--refazer` retira do índice os links que as capilhas trouxeram (rolos 005_BA_CA e 017-1_RJ que não
+estavam no índice antes de 31d10a4) e os junta de novo com as regras acima. Depois rode
+`aplicar_indice_resgate.py` para levar o índice ao app.
 
 Uso: python coleta/scripts/juntar_capilhas.py [--capilhas-dir ~/resgate_capilhas] [--dry-run]
 """
@@ -22,6 +30,7 @@ import gzip
 import hashlib
 import io
 import json
+import subprocess
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -56,6 +65,17 @@ def carregar_jsonl(caminho: Path) -> dict[str, dict]:
     return itens
 
 
+def doc_confirmado(r: dict, d: int) -> bool:
+    """Regra 6: o número precisa estar na leitura do Gemini, quando ela existe."""
+    g = r.get("gem_json")
+    if not g:
+        return True
+    if d in {int(x) for x in g.get("docs_explicitos") or [] if str(x).isdigit()}:
+        return True
+    ini, fim = g.get("faixa_inicio"), g.get("faixa_fim")
+    return isinstance(ini, int) and isinstance(fim, int) and min(ini, fim) <= d <= max(ini, fim)
+
+
 def coletar_novos_links(capilhas_dir: Path, existentes: dict[str, tuple[str, int]],
                         refs_validas: set[str]) -> tuple[dict[str, tuple[str, int]], dict[str, int]]:
     mapa = json.loads((capilhas_dir / "mapa_canonico_ca.json").read_text(encoding="utf-8"))
@@ -72,6 +92,7 @@ def coletar_novos_links(capilhas_dir: Path, existentes: dict[str, tuple[str, int
         "fase1_unicos": 0,
         "fase2_unicos": 0,
         "desambiguados_caixa": 0,
+        "recusados_fora_da_leitura": 0,
     }
 
     for rset, label, prio in ((res1.values(), "f1", 1), (res2.values(), "f2", 0)):
@@ -88,6 +109,9 @@ def coletar_novos_links(capilhas_dir: Path, existentes: dict[str, tuple[str, int
             parent = fila2.get(r.get("pasta_id")) if label == "f2" else fila1.get(r["id"])
             cx_parent = parent.get("caixa") if parent else None
             for d in r.get("resolved_docs") or []:
+                if not doc_confirmado(r, int(d)):
+                    stats["recusados_fora_da_leitura"] += 1
+                    continue
                 cands = mapa.get(serie, {}).get(str(int(d)), [])
                 uniq_refs = sorted({c["ref"] for c in cands})
                 if len(uniq_refs) == 1:
@@ -126,7 +150,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--capilhas-dir", default=str(Path.home() / "resgate_capilhas"))
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--refazer", action="store_true",
+                    help="retira os links das capilhas e os junta de novo (só o índice)")
     args = ap.parse_args()
+    if args.refazer:
+        return refazer(Path(args.capilhas_dir), args.dry_run)
 
     capilhas_dir = Path(args.capilhas_dir)
     with gzip.open(INDICE, "rt", encoding="utf-8") as f:
@@ -193,6 +221,50 @@ def main() -> int:
     manifest.setdefault("acertos", {})["resgate_com_quadro"] = total_com_quadro
     manifest["artefatos"]["documentos.parquet"] = sha256_arquivo(DOCS_PARQUET)
     MANIFEST_JSON.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return 0
+
+
+def refs_antes_das_capilhas() -> set[str]:
+    raw = subprocess.run(["git", "-C", str(RAIZ), "show", "31d10a4^:corpus/resgate_docreader.tsv.gz"],
+                         check=True, capture_output=True).stdout
+    with gzip.open(io.BytesIO(raw), "rt", encoding="utf-8") as f:
+        next(f)
+        return {linha.split("\t", 1)[0] for linha in f}
+
+
+def refazer(capilhas_dir: Path, dry_run: bool) -> int:
+    with gzip.open(INDICE, "rt", encoding="utf-8") as f:
+        linhas = [linha.rstrip("\n").split("\t") for linha in f if linha.strip()]
+    cabecalho, corpo = linhas[0], linhas[1:]
+    atual = {linha[0]: (linha[1], int(linha[2])) for linha in corpo}
+    antes = refs_antes_das_capilhas()
+    das_capilhas = {r for r, (bib, _) in atual.items() if bib in SERIE_BIB and r not in antes}
+    base = {r: v for r, v in atual.items() if r not in das_capilhas}
+    refs_validas = {r for r in pq.read_table(DOCS_PARQUET, columns=["reference_code"])["reference_code"].to_pylist()
+                    if isinstance(r, str)}
+    novos, stats = coletar_novos_links(capilhas_dir, base, refs_validas)
+    retirados = sorted(das_capilhas - set(novos))
+    trocados = sorted(r for r in das_capilhas & set(novos) if novos[r] != atual[r])
+    acrescentados = sorted(set(novos) - das_capilhas)
+    print(json.dumps({"links_das_capilhas_antes": len(das_capilhas), "depois": len(novos),
+                      "retirados": len(retirados), "trocados": len(trocados),
+                      "acrescentados": len(acrescentados), **stats}, ensure_ascii=False, indent=2))
+    for r in retirados:
+        print("retirado", r, *atual[r])
+    for r in trocados:
+        print("trocado", r, *atual[r], "->", *novos[r])
+    for r in acrescentados:
+        print("novo", r, *novos[r])
+    if dry_run:
+        return 0
+    final = dict(base)
+    final.update(novos)
+    buf = io.StringIO()
+    buf.write("\t".join(cabecalho) + "\n")
+    for r in sorted(final):
+        buf.write(f"{r}\t{final[r][0]}\t{final[r][1]}\n")
+    with gzip.GzipFile(INDICE, "wb", mtime=0) as f:
+        f.write(buf.getvalue().encode("utf-8"))
     return 0
 
 

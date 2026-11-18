@@ -199,3 +199,30 @@ def test_rolo_da_colonia_do_sacramento_separa_as_series_pelo_rotulo():
     assert indice["PT/AHU/CU/059/0001/00031"] == "012_CSRP#352"
     series = {ref.split("/")[3] for ref, quadro in indice.items() if quadro.startswith("012_CSRP#")}
     assert series == {"012", "059", "065", "066", "071"}
+
+
+def test_capilha_so_liga_os_numeros_que_o_gemini_confirma():
+    """A Fase 2 ligava todo número que o Tesseract via na capilha, mesmo fora da faixa lida pelo
+    Gemini (auditoria de 17/11/2026: 20.308 na capilha de 20.300–20.303)."""
+    import importlib.util
+    from pathlib import Path
+
+    caminho = Path(__file__).resolve().parents[1] / "coleta" / "scripts" / "juntar_capilhas.py"
+    spec = importlib.util.spec_from_file_location("juntar_capilhas", caminho)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    r = {"gem_json": {"docs_explicitos": [20300, 20301], "faixa_inicio": 20300, "faixa_fim": 20303}}
+    assert mod.doc_confirmado(r, 20302)
+    assert not mod.doc_confirmado(r, 20308)
+    assert not mod.doc_confirmado({"gem_json": {"docs_explicitos": [12703]}}, 12708)
+    assert mod.doc_confirmado({"tess_docs": [5]}, 5)  # sem leitura do Gemini, vale o Tesseract
+
+    from build import cotas
+
+    indice = cotas.ler_docreader(Path(__file__).resolve().parents[1] / "corpus" / "resgate_docreader.tsv.gz")
+    for ref in ("PT/AHU/CU/005-001/0104/20308", "PT/AHU/CU/005-001/0070/13432",
+                "PT/AHU/CU/005-001/0066/12708", "PT/AHU/CU/005-001/0117/23004"):
+        assert ref not in indice
+    # As duplicatas do catálogo recebem o link do par (rótulo da BN: Cx. 7; série 016).
+    assert indice["PT/AHU/CU/010/0007/00434"] == indice["PT/AHU/CU/010/0006/00434"] == "010_MT#3466"
+    assert indice["PT/AHU/CU/016/0008/00450"] == indice["PT/AHU/CU/018/0008/00450"] == "016_PI#4691"
