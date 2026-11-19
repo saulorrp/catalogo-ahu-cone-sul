@@ -1,4 +1,4 @@
-{# "Σ Adicionar à lista": só no endereço privado do eins zwei (web/rotas_lista.py). Troca a si mesmo pela resposta. #}
+{# "🙦 Adicionar à lista": só no endereço privado do eins zwei (web/rotas_lista.py). Troca a si mesmo pela resposta. #}
 {% set estados_lista = estados_na_lista(request) %}
 {% if estados_lista is not none %}
 {% set estado_lista = estados_lista.get(uid) %}
@@ -10,9 +10,9 @@
         aria-pressed="{{ 'true' if estado_lista else 'false' }}"
         title="{% if estado_lista %}Na Lista do eins zwei ({{ estado_lista }}). Clique para tirar.{% else %}Guardar este processo na Lista do eins zwei, de onde ele vai para a triagem{% endif %}">
     {%- if estado_lista -%}
-    <span class="sel-sim">Σ Na lista{% if estado_lista != 'na lista' %} · {{ estado_lista }}{% endif %}</span><span class="sel-tirar">✕ Tirar da lista</span>
+    <span class="sel-sim">🙦 Na lista{% if estado_lista != 'na lista' %} · {{ estado_lista }}{% endif %}</span><span class="sel-tirar">✕ Tirar da lista</span>
     {%- else -%}
-    <span class="capitulo">Σ</span> Adicionar à lista
+    <span class="folha-lista" aria-hidden="true">🙦</span> Adicionar à lista
     {%- endif -%}
 </button>
 {% if aviso_lista %}<span class="aviso-lista">{{ aviso_lista }}</span>{% endif %}

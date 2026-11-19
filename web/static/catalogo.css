@@ -267,6 +267,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 .btn-lista:hover { background: var(--accent-suave); }
 .btn-lista.marcado { background: var(--txt-secondary); border-color: var(--txt-secondary); color: var(--bg-panel); }
 .btn-lista .sel-tirar { display: none; }
+.folha-lista { font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "Symbola", sans-serif; font-weight: 400; }
 .btn-lista.marcado:hover .sel-sim, .btn-lista.marcado:focus-visible .sel-sim { display: none; }
 .btn-lista.marcado:hover .sel-tirar, .btn-lista.marcado:focus-visible .sel-tirar { display: inline; }
 .aviso-lista { font-size: 0.85em; color: var(--txt-secondary); }
