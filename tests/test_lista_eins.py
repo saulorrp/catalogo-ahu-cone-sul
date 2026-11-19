@@ -113,3 +113,26 @@ def test_api_do_eins(privado):
     assert client.put(f"/api/lista/{cota}", json={"estado": "x"}, headers=PRIVADO).status_code == 400
     assert client.delete(f"/api/lista/{cota}", headers=PRIVADO).status_code == 204
     assert client.delete(f"/api/lista/{cota}", headers=PRIVADO).status_code == 404
+
+
+def test_notas_do_eins(privado, monkeypatch):
+    client, pasta = privado
+    cota = "021-0006-00390"
+    assert client.get("/api/notas").status_code == 403
+    assert client.get(f"/api/notas/{cota}", headers=PRIVADO).status_code == 404
+    assert client.put(f"/api/notas/{cota}", content="{}", headers=PRIVADO).status_code == 415
+    assert client.put(f"/api/notas/{cota}", json={"x": 1}, headers=PRIVADO).status_code == 400
+    r = client.put(f"/api/notas/{cota}", json={"texto": "D1\n[foto 13h50-52]", "aparelho": "tablet"},
+                   headers=PRIVADO).json()
+    assert r["versao"] == 1 and r["texto"].endswith("52]")
+    assert (pasta / "notas" / f"{cota}.md").read_text(encoding="utf-8") == "D1\n[foto 13h50-52]"
+    # O mesmo aparelho, logo depois: troca sem cópia. Outro aparelho: a versão anterior fica guardada.
+    client.put(f"/api/notas/{cota}", json={"texto": "D1 C1", "aparelho": "tablet"}, headers=PRIVADO)
+    assert not (pasta / "notas" / "versoes").exists()
+    r = client.put(f"/api/notas/{cota}", json={"texto": "D1 C1 C2", "aparelho": "pc"}, headers=PRIVADO).json()
+    assert r["versao"] == 3
+    guardadas = list((pasta / "notas" / "versoes" / cota).glob("*.md"))
+    assert [g.read_text(encoding="utf-8") for g in guardadas] == ["D1 C1"]
+    itens = client.get("/api/notas", headers=PRIVADO).json()["itens"]
+    assert [i["cota"] for i in itens] == [cota]
+    assert client.put("/api/notas/..%2Fx", json={"texto": ""}, headers=PRIVADO).status_code in (400, 404)

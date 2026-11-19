@@ -20,6 +20,8 @@ from fastapi.responses import Response
 import web.main as main_module
 from ahu.busca import chave_cota, tabela_de_cotas
 from ahu.lista_eins import FORMATO, Lista, cota_curta, cota_valida
+from ahu.notas_eins import FORMATO as FORMATO_NOTAS
+from ahu.notas_eins import Notas
 from web.core import templates
 
 router = APIRouter()
@@ -148,6 +150,53 @@ def api_lista_remover(request: Request, cota: str):
     if not cota_valida(cota) or not lista.remover(cota):
         raise HTTPException(status_code=404, detail="Processo fora da Lista")
     return Response(status_code=204)
+
+
+# ---- As notas da aba γ notas (ahu/notas_eins.py), na subpasta notas/ da Lista -----------------
+
+def _notas(request: Request) -> Notas:
+    lista = _exigir(request)
+    return Notas(lista.pasta / "notas")
+
+
+async def _json(request: Request):
+    if not request.headers.get("content-type", "").startswith("application/json"):
+        raise HTTPException(status_code=415, detail="Mande JSON")
+    corpo = await request.body()
+    if len(corpo) > MAX_CORPO:
+        raise HTTPException(status_code=413, detail="Grande demais")
+    try:
+        return json.loads(corpo or b"{}")
+    except ValueError:
+        raise HTTPException(status_code=400, detail="JSON inválido")
+
+
+@router.get("/api/notas", name="api_notas")
+def api_notas(request: Request):
+    return {"formato": FORMATO_NOTAS, "itens": _notas(request).listar()}
+
+
+@router.get("/api/notas/{cota}", name="api_notas_cota")
+def api_notas_cota(request: Request, cota: str):
+    notas = _notas(request)
+    nota = notas.ler(cota) if cota_valida(cota) else None
+    if nota is None:
+        raise HTTPException(status_code=404, detail="Sem notas para este processo")
+    return nota
+
+
+@router.put("/api/notas/{cota}", name="api_notas_gravar")
+async def api_notas_gravar(request: Request, cota: str):
+    notas = _notas(request)
+    if not cota_valida(cota):
+        raise HTTPException(status_code=400, detail="Use a cota curta (089-0010-00955)")
+    corpo = await _json(request)
+    if not isinstance(corpo, dict) or not isinstance(corpo.get("texto"), str):
+        raise HTTPException(status_code=400, detail="Mande {texto}")
+    try:
+        return notas.gravar(cota, corpo["texto"], str(corpo.get("aparelho") or ""))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # ---- O botão "Σ Adicionar à lista" (o catálogo) -----------------------------------------------
