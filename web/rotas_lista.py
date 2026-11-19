@@ -4,7 +4,7 @@ A Lista só existe no endereço privado do eins zwei. Duas variáveis de ambient
 `EINS_LISTA_DIR` (a pasta dos registros) e `EINS_LISTA_TOKEN`. O proxy do endereço privado
 (nginx, só na rede Tailscale) acrescenta a todo pedido o cabeçalho `X-Eins-Lista` com o token; o
 endereço público nunca o manda. Sem as variáveis, as rotas respondem 404; sem o cabeçalho certo,
-403, e o catálogo não mostra o botão "Σ Adicionar à lista".
+403, e o catálogo não mostra o botão "🙦 Adicionar à lista".
 
 Os pedidos que mudam a Lista exigem um cabeçalho que um formulário de outro site não consegue
 mandar (`HX-Request` nos botões, `Content-Type: application/json` na API), para que uma página
@@ -199,7 +199,7 @@ async def api_notas_gravar(request: Request, cota: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 
-# ---- O botão "Σ Adicionar à lista" (o catálogo) -----------------------------------------------
+# ---- O botão "🙦 Adicionar à lista" (o catálogo) -----------------------------------------------
 
 def _botao(request: Request, lista: Lista, doc_uid: str, aviso: str = ""):
     request.state.estados_lista = lista.estados_por_doc()
