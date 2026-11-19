@@ -9,6 +9,7 @@ from ahu.dados import ErroDados, carregar
 from web.rotas_api import router as router_api
 from web.rotas_busca import router as router_busca
 from web.rotas_doc import router as router_doc
+from web.rotas_lista import router as router_lista
 from web.rotas_paginas import router as router_paginas
 
 # Nomes de rota para url_for:
@@ -27,6 +28,7 @@ from web.rotas_paginas import router as router_paginas
 # "painel" (GET /painel)
 # "sobre" (GET /sobre)
 # "referencias" (GET /referencias)
+# "api_lista", "adicionar_lista", "remover_lista": a Lista do eins zwei (web/rotas_lista.py)
 
 dados_app = None
 encoder_app = None
@@ -112,6 +114,7 @@ def criar_app(dados_injetados=None):
     inner_app.include_router(router_busca)
     inner_app.include_router(router_doc)
     inner_app.include_router(router_api)
+    inner_app.include_router(router_lista)
     inner_app.include_router(router_paginas)
 
     import pathlib
