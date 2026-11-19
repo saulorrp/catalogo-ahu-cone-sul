@@ -1,0 +1,20 @@
+{# "Σ Adicionar à lista": só no endereço privado do eins zwei (web/rotas_lista.py). Troca a si mesmo pela resposta. #}
+{% set estados_lista = estados_na_lista(request) %}
+{% if estados_lista is not none %}
+{% set estado_lista = estados_lista.get(uid) %}
+<span id="lista-{{ uid | id_seguro }}" class="botao-lista">
+<button type="button" class="btn btn-lista{% if estado_lista %} marcado{% endif %}"
+        hx-post="{{ url_for('remover_lista' if estado_lista else 'adicionar_lista', doc_uid=uid) }}"
+        hx-target="#lista-{{ uid | id_seguro }}" hx-swap="outerHTML" hx-select="unset" hx-push-url="false" hx-indicator="this"
+        {% if estado_lista and estado_lista != 'na lista' %}hx-confirm="Este processo já está {{ estado_lista }} na Lista. Tirá-lo mesmo assim? O registro vai para a lixeira da Lista, e a pasta organizada não muda."{% endif %}
+        aria-pressed="{{ 'true' if estado_lista else 'false' }}"
+        title="{% if estado_lista %}Na Lista do eins zwei ({{ estado_lista }}). Clique para tirar.{% else %}Guardar este processo na Lista do eins zwei, de onde ele vai para a triagem{% endif %}">
+    {%- if estado_lista -%}
+    <span class="sel-sim">Σ Na lista{% if estado_lista != 'na lista' %} · {{ estado_lista }}{% endif %}</span><span class="sel-tirar">✕ Tirar da lista</span>
+    {%- else -%}
+    <span class="capitulo">Σ</span> Adicionar à lista
+    {%- endif -%}
+</button>
+{% if aviso_lista %}<span class="aviso-lista">{{ aviso_lista }}</span>{% endif %}
+</span>
+{% endif %}

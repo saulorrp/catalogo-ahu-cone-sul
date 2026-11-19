@@ -24,6 +24,7 @@
     <div class="doc-actions">
         {% set uid = ficha.doc_uid %}
         {% include "_botao_selecao.html" %}
+        {% include "_botao_lista.html" %}
         <button type="button" class="btn" data-copiar="{{ cota_principal }}">Copiar a cota</button>
         <a href="{{ email_de_documento(ficha.doc_uid, cota_principal, ficha.titulo) }}" class="btn-texto empurra">Reportar erro</a>
     </div>
