@@ -157,7 +157,8 @@ class Lista:
                 registro["ficha"] = ficha
                 registro["ficha_em"] = quando
                 cotas = ficha.get("cotas") or {}
-                registro["cota_referencia"] = cotas.get("Código de referência") or registro.get("cota_referencia")
+                registro["cota_referencia"] = (cotas.get("Código de referência")
+                                               or registro.get("cota_referencia"))
                 registro["doc_uid"] = ficha.get("doc_uid") or registro.get("doc_uid")
                 registro["titulo"] = ficha.get("titulo") or registro.get("titulo")
                 registro["ano"] = ficha.get("ano") if ficha.get("ano") is not None else registro.get("ano")
@@ -167,8 +168,8 @@ class Lista:
                 if estado not in ESTADOS:
                     raise ValueError(f"estado desconhecido: {estado!r}")
                 if estado != registro.get("estado"):
-                    registro["historico"].append({"tipo": "estado", "em": quando, "de": registro.get("estado"),
-                                                  "para": estado})
+                    registro["historico"].append(
+                        {"tipo": "estado", "em": quando, "de": registro.get("estado"), "para": estado})
                 registro["estado"] = estado
 
             pasta = mudanca.get("pasta")
@@ -186,7 +187,8 @@ class Lista:
 
             evento = mudanca.get("evento")
             if isinstance(evento, dict) and evento.get("tipo"):
-                registro["historico"].append({**evento, "recebido_em": quando, "em": evento.get("em") or quando})
+                registro["historico"].append(
+                    {**evento, "recebido_em": quando, "em": evento.get("em") or quando})
 
             registro["atualizado_em"] = quando
             self._gravar(caminho, registro)

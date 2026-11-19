@@ -28,7 +28,8 @@ def test_cota_valida_recusa_caminhos():
 
 def test_lista_junta_mudancas_e_guarda_lixeira(tmp_path):
     lista = Lista(tmp_path)
-    ficha = {"doc_uid": "ahu:1", "titulo": "Carta", "ano": 1777, "cotas": {"Código de referência": "PT/AHU/CU/089/0010/00955"}}
+    ficha = {"doc_uid": "ahu:1", "titulo": "Carta", "ano": 1777,
+             "cotas": {"Código de referência": "PT/AHU/CU/089/0010/00955"}}
     r = lista.atualizar("089-0010-00955", {"ficha": ficha})
     assert r["estado"] == "na lista" and r["cota_referencia"].endswith("00955") and r["doc_uid"] == "ahu:1"
     pasta = {"computador": "Hermerico", "nome": "089-0010-00955", "caminho": "C:\\x\\089-0010-00955"}

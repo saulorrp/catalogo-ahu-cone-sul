@@ -130,7 +130,8 @@ async def api_lista_atualizar(request: Request, cota: str):
     except ValueError:
         raise HTTPException(status_code=400, detail="JSON inválido")
     ficha = None
-    if lista.ler(cota) is None and not isinstance(mudanca.get("ficha") if isinstance(mudanca, dict) else None, dict):
+    tem_ficha = isinstance(mudanca, dict) and isinstance(mudanca.get("ficha"), dict)
+    if lista.ler(cota) is None and not tem_ficha:
         try:
             ficha = _ficha_da_cota(main_module.dados_app, cota)
         except KeyError:
